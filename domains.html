@@ -34,22 +34,29 @@
 <main>
 <section class="inner-hero"><div class="container"><div class="eyebrow">Interest Domains</div><h1>Looking for another domain?</h1><p>Choose the area you want to learn. Your selected interest can be submitted through the application form.</p></div></section>
 <section class="section"><div class="container">
-  <div class="grid-4">
-    <div class="card"><div class="icon-box">🐍</div><h3>Python Programming</h3><p>Programming fundamentals and practical Python development.</p></div>
-    <div class="card"><div class="icon-box">☕</div><h3>Java Programming</h3><p>Core programming concepts and application development.</p></div>
-    <div class="card"><div class="icon-box">⚙️</div><h3>C++ Programming</h3><p>Programming fundamentals, logic and problem solving.</p></div>
-    <div class="card"><div class="icon-box">🔧</div><h3>C Programming</h3><p>Strong foundations in programming and computational thinking.</p></div>
-    <div class="card"><div class="icon-box">🌐</div><h3>Internet of Things</h3><p>Explore connected devices and IoT concepts.</p></div>
-    <div class="card"><div class="icon-box">📱</div><h3>App Development</h3><p>Application development concepts through practical projects.</p></div>
-    <div class="card"><div class="icon-box">🎨</div><h3>UI/UX Design</h3><p>User-focused design, interfaces and digital experiences.</p></div>
-    <div class="card"><div class="icon-box">🖌️</div><h3>Graphic Designing</h3><p>Creative design principles and digital visual communication.</p></div>
-    <div class="card"><div class="icon-box">🧑‍💻</div><h3>Frontend Development</h3><p>Modern frontend interfaces and responsive experiences.</p></div>
-    <div class="card"><div class="icon-box">🗄️</div><h3>Backend Development</h3><p>Server-side concepts, APIs and application logic.</p></div>
-    <div class="card"><div class="icon-box">📈</div><h3>Data Analysis</h3><p>Analyze data and communicate useful insights.</p></div>
-    <div class="card"><div class="icon-box">📲</div><h3>Flutter Development</h3><p>Cross-platform mobile application development.</p></div>
+  <div class="section-head"><div class="eyebrow">Choose Your Interest</div><h2>Select a domain</h2><p>Choose any available learning domain. Your selection will be shown below before you continue to the application form.</p></div>
+  <div class="grid-4 domain-select-grid">
+    <button class="card domain-choice" type="button" data-domain="Python Programming"><div class="icon-box">🐍</div><h3>Python Programming</h3><p>Programming fundamentals and practical Python development.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="Java Programming"><div class="icon-box">☕</div><h3>Java Programming</h3><p>Core programming concepts and application development.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="C++ Programming"><div class="icon-box">⚙️</div><h3>C++ Programming</h3><p>Programming fundamentals, logic and problem solving.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="C Programming"><div class="icon-box">🔧</div><h3>C Programming</h3><p>Strong foundations in programming and computational thinking.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="Internet of Things (IOT)"><div class="icon-box">🌐</div><h3>Internet of Things</h3><p>Explore connected devices, sensors and IoT concepts.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="App Development"><div class="icon-box">📱</div><h3>App Development</h3><p>Application development concepts through practical projects.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="UI/UX Design"><div class="icon-box">🎨</div><h3>UI/UX Design</h3><p>User-focused design, interfaces and digital experiences.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="Graphic Designing"><div class="icon-box">🖌️</div><h3>Graphic Designing</h3><p>Creative design principles and digital visual communication.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="Frontend Developer"><div class="icon-box">🧑‍💻</div><h3>Frontend Developer</h3><p>Modern frontend interfaces and responsive experiences.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="Backend Developer"><div class="icon-box">🗄️</div><h3>Backend Developer</h3><p>Server-side concepts, APIs and application logic.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="Data Analysis"><div class="icon-box">📈</div><h3>Data Analysis</h3><p>Analyze data and communicate useful insights.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="Flutter Development"><div class="icon-box">📲</div><h3>Flutter Development</h3><p>Cross-platform mobile application development.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="Web Development"><div class="icon-box">💻</div><h3>Web Development</h3><p>Responsive websites and interactive web experiences.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="Artificial Intelligence"><div class="icon-box">🤖</div><h3>Artificial Intelligence</h3><p>Practical AI concepts and project-based learning.</p><span class="text-link">Select <span class="arrow">→</span></span></button>
   </div>
-  <div class="cta" style="border-radius:24px;margin-top:55px"><div class="cta-inner"><h2>Select Your Interest Domain</h2><p>Choose your preferred area while applying. The application form lets you submit your interest.</p><a class="btn btn-light" href="apply.html">Apply Now →</a></div></div>
+  <div class="card selected-domain-box" id="selectedDomainBox">
+    <div><div class="eyebrow">Selected Domain</div><h3 id="selectedDomainTitle">No domain selected</h3><p id="selectedDomainText">Select any domain above to continue.</p></div>
+    <a class="btn btn-primary disabled-btn" id="continueDomainApply" href="https://forms.gle/aUmHNX3i7VQ73Zkq8" target="_blank" rel="noopener" aria-disabled="true">Continue — Apply in Domain <span class="arrow">→</span></a>
+  </div>
 </div></section>
+
 </main>
 
 
@@ -94,5 +101,16 @@
 </footer>
 
 <script src="script.js"></script>
+<script>
+(function(){
+ const choices=[...document.querySelectorAll('.domain-choice')]; const title=document.getElementById('selectedDomainTitle'); const text=document.getElementById('selectedDomainText'); const btn=document.getElementById('continueDomainApply');
+ choices.forEach(card=>card.addEventListener('click',()=>{
+   choices.forEach(c=>c.classList.remove('selected')); card.classList.add('selected');
+   const domain=card.dataset.domain; title.textContent=domain; text.textContent='Your interest domain is selected. Continue to the application form.';
+   btn.classList.remove('disabled-btn'); btn.removeAttribute('aria-disabled'); sessionStorage.setItem('softgrow_selected_domain',domain);
+ }));
+ const saved=sessionStorage.getItem('softgrow_selected_domain'); if(saved){ const c=choices.find(x=>x.dataset.domain===saved); if(c)c.click(); }
+})();
+</script>
 </body>
 </html>

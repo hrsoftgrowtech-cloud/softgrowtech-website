@@ -4,97 +4,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Apply | SoftGrowTech</title>
-<meta name="description" content="SoftGrowTech — practical learning, project-based internships and career-focused development.">
+<meta name="description" content="Choose your interest domain and continue to the SoftGrowTech internship application form.">
 <link rel="icon" href="assets/softgrowtech-logo.jpg">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-
 <header class="header">
   <div class="container nav">
-    <a class="brand" href="index.html">
-      <img src="assets/softgrowtech-logo.jpg" alt="SoftGrowTech logo">
-      <span>Soft<span>Grow</span>Tech</span>
-    </a>
+    <a class="brand" href="index.html"><img src="assets/softgrowtech-logo.jpg" alt="SoftGrowTech logo"><span>Soft<span>Grow</span>Tech</span></a>
     <button class="menu-btn" aria-label="Open menu">☰</button>
     <ul class="nav-links" id="navLinks">
-      <li><a href="index.html">Home</a></li>
-      <li><a href="internships.html">Internships</a></li>
-      <li><a href="how-it-works.html">How It Works</a></li>
-      <li><a href="projects.html">Projects</a></li>
-      <li><a href="documents-verification.html">Verify</a></li>
-      <li><a href="about.html">About</a></li>
-      <li><a class="nav-apply" href="apply.html">Apply Now <span class="arrow">→</span></a></li>
+      <li><a href="index.html">Home</a></li><li><a href="internships.html">Internships</a></li><li><a href="how-it-works.html">How It Works</a></li><li><a href="projects.html">Projects</a></li><li><a href="documents-verification.html">Verify</a></li><li><a href="about.html">About</a></li><li><a class="nav-apply" href="apply.html">Apply Now <span class="arrow">→</span></a></li>
     </ul>
   </div>
 </header>
-
-
 <main>
-<section class="inner-hero"><div class="container"><div class="eyebrow">Start Your Journey</div><h1>Select Your Interest Domain</h1><p>Choose the area you are interested in before submitting your application.</p></div></section>
+<section class="inner-hero"><div class="container"><div class="eyebrow">Start Your Journey</div><h1>Select Your Interest Domain</h1><p>Choose the area you want to learn before continuing to the SoftGrowTech application form.</p></div></section>
 <section class="section"><div class="container">
-  <div class="grid-3">
-    <a class="card domain-card" href="https://forms.gle/aUmHNX3i7VQ73Zkq8" target="_blank" rel="noopener"><div class="icon-box">💻</div><h3>Web Development</h3><p>Select this interest and continue to the application form.</p><span class="text-link">Apply in this domain →</span></a>
-    <a class="card domain-card" href="https://forms.gle/aUmHNX3i7VQ73Zkq8" target="_blank" rel="noopener"><div class="icon-box">📊</div><h3>Data Analysis</h3><p>Select this interest and continue to the application form.</p><span class="text-link">Apply in this domain →</span></a>
-    <a class="card domain-card" href="https://forms.gle/aUmHNX3i7VQ73Zkq8" target="_blank" rel="noopener"><div class="icon-box">🤖</div><h3>Artificial Intelligence</h3><p>Select this interest and continue to the application form.</p><span class="text-link">Apply in this domain →</span></a>
+  <div class="grid-3 domain-select-grid">
+    <button class="card domain-choice" type="button" data-domain="Web Development"><div class="icon-box">💻</div><h3>Web Development</h3><p>Build responsive websites, interfaces and practical web projects.</p><span class="text-link">Select Domain <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="Data Analysis"><div class="icon-box">📊</div><h3>Data Analysis</h3><p>Work with data, visualization, insights and analysis projects.</p><span class="text-link">Select Domain <span class="arrow">→</span></span></button>
+    <button class="card domain-choice" type="button" data-domain="Artificial Intelligence"><div class="icon-box">🤖</div><h3>Artificial Intelligence</h3><p>Explore AI concepts and apply them through practical projects.</p><span class="text-link">Select Domain <span class="arrow">→</span></span></button>
   </div>
-  <div class="card" style="margin-top:25px;text-align:center;background:#f8fbff">
-    <div class="icon-box" style="margin:0 auto 15px">✨</div><h3>Interested in another domain?</h3><p>Explore the complete list and then apply using the same form.</p><a class="btn btn-outline" style="margin-top:16px" href="domains.html">View Other Domains →</a>
+  <div class="card selected-domain-box" id="selectedDomainBox">
+    <div><div class="eyebrow">Your Selection</div><h3 id="selectedDomainTitle">Select a domain to continue</h3><p id="selectedDomainText">Choose one of the three learning paths above.</p></div>
+    <a class="btn btn-primary disabled-btn" id="continueApply" href="https://forms.gle/aUmHNX3i7VQ73Zkq8" target="_blank" rel="noopener" aria-disabled="true">Continue — Apply in Domain <span class="arrow">→</span></a>
   </div>
-  <div class="fee-note fee-note-compact">
-    <div class="fee-icon">✨</div>
-    <div>
-      <div class="eyebrow">Before You Continue</div>
-      <h3>Nominal one-time program fee</h3>
-      <p>A nominal one-time confirmation fee may apply after selection. Applicable program services are included, including mentor support, task/project evaluation, orientation and presentation sessions, mock interview preparation, placement guidance, certificate processing and official record/document verification.</p>
-    </div>
-  </div>
-  <div style="text-align:center;margin-top:34px"><a class="btn btn-primary" href="https://forms.gle/aUmHNX3i7VQ73Zkq8" target="_blank" rel="noopener">Continue to Application Form <span class="arrow">↗</span></a></div>
+  <div class="card other-domain-box"><div class="icon-box">✨</div><h3>Looking for another domain?</h3><p>Explore all available interest domains and select the one that matches your goals.</p><a class="btn btn-outline" href="domains.html">View Other Domains <span class="arrow">→</span></a></div>
 </div></section>
 </main>
-
-
 <footer>
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <img src="assets/softgrowtech-logo.jpg" alt="SoftGrowTech">
-        <div>
-          <h3>Soft<span>Grow</span>Tech</h3>
-          <p>Learn • Build • Evolve. Practical learning, projects and career-focused internship experiences.</p>
-        </div>
-      </div>
-      <div class="footer-col">
-        <h4>Explore</h4>
-        <ul>
-          <li><a href="internships.html">Internships</a></li>
-          <li><a href="projects.html">Projects</a></li>
-          <li><a href="how-it-works.html">How It Works</a></li>
-          <li><a href="about.html">About</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Domains</h4>
-        <ul>
-          <li><a href="web-development.html">Web Development</a></li>
-          <li><a href="data-analysis.html">Data Analysis</a></li>
-          <li><a href="artificial-intelligence.html">Artificial Intelligence</a></li>
-          <li><a href="domains.html">Other Domains</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Support</h4>
-        <ul>
-          <li><a href="documents-verification.html">Document Verification</a></li>
-          <li><a href="apply.html">Apply Now</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="copyright">© 2026 SoftGrowTech. All rights reserved.</div>
-  </div>
+  <div class="container"><div class="footer-grid">
+    <div class="footer-brand"><img src="assets/softgrowtech-logo.jpg" alt="SoftGrowTech"><div><h3>Soft<span>Grow</span>Tech</h3><p>Learn • Build • Evolve. Practical learning, projects and career-focused internship experiences.</p></div></div>
+    <div class="footer-col"><h4>Explore</h4><ul><li><a href="internships.html">Internships</a></li><li><a href="projects.html">Projects</a></li><li><a href="how-it-works.html">How It Works</a></li><li><a href="about.html">About</a></li></ul></div>
+    <div class="footer-col"><h4>Domains</h4><ul><li><a href="web-development.html">Web Development</a></li><li><a href="data-analysis.html">Data Analysis</a></li><li><a href="artificial-intelligence.html">Artificial Intelligence</a></li><li><a href="domains.html">Other Domains</a></li></ul></div>
+    <div class="footer-col"><h4>Support</h4><ul><li><a href="documents-verification.html">Document Verification</a></li><li><a href="apply.html">Apply Now</a></li></ul></div>
+  </div><div class="copyright">© 2026 SoftGrowTech. All rights reserved.</div></div>
 </footer>
-
 <script src="script.js"></script>
+<script>
+(function(){
+ const choices=[...document.querySelectorAll('.domain-choice')]; const title=document.getElementById('selectedDomainTitle'); const text=document.getElementById('selectedDomainText'); const btn=document.getElementById('continueApply');
+ choices.forEach(card=>card.addEventListener('click',()=>{
+   choices.forEach(c=>c.classList.remove('selected')); card.classList.add('selected');
+   const domain=card.dataset.domain;
+   title.textContent=domain; text.textContent='Your interest domain is selected. Continue to the application form.';
+   btn.classList.remove('disabled-btn'); btn.removeAttribute('aria-disabled'); btn.dataset.domain=domain;
+   sessionStorage.setItem('softgrow_selected_domain',domain);
+ }));
+ const saved=sessionStorage.getItem('softgrow_selected_domain'); if(saved){ const c=choices.find(x=>x.dataset.domain===saved); if(c)c.click(); }
+})();
+</script>
 </body>
 </html>
