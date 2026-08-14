@@ -1,328 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Documents Verification | SoftGrowTech</title>
+<meta name="description" content="SoftGrowTech — practical learning, project-based internships and career-focused development.">
+<link rel="icon" href="assets/softgrowtech-logo.jpg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
-  <title>Documents Verification | SoftGrowTech</title>
 
-  <meta name="description"
-    content="Verify official certificates, offer letters, experience letters and other documents issued by SoftGrowTech.">
+<header class="header">
+  <div class="container nav">
+    <a class="brand" href="index.html">
+      <img src="assets/softgrowtech-logo.jpg" alt="SoftGrowTech logo">
+      <span>Soft<span>Grow</span>Tech</span>
+    </a>
+    <button class="menu-btn" aria-label="Open menu">☰</button>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="internships.html">Internships</a></li>
+      <li><a href="how-it-works.html">How It Works</a></li>
+      <li><a href="projects.html">Projects</a></li>
+      <li><a href="documents-verification.html">Verify</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a class="nav-apply" href="apply.html">Apply Now <span class="arrow">→</span></a></li>
+    </ul>
+  </div>
+</header>
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      scroll-behavior: smooth;
-    }
 
-    :root {
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --dark: #0b1220;
-      --text: #172033;
-      --muted: #64748b;
-      --light: #f8fafc;
-      --white: #ffffff;
-      --border: #e2e8f0;
-    }
+<main>
+<section class="inner-hero">
+  <div class="container">
+    <div class="eyebrow">Documents Verification</div>
+    <h1>Verify your SoftGrowTech documents.</h1>
+    <p>Use your document ID to begin verification for a Certificate, Offer Letter or other official letter issued by SoftGrowTech.</p>
+  </div>
+</section>
 
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      color: var(--text);
-      background: var(--white);
-      line-height: 1.6;
-    }
+<section class="section">
+  <div class="container">
+    <div class="verify-layout">
 
-    a {
-      text-decoration: none;
-      color: inherit;
-    }
+      <div class="verify-info">
+        <div class="eyebrow" style="color:#60a5fa">Official Documents</div>
+        <h3>One place to check your documents.</h3>
+        <p>Document verification can help confirm the document type and its associated record.</p>
 
-    /* NAVBAR */
-    .navbar {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      background: rgba(255,255,255,0.96);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-    }
+        <div class="verify-list">
+          <div>✓ Certificate</div>
+          <div>✓ Offer Letter</div>
+          <div>✓ Experience / Recommendation Letter</div>
+          <div>✓ Other official letters issued by SoftGrowTech</div>
+        </div>
+      </div>
 
-    .nav-container {
-      max-width: 1180px;
-      margin: auto;
-      padding: 16px 22px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+      <form class="verify-form" data-verify>
+        <label for="docid">Student / Letter ID</label>
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 22px;
-      font-weight: 800;
-      color: var(--dark);
-    }
+        <input
+          id="docid"
+          required
+          placeholder="e.g. SGT-26X-0001"
+        >
 
-    .logo span {
-      color: var(--primary);
-    }
+        <button class="btn btn-primary" type="submit">
+          Verify Document <span class="arrow">→</span>
+        </button>
 
-    .logo-mark {
-      width: 34px;
-      height: 34px;
-      border-radius: 9px;
-      background: linear-gradient(135deg, #2563eb, #60a5fa);
-      display: grid;
-      place-items: center;
-      color: white;
-      font-size: 17px;
-      font-weight: 800;
-    }
+        <div class="verify-result"></div>
 
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 28px;
-      list-style: none;
-      font-size: 14px;
-      font-weight: 600;
-    }
+        <p style="color:#64748b;font-size:.8rem;margin-top:15px">
+          Your Student / Letter ID is mentioned on the official document or letter issued by SoftGrowTech. Enter the same ID above to verify your document details.
+        </p>
+      </form>
 
-    .nav-links a {
-      transition: 0.25s ease;
-    }
+    </div>
+  </div>
+</section>
 
-    .nav-links a:hover {
-      color: var(--primary);
-    }
+<section class="section section-light">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Need to Apply?</div>
+      <h2>Start your SoftGrowTech journey</h2>
+      <p>Verification is for issued documents. New applicants should use the application flow.</p>
+      <a class="btn btn-primary" style="margin-top:20px" href="apply.html">
+        Select Your Interest Domain →
+      </a>
+    </div>
+  </div>
+</section>
+</main>
 
-    .nav-apply {
-      background: var(--primary);
-      color: white !important;
-      padding: 11px 18px;
-      border-radius: 8px;
-    }
 
-    .nav-apply:hover {
-      background: var(--primary-dark);
-      transform: translateY(-2px);
-    }
+<footer>
+  <div class="container">
+    <div class="footer-grid">
 
-    .menu-btn {
-      display: none;
-      border: none;
-      background: none;
-      font-size: 28px;
-      cursor: pointer;
-    }
+      <div class="footer-brand">
+        <img src="assets/softgrowtech-logo.jpg" alt="SoftGrowTech">
+        <div>
+          <h3>Soft<span>Grow</span>Tech</h3>
+          <p>Learn • Build • Evolve. Practical learning, projects and career-focused internship experiences.</p>
+        </div>
+      </div>
 
-    /* HERO */
-    .verification-hero {
-      background:
-        radial-gradient(
-          circle at 80% 20%,
-          rgba(37,99,235,0.18),
-          transparent 32%
-        ),
-        linear-gradient(
-          135deg,
-          #f8fbff 0%,
-          #eef5ff 100%
-        );
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="internships.html">Internships</a></li>
+          <li><a href="projects.html">Projects</a></li>
+          <li><a href="how-it-works.html">How It Works</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </div>
 
-      padding: 85px 22px 80px;
-    }
+      <div class="footer-col">
+        <h4>Domains</h4>
+        <ul>
+          <li><a href="web-development.html">Web Development</a></li>
+          <li><a href="data-analysis.html">Data Analysis</a></li>
+          <li><a href="artificial-intelligence.html">Artificial Intelligence</a></li>
+          <li><a href="domains.html">Other Domains</a></li>
+        </ul>
+      </div>
 
-    .verification-container {
-      max-width: 1180px;
-      margin: auto;
-      display: grid;
-      grid-template-columns: 0.9fr 1.1fr;
-      gap: 55px;
-      align-items: center;
-    }
+      <div class="footer-col">
+        <h4>Support</h4>
+        <ul>
+          <li><a href="documents-verification.html">Document Verification</a></li>
+          <li><a href="apply.html">Apply Now</a></li>
+        </ul>
+      </div>
 
-    /* LEFT CARD */
-    .info-card {
-      background: linear-gradient(
-        145deg,
-        #0b1220,
-        #172554
-      );
+    </div>
 
-      color: white;
-      border-radius: 24px;
-      padding: 42px;
-      box-shadow:
-        0 25px 60px rgba(15,23,42,0.18);
-    }
+    <div class="copyright">
+      © 2026 SoftGrowTech. All rights reserved.
+    </div>
+  </div>
+</footer>
 
-    .eyebrow {
-      color: #60a5fa;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 1.6px;
-      text-transform: uppercase;
-      margin-bottom: 16px;
-    }
-
-    .info-card h1 {
-      font-size: clamp(34px, 5vw, 52px);
-      line-height: 1.1;
-      margin-bottom: 18px;
-    }
-
-    .info-card h1 span {
-      color: #60a5fa;
-    }
-
-    .info-card > p {
-      color: #cbd5e1;
-      font-size: 15px;
-      margin-bottom: 30px;
-    }
-
-    .document-list {
-      list-style: none;
-    }
-
-    .document-list li {
-      display: flex;
-      align-items: center;
-      gap: 11px;
-      margin-bottom: 16px;
-      color: #e2e8f0;
-      font-size: 14px;
-    }
-
-    .check {
-      width: 23px;
-      height: 23px;
-      border-radius: 50%;
-      background: rgba(96,165,250,0.16);
-      color: #60a5fa;
-      display: grid;
-      place-items: center;
-      font-size: 13px;
-      flex-shrink: 0;
-    }
-
-    /* VERIFICATION BOX */
-    .verify-box {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 42px;
-      box-shadow:
-        0 20px 50px rgba(15,23,42,0.08);
-    }
-
-    .verify-box h2 {
-      font-size: 30px;
-      color: var(--dark);
-      margin-bottom: 10px;
-    }
-
-    .verify-box-intro {
-      color: var(--muted);
-      font-size: 15px;
-      margin-bottom: 30px;
-    }
-
-    .form-group {
-      margin-bottom: 20px;
-    }
-
-    .form-group label {
-      display: block;
-      font-weight: 700;
-      font-size: 14px;
-      margin-bottom: 9px;
-      color: var(--dark);
-    }
-
-    .form-group input {
-      width: 100%;
-      padding: 16px 17px;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      outline: none;
-      font-size: 15px;
-      transition: 0.25s ease;
-    }
-
-    .form-group input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(37,99,235,0.10);
-    }
-
-    .verify-note {
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.7;
-      margin-bottom: 23px;
-    }
-
-    /* BUTTON */
-    .verify-btn {
-      border: none;
-      width: 100%;
-      padding: 15px 22px;
-      border-radius: 10px;
-      background: var(--primary);
-      color: white;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition:
-        transform 0.25s ease,
-        background 0.25s ease,
-        box-shadow 0.25s ease;
-    }
-
-    .verify-btn:hover {
-      background: var(--primary-dark);
-      transform: translateY(-3px);
-      box-shadow:
-        0 12px 25px rgba(37,99,235,0.25);
-    }
-
-    .verify-btn:active {
-      transform: translateY(-1px);
-    }
-
-    /* RESULT */
-    .verify-result {
-      display: none;
-      margin-top: 22px;
-      padding: 18px;
-      border-radius: 12px;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      color: #166534;
-      font-size: 14px;
-    }
-
-    .verify-result.show {
-      display: block;
-    }
-
-    /* FOOTER */
-    footer {
-      background: #070d18;
-      color: white;
-      padding: 45px 22px 25px;
-    }
-
-    .footer-container {
-      max-width: 1180px;
-      margin: auto;
-      display: flex;
-      justify-content: space-between;
-      gap: 30px;
-      align-items: center;
+<script src="script.js"></script>
+</body>
+</html>
