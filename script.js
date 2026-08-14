@@ -4,8 +4,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const welcome = document.getElementById("welcomeScreen");
   if (welcome) {
-    setTimeout(() => welcome.classList.add("hide"), 2500);
-    setTimeout(() => welcome.remove(), 3300);
+    const welcomeShown = sessionStorage.getItem("softgrow_welcome_shown");
+    if (welcomeShown) {
+      welcome.remove();
+    } else {
+      sessionStorage.setItem("softgrow_welcome_shown", "1");
+      setTimeout(() => welcome.classList.add("hide"), 1300);
+      setTimeout(() => welcome.remove(), 1750);
+    }
   }
 
 
