@@ -13,6 +13,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+
+  // Highlight the current page in the navbar.
+  const currentPage = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  document.querySelectorAll(".nav-links a").forEach(link => {
+    const href = (link.getAttribute("href") || "").split("#")[0].split("?")[0].toLowerCase();
+    if (!href || href.startsWith("http")) return;
+    if (href === currentPage) link.classList.add("active");
+
+    // Domain pages belong to the Internships section.
+    if (
+      ["web-development.html","data-analysis.html","artificial-intelligence.html","domains.html"].includes(currentPage)
+      && href === "internships.html"
+    ) link.classList.add("active");
+  });
+
   const menuBtn = document.querySelector(".menu-btn");
   const navLinks = document.getElementById("navLinks");
   if (menuBtn && navLinks) {

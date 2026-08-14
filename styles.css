@@ -187,3 +187,48 @@ footer{background:#060c16;color:#fff;padding:60px 0 25px}
 .clicked{animation:buttonPulse .38s ease}
 @keyframes buttonPulse{0%{transform:scale(1)}45%{transform:scale(.97)}100%{transform:scale(1)}}
 @media(max-width:700px){.selected-domain-box,.other-domain-box{flex-direction:column;align-items:stretch}.selected-domain-box .btn,.other-domain-box .btn{width:100%;text-align:center}.domain-choice.selected::after{position:static;display:inline-block;margin-top:12px}}
+
+
+/* Six-card hero summary */
+.hero-stats-six{grid-template-columns:repeat(3,1fr);gap:8px}
+.hero-stats-six .stat{min-height:76px;display:flex;flex-direction:column;justify-content:center}
+.hero-stats-six .stat small{font-size:.68rem;line-height:1.2;margin-top:3px}
+
+/* FAQ */
+.faq-list{max-width:900px;margin:0 auto;display:grid;gap:12px}
+.faq-item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:0 20px;transition:border-color .25s ease,box-shadow .25s ease}
+.faq-item:hover{border-color:#bfdbfe;box-shadow:0 10px 28px rgba(15,23,42,.06)}
+.faq-item summary{cursor:pointer;list-style:none;padding:19px 34px 19px 0;font-weight:800;color:var(--ink);position:relative}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"+";position:absolute;right:0;top:14px;font-size:1.45rem;font-weight:500;color:var(--blue)}
+.faq-item[open] summary::after{content:"−"}
+.faq-item p{color:var(--muted);font-size:.92rem;line-height:1.7;padding:0 0 20px}
+
+/* Domain fee */
+.domain-fee{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;padding:30px;border:1px solid #bfdbfe;border-radius:22px;background:linear-gradient(135deg,#f8fbff,#eef5ff);box-shadow:0 14px 35px rgba(37,99,235,.07)}
+.domain-fee h2{font-size:clamp(1.6rem,3vw,2.25rem);color:var(--ink);margin-bottom:8px}
+.domain-fee p{color:var(--muted);font-size:.94rem;line-height:1.75}
+.domain-fee .fee-small{margin-top:8px;font-size:.86rem;color:#475569}
+.fee-badge{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;background:#fff;border:1px solid #dbeafe;font-size:1.35rem}
+.selected-domain-fee{display:grid;gap:4px;margin-top:13px;padding:13px 15px;border-radius:12px;background:#f8fbff;border:1px solid #dbeafe}
+.selected-domain-fee strong{font-size:.82rem;color:var(--blue)}
+.selected-domain-fee span{font-size:.78rem;color:var(--muted);line-height:1.55}
+
+/* More polished page entry / welcome */
+.welcome-screen::before,.welcome-screen::after{content:"";position:absolute;border-radius:50%;border:1px solid rgba(96,165,250,.18);pointer-events:none}
+.welcome-screen::before{width:520px;height:520px;animation:welcomeOrbit 7s linear infinite}
+.welcome-screen::after{width:760px;height:760px;border-color:rgba(37,99,235,.10);animation:welcomeOrbitReverse 10s linear infinite}
+@keyframes welcomeOrbit{to{transform:rotate(360deg) scale(1.04)}}
+@keyframes welcomeOrbitReverse{to{transform:rotate(-360deg) scale(.96)}}
+.welcome-inner{position:relative;z-index:2}
+.welcome-line{box-shadow:0 0 22px rgba(37,99,235,.7)}
+.nav-links a.active:not(.nav-apply){color:var(--blue);font-weight:850}
+.nav-links a.active:not(.nav-apply)::after{width:100%}
+
+@media(max-width:700px){
+  .hero-stats-six{grid-template-columns:repeat(2,1fr)}
+  .domain-fee{grid-template-columns:1fr;padding:22px}
+  .faq-item{padding:0 16px}
+  .faq-item summary{padding:17px 28px 17px 0;font-size:.94rem}
+  .faq-item summary::after{top:13px}
+}
