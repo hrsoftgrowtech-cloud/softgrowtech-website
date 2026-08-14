@@ -43,29 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  const domainCards = document.querySelectorAll(".domain-select-card");
-  const selectedDomain = document.getElementById("selectedDomain");
-  const selectedDomainHint = document.getElementById("selectedDomainHint");
-  const continueApply = document.getElementById("continueApply");
-
-  if (domainCards.length && selectedDomain && selectedDomainHint && continueApply) {
-    domainCards.forEach(card => {
-      card.addEventListener("click", () => {
-        domainCards.forEach(c => {
-          c.classList.remove("selected");
-          c.setAttribute("aria-pressed","false");
-        });
-        card.classList.add("selected");
-        card.setAttribute("aria-pressed","true");
-        const domain = card.dataset.domain;
-        selectedDomain.textContent = domain;
-        selectedDomainHint.textContent = `${domain} is selected. Continue to the application form to submit your interest.`;
-        continueApply.setAttribute("aria-disabled","false");
-        continueApply.href = `${continueApply.dataset.form || continueApply.href}`;
-      });
-    });
-  }
-
   document.querySelectorAll(".btn, .nav-apply, .text-link").forEach(el => {
     el.addEventListener("click", () => {
       el.classList.remove("clicked");
