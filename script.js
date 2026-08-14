@@ -4,13 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const welcome = document.getElementById("welcomeScreen");
   if (welcome) {
-    const seen = sessionStorage.getItem("softgrow_welcome_seen");
-    if (seen) welcome.remove();
-    else {
-      sessionStorage.setItem("softgrow_welcome_seen","1");
-      setTimeout(() => welcome.classList.add("hide"), 1900);
-      setTimeout(() => welcome.remove(), 2850);
-    }
+    setTimeout(() => welcome.classList.add("hide"), 2500);
+    setTimeout(() => welcome.remove(), 3300);
   }
 
 

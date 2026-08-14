@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Domain Details | SoftGrowTech</title>
+<meta name="description" content="Explore your selected SoftGrowTech learning domain, practical projects, mentor support and application details.">
+<link rel="icon" href="assets/softgrowtech-logo.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="header"><div class="container nav">
+<a class="brand" href="index.html"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech logo"><span>Soft<span>Grow</span>Tech</span></a>
+<button class="menu-btn" aria-label="Open menu">☰</button>
+<ul class="nav-links" id="navLinks">
+<li><a href="index.html">Home</a></li><li><a href="internships.html">Internships</a></li><li><a href="how-it-works.html">How It Works</a></li><li><a href="projects.html">Projects</a></li><li><a href="documents-verification.html">Verify</a></li><li><a href="about.html">About</a></li><li><a class="nav-apply" href="apply.html">Apply Now <span class="arrow">→</span></a></li>
+</ul></div></header>
+<main>
+<section class="inner-hero"><div class="container"><div class="eyebrow">Selected Learning Domain</div><h1 id="domainTitle">Your Selected Domain</h1><p id="domainIntro">Explore what you’ll learn, build and practice with mentor support.</p></div></section>
+<section class="section"><div class="container"><div class="grid-3">
+<div class="card"><div class="icon-box">📚</div><h3>What You’ll Learn</h3><p id="learnText">Practical concepts and structured learning related to your selected domain.</p></div>
+<div class="card"><div class="icon-box">🛠️</div><h3>What You’ll Build</h3><p>Domain-related tasks and projects, including a final project that turns learning into practical experience.</p></div>
+<div class="card"><div class="icon-box">👩‍🏫</div><h3>Mentor Support</h3><p>Mentor guidance for doubts, project direction, reviews, feedback and professional project presentation.</p></div>
+</div></div></section>
+<section class="section section-light"><div class="container"><div class="domain-fee">
+<div class="fee-badge">✨</div><div><div class="eyebrow">Before You Apply</div><h2>One-Time Nominal Fee</h2>
+<p>A nominal one-time confirmation fee may apply after selection. Applicable program services are included — including <strong>mentor support, task &amp; project evaluation, orientation session, mock interview preparation, placement guidance, certificate processing and official document/record verification.</strong></p>
+<p class="fee-small">Don’t worry — it is a one-time program fee. No fee is required to submit the initial application.</p></div>
+</div></div></section>
+<section class="cta"><div class="container cta-inner"><h2 id="readyTitle">Ready to choose your domain?</h2><p>Continue to the application form for your selected learning domain.</p><a class="btn btn-light" id="applyDomainBtn" href="apply.html">Apply Now →</a></div></section>
+</main>
+<footer><div class="container"><div class="footer-grid">
+<div class="footer-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><h3>Soft<span>Grow</span>Tech</h3><p>Learn • Build • Evolve. Practical learning, projects and career-focused internship experiences.</p></div></div>
+<div class="footer-col"><h4>Explore</h4><ul><li><a href="internships.html">Internships</a></li><li><a href="projects.html">Projects</a></li><li><a href="how-it-works.html">How It Works</a></li><li><a href="about.html">About</a></li></ul></div>
+<div class="footer-col"><h4>Domains</h4><ul><li><a href="web-development.html">Web Development</a></li><li><a href="data-analysis.html">Data Analysis</a></li><li><a href="artificial-intelligence.html">Artificial Intelligence</a></li><li><a href="domains.html">Other Domains</a></li></ul></div>
+<div class="footer-col"><h4>Support</h4><ul><li><a href="documents-verification.html">Document Verification</a></li><li><a href="apply.html">Apply Now</a></li></ul></div>
+</div><div class="copyright">© 2026 SoftGrowTech. All rights reserved.</div></div></footer>
+<script src="script.js"></script>
+<script>
+(function(){
+const domain=new URLSearchParams(location.search).get('domain')||sessionStorage.getItem('softgrow_selected_domain')||'your selected domain';
+const map={
+"Python Programming":"Python fundamentals, coding logic, automation and practical application development.",
+"Java Programming":"Java fundamentals, structured programming and practical application development.",
+"C++ Programming":"Programming logic, problem solving and practical C++ development.",
+"C Programming":"Strong programming foundations, logic and computational thinking.",
+"Internet of Things (IOT)":"Connected devices, sensors, IoT concepts and practical implementations.",
+"App Development":"Application development concepts and practical mobile projects.",
+"UI/UX Design":"User research, interface design, flows and digital experiences.",
+"Graphic Designing":"Visual communication, design principles and practical creative projects.",
+"Frontend Developer":"Modern frontend interfaces, responsive design and interactive web experiences.",
+"Backend Developer":"Server-side logic, APIs, databases and application workflows.",
+"Data Analysis":"Data cleaning, analysis, visualization and insight communication.",
+"Flutter Development":"Cross-platform mobile application development with practical project work.",
+"Web Development":"Responsive websites, interfaces, frontend concepts and practical web projects.",
+"Artificial Intelligence":"AI concepts, practical applications and project-based problem solving.",
+"Python Data Visualization":"Python-based data cleaning, visualization, dashboards and insight presentation.",
+"AI Python Projects":"Python programming combined with AI concepts through practical projects."
+};
+document.getElementById('domainTitle').textContent=domain;
+document.getElementById('readyTitle').textContent='Ready to choose '+domain+'?';
+document.getElementById('learnText').textContent=map[domain]||'Practical concepts, structured tasks and hands-on learning related to your selected domain.';
+document.getElementById('applyDomainBtn').href='apply.html?domain='+encodeURIComponent(domain);
+})();
+</script>
+</body></html>
