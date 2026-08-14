@@ -245,3 +245,5 @@ footer{background:#060c16;color:#fff;padding:60px 0 25px}
 @media(max-width:1050px){.domain-select-grid.grid-4{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.domain-select-grid.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.domain-select-grid.grid-4{grid-template-columns:1fr}}
+
+.domain-select-grid{align-items:stretch}.domain-choice{width:100%;text-align:left;cursor:pointer;position:relative}.domain-choice.selected{border-color:#60a5fa;box-shadow:0 14px 32px rgba(37,99,235,.12);transform:translateY(-2px)}.domain-choice.selected::after{content:'✓ Selected';position:absolute;top:14px;right:14px;color:#2563eb;font-size:.72rem;font-weight:800}.hero-stats-six .stat strong{font-size:1.15rem;letter-spacing:-.02em}@media(max-width:1050px){.domain-select-grid.grid-4{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.domain-select-grid.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.domain-select-grid.grid-4{grid-template-columns:1fr}}
