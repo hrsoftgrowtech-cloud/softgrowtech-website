@@ -4,15 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const welcome = document.getElementById("welcomeScreen");
   if (welcome) {
-    // Always show the welcome screen when the website opens.
-    // It stays visible long enough for the message to be clearly readable,
-    // then fades smoothly into the homepage.
-    document.body.classList.add("welcome-active");
-    setTimeout(() => welcome.classList.add("hide"), 1800);
-    setTimeout(() => {
-      welcome.remove();
-      document.body.classList.remove("welcome-active");
-    }, 2700);
+    setTimeout(() => welcome.classList.add("hide"), 1600);
+    setTimeout(() => welcome.remove(), 2450);
   }
 
 

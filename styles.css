@@ -21,8 +21,6 @@ body{
   color:var(--ink-2);background:var(--white);line-height:1.6;
   overflow-x:hidden;
 }
-body.loaded{animation:pageIn .55s ease both}
-@keyframes pageIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
 a{text-decoration:none;color:inherit}
 button,input{font:inherit}
 img{max-width:100%;display:block}
