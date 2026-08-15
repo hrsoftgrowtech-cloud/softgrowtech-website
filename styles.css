@@ -69,7 +69,7 @@ img{max-width:100%;display:block}
   border-radius:11px;font-weight:800;transition:transform .2s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease;
 }
 .nav-apply{padding:11px 17px;background:var(--blue);color:#fff!important;box-shadow:0 8px 22px rgba(37,99,235,.18)}
-.nav-apply:hover,.btn-primary:hover{transform:translateY(-2px);background:var(--blue-dark);box-shadow:0 12px 26px rgba(37,99,235,.22)}
+.btn-primary:hover{transform:translateY(-2px);background:var(--blue-dark);box-shadow:0 12px 26px rgba(37,99,235,.22)}
 .menu-btn{display:none;border:0;background:none;font-size:1.8rem;color:var(--ink);cursor:pointer}
 
 /* Buttons */
@@ -110,6 +110,7 @@ img{max-width:100%;display:block}
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:19px}
 .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px;transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease}
 .card:hover{transform:translateY(-7px);box-shadow:var(--shadow);border-color:#bfdbfe}
+.card:active{transform:translateY(-2px) scale(.985);box-shadow:0 10px 28px rgba(15,23,42,.12)}
 .icon-box{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:var(--blue-soft);font-size:1.45rem;margin-bottom:18px}
 .card h3{font-size:1.16rem;color:var(--ink);margin-bottom:8px}
 .card p{font-size:.9rem;color:var(--muted)}
@@ -134,7 +135,7 @@ img{max-width:100%;display:block}
 .step h4{font-size:.88rem;color:var(--ink);margin-bottom:5px}.step p{font-size:.75rem;color:var(--muted)}
 
 /* CTA */
-.cta{padding:80px 0;background:linear-gradient(135deg,#173b9f,#2563eb);color:#fff;position:relative;overflow:hidden}
+.cta{padding:62px 0;margin:0;background:linear-gradient(135deg,#173b9f,#2563eb);color:#fff;position:relative;overflow:hidden}
 .cta::after{content:"";position:absolute;width:360px;height:360px;border-radius:50%;border:1px solid rgba(255,255,255,.14);right:-130px;top:-150px}
 .cta-inner{text-align:center;position:relative;z-index:1}.cta h2{font-size:clamp(2rem,4vw,3.3rem);line-height:1.08;margin-bottom:12px}.cta p{max-width:650px;margin:0 auto 25px;color:#dbeafe}
 

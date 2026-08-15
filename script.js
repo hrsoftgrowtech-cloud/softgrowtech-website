@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Domain pages belong to the Internships section.
     if (
-      ["web-development.html","data-analysis.html","artificial-intelligence.html","domains.html"].includes(currentPage)
+      ["web-development.html","data-analysis.html","artificial-intelligence.html","domains.html","domain-details.html"].includes(currentPage)
       && href === "internships.html"
     ) link.classList.add("active");
   });
@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.querySelectorAll(".btn, .nav-apply, .text-link").forEach(el => {
+  document.querySelectorAll(".btn, .text-link").forEach(el => {
     el.addEventListener("click", () => {
       el.classList.remove("clicked");
       void el.offsetWidth;
