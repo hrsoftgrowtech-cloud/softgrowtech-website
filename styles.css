@@ -253,3 +253,59 @@ footer{background:#060c16;color:#fff;padding:60px 0 25px}
 .domain-back-btn{display:inline-flex;align-items:center;gap:8px}
 
 .trust-section{position:relative}
+
+
+/* Universal content-box interaction
+   Keeps the navbar unchanged; only page content cards/boxes lift on hover
+   and press slightly on click. */
+.card,
+.feature,
+.about-box,
+.check-card,
+.domain-fee,
+.verify-info,
+.hero-card,
+.faq-item,
+.mini-list div,
+.selected-domain-box,
+.selected-domain-details > div,
+.domain-panel {
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.card:hover,
+.feature:hover,
+.about-box:hover,
+.check-card:hover,
+.domain-fee:hover,
+.verify-info:hover,
+.hero-card:hover,
+.faq-item:hover,
+.mini-list div:hover,
+.selected-domain-box:hover,
+.selected-domain-details > div:hover,
+.domain-panel:hover {
+  transform: translateY(-4px);
+}
+.card:active,
+.feature:active,
+.about-box:active,
+.check-card:active,
+.domain-fee:active,
+.verify-info:active,
+.hero-card:active,
+.faq-item:active,
+.mini-list div:active,
+.selected-domain-box:active,
+.selected-domain-details > div:active,
+.domain-panel:active {
+  transform: translateY(-1px) scale(.995);
+}
+
+/* Keep the requested small separation between CTA and footer. */
+.cta { margin-bottom: 3px; }
+
+/* Keep the navbar Apply Now centered inside its own blue button. */
+.nav-apply {
+  justify-content: center;
+  text-align: center;
+}
