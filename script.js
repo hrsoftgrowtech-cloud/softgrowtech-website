@@ -2,12 +2,16 @@
 document.addEventListener("DOMContentLoaded", () => {
   document.body.classList.add("loaded");
 
-  // Show the welcome screen immediately on the home page.
-  // No body fade is used, so the user never sees a blank white screen first.
   const welcome = document.getElementById("welcomeScreen");
   if (welcome) {
-    setTimeout(() => welcome.classList.add("hide"), 1600);
-    setTimeout(() => welcome.remove(), 2450);
+    const welcomeShown = sessionStorage.getItem("softgrow_welcome_shown");
+    if (welcomeShown) {
+      welcome.remove();
+    } else {
+      sessionStorage.setItem("softgrow_welcome_shown", "1");
+      setTimeout(() => welcome.classList.add("hide"), 1300);
+      setTimeout(() => welcome.remove(), 1750);
+    }
   }
 
 
@@ -55,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  document.querySelectorAll(".btn:not(.nav-apply), .text-link").forEach(el => {
+  document.querySelectorAll(".btn, .nav-apply, .text-link").forEach(el => {
     el.addEventListener("click", () => {
       el.classList.remove("clicked");
       void el.offsetWidth;
