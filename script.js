@@ -3,7 +3,11 @@
 // ========================================
 
 const SUPABASE_URL = "https://syoqukavgvrdhwxatdav.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "PASTE_YOUR_PUBLISHABLE_KEY_HERE";
+
+// IMPORTANT:
+// YAHAN APNA SUPABASE PUBLISHABLE KEY PASTE KARO.
+// "PASTE_YOUR_PUBLISHABLE_KEY_HERE" NAHI REHNA CHAHIYE.
+const SUPABASE_PUBLISHABLE_KEY = "YOUR_PUBLISHABLE_KEY_HERE";
 
 
 // ========================================
@@ -11,6 +15,7 @@ const SUPABASE_PUBLISHABLE_KEY = "PASTE_YOUR_PUBLISHABLE_KEY_HERE";
 // ========================================
 
 document.addEventListener("DOMContentLoaded", () => {
+
   document.body.classList.add("loaded");
 
   const welcome = document.getElementById("welcomeScreen");
@@ -54,6 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ) {
       link.classList.add("active");
     }
+
   });
 
 
@@ -75,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         navLinks.classList.remove("open");
       });
     });
+
   }
 
 
@@ -95,45 +102,80 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const id = input.value.trim();
 
-      // Empty ID
+
+      // ========================================
+      // EMPTY ID
+      // ========================================
+
       if (!id) {
 
-        result.style.display = "block";
-        result.style.background = "#fff7ed";
-        result.style.borderColor = "#fed7aa";
-        result.style.color = "#9a3412";
-
-        result.textContent =
-          "Please enter a valid Student / Letter ID.";
+        showResult(
+          result,
+          "#fff7ed",
+          "#fed7aa",
+          "#9a3412",
+          `
+            <strong>Please enter a valid Student / Letter ID.</strong>
+          `
+        );
 
         return;
       }
 
 
-      // Loading
-      result.style.display = "block";
-      result.style.background = "#eff6ff";
-      result.style.borderColor = "#bfdbfe";
-      result.style.color = "#1d4ed8";
+      // ========================================
+      // CHECK SUPABASE KEY
+      // ========================================
 
-      result.innerHTML = `
-        <strong>Verifying...</strong><br>
-        Please wait while we check the official record.
-      `;
+      if (
+        !SUPABASE_PUBLISHABLE_KEY ||
+        SUPABASE_PUBLISHABLE_KEY === "YOUR_PUBLISHABLE_KEY_HERE"
+      ) {
+
+        showResult(
+          result,
+          "#fef2f2",
+          "#fecaca",
+          "#b91c1c",
+          `
+            <strong>Supabase Configuration Error</strong><br>
+            <small>
+              Please add your Supabase Publishable Key in script.js.
+            </small>
+          `
+        );
+
+        return;
+      }
+
+
+      // ========================================
+      // LOADING
+      // ========================================
+
+      showResult(
+        result,
+        "#eff6ff",
+        "#bfdbfe",
+        "#1d4ed8",
+        `
+          <strong>Verifying...</strong><br>
+          Please wait while we check the official record.
+        `
+      );
 
 
       try {
 
         // ========================================
-        // SUPABASE DATABASE REQUEST
+        // FETCH ALL STUDENT RECORDS
         // ========================================
 
         const apiUrl =
-          `${SUPABASE_URL}/rest/v1/Students` +
-          `?student_id=eq.${encodeURIComponent(id)}` +
-          `&select=*`;
+          `${SUPABASE_URL}/rest/v1/Students?select=*`;
 
         const response = await fetch(apiUrl, {
+
           method: "GET",
 
           headers: {
@@ -142,76 +184,170 @@ document.addEventListener("DOMContentLoaded", () => {
               `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
             "Content-Type": "application/json"
           }
+
         });
 
 
+        // ========================================
+        // API ERROR
+        // ========================================
+
         if (!response.ok) {
-          throw new Error("Database request failed");
+
+          let errorText = "";
+
+          try {
+            errorText = await response.text();
+          } catch (_) {}
+
+          console.error(
+            "Supabase error:",
+            response.status,
+            errorText
+          );
+
+          throw new Error(
+            `Supabase request failed: ${response.status}`
+          );
         }
 
 
         const data = await response.json();
+
+        console.log("Supabase records:", data);
+
+
+        // ========================================
+        // FIND STUDENT BY ID
+        // ========================================
+
+        const student = findStudentById(data, id);
 
 
         // ========================================
         // RECORD NOT FOUND
         // ========================================
 
-        if (!data || data.length === 0) {
+        if (!student) {
 
-          result.style.background = "#fff7ed";
-          result.style.borderColor = "#fed7aa";
-          result.style.color = "#9a3412";
-
-          result.innerHTML = `
-            <strong>Document Not Found</strong><br>
-            Student / Letter ID:
-            ${escapeHtml(id)}<br>
-            <small>
-              No verified record was found for this ID.
-            </small>
-          `;
+          showResult(
+            result,
+            "#fff7ed",
+            "#fed7aa",
+            "#9a3412",
+            `
+              <strong>Document Not Found</strong><br>
+              Student / Letter ID:
+              ${escapeHtml(id)}
+              <br>
+              <small>
+                No verified record was found for this ID.
+              </small>
+            `
+          );
 
           return;
         }
 
 
         // ========================================
-        // RECORD FOUND
+        // GET VALUES
         // ========================================
-
-        const student = data[0];
-
 
         const studentId =
-          student.student_id || id;
+          getColumnValue(
+            student,
+            [
+              "student_id",
+              "Student Id",
+              "Student ID",
+              "student id",
+              "studentid"
+            ]
+          ) || id;
+
 
         const name =
-          student.name || "Not Available";
+          getColumnValue(
+            student,
+            [
+              "name",
+              "Name"
+            ]
+          ) || "Not Available";
+
 
         const domain =
-          student.domain || "Not Available";
+          getColumnValue(
+            student,
+            [
+              "domain",
+              "Domain"
+            ]
+          ) || "Not Available";
+
 
         const batch =
-          student.batch || "Not Available";
+          getColumnValue(
+            student,
+            [
+              "batch",
+              "Batch",
+              "batch_date",
+              "Batch date",
+              "batch date"
+            ]
+          ) || "Not Available";
+
 
         const offerLetter =
-          student.offer_letter || "Not Available";
+          getColumnValue(
+            student,
+            [
+              "offer_letter",
+              "Offer Letter",
+              "offer letter"
+            ]
+          ) || "Not Available";
+
 
         const certificate =
-          student.certificate || "Not Available";
+          getColumnValue(
+            student,
+            [
+              "certificate",
+              "Certificate"
+            ]
+          ) || "Not Available";
+
 
         const status =
-          student.status || "Not Available";
+          getColumnValue(
+            student,
+            [
+              "status",
+              "Status"
+            ]
+          ) || "Not Available";
+
 
         const overallStatus =
-          student.overall_status || "Not Available";
+          getColumnValue(
+            student,
+            [
+              "overall_status",
+              "Overall Status",
+              "overall status",
+              "Overall status"
+            ]
+          ) || "Not Available";
 
 
         // ========================================
-        // SUCCESS RESULT
+        // SUCCESS
         // ========================================
 
+        result.style.display = "block";
         result.style.background = "#f0fdf4";
         result.style.borderColor = "#bbf7d0";
         result.style.color = "#166534";
@@ -243,6 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
 
               <div>
+
                 <strong style="font-size:18px;">
                   Document Record Verified
                 </strong>
@@ -253,6 +390,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ">
                   The record associated with this Student / Letter ID is valid.
                 </div>
+
               </div>
 
             </div>
@@ -265,16 +403,23 @@ document.addEventListener("DOMContentLoaded", () => {
               margin-top:15px;
             ">
 
+
               <div style="
                 background:white;
                 padding:12px;
                 border-radius:10px;
                 border:1px solid #dcfce7;
               ">
+
                 <small>Student / Letter ID</small>
-                <strong style="display:block;margin-top:5px;">
+
+                <strong style="
+                  display:block;
+                  margin-top:5px;
+                ">
                   ${escapeHtml(studentId)}
                 </strong>
+
               </div>
 
 
@@ -284,10 +429,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 border-radius:10px;
                 border:1px solid #dcfce7;
               ">
+
                 <small>Student Name</small>
-                <strong style="display:block;margin-top:5px;">
+
+                <strong style="
+                  display:block;
+                  margin-top:5px;
+                ">
                   ${escapeHtml(name)}
                 </strong>
+
               </div>
 
 
@@ -297,10 +448,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 border-radius:10px;
                 border:1px solid #dcfce7;
               ">
+
                 <small>Domain</small>
-                <strong style="display:block;margin-top:5px;">
+
+                <strong style="
+                  display:block;
+                  margin-top:5px;
+                ">
                   ${escapeHtml(domain)}
                 </strong>
+
               </div>
 
 
@@ -310,10 +467,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 border-radius:10px;
                 border:1px solid #dcfce7;
               ">
+
                 <small>Batch</small>
-                <strong style="display:block;margin-top:5px;">
+
+                <strong style="
+                  display:block;
+                  margin-top:5px;
+                ">
                   ${escapeHtml(batch)}
                 </strong>
+
               </div>
 
             </div>
@@ -329,12 +492,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
               <strong>Document Status</strong>
 
+
               <div style="
                 display:grid;
                 gap:10px;
                 margin-top:12px;
               ">
 
+
                 <div style="
                   display:flex;
                   justify-content:space-between;
@@ -343,8 +508,13 @@ document.addEventListener("DOMContentLoaded", () => {
                   background:#f0fdf4;
                   border-radius:8px;
                 ">
+
                   <span>Offer Letter</span>
-                  <strong>${escapeHtml(offerLetter)}</strong>
+
+                  <strong>
+                    ${escapeHtml(offerLetter)}
+                  </strong>
+
                 </div>
 
 
@@ -356,8 +526,13 @@ document.addEventListener("DOMContentLoaded", () => {
                   background:#f0fdf4;
                   border-radius:8px;
                 ">
+
                   <span>Certificate</span>
-                  <strong>${escapeHtml(certificate)}</strong>
+
+                  <strong>
+                    ${escapeHtml(certificate)}
+                  </strong>
+
                 </div>
 
 
@@ -369,8 +544,13 @@ document.addEventListener("DOMContentLoaded", () => {
                   background:#f0fdf4;
                   border-radius:8px;
                 ">
+
                   <span>Status</span>
-                  <strong>${escapeHtml(status)}</strong>
+
+                  <strong>
+                    ${escapeHtml(status)}
+                  </strong>
+
                 </div>
 
 
@@ -382,8 +562,13 @@ document.addEventListener("DOMContentLoaded", () => {
                   background:#f0fdf4;
                   border-radius:8px;
                 ">
+
                   <span>Overall Status</span>
-                  <strong>${escapeHtml(overallStatus)}</strong>
+
+                  <strong>
+                    ${escapeHtml(overallStatus)}
+                  </strong>
+
                 </div>
 
               </div>
@@ -391,23 +576,36 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
 
           </div>
+
         `;
 
+      }
 
-      } catch (error) {
+
+      // ========================================
+      // ERROR
+      // ========================================
+
+      catch (error) {
 
         console.error("Verification error:", error);
 
-        result.style.background = "#fef2f2";
-        result.style.borderColor = "#fecaca";
-        result.style.color = "#b91c1c";
+        showResult(
+          result,
+          "#fef2f2",
+          "#fecaca",
+          "#b91c1c",
+          `
+            <strong>Verification Error</strong><br>
+            Unable to connect to the verification database.
+            <br>
+            <small>
+              Please check your Supabase URL, Publishable Key,
+              table access and RLS policy.
+            </small>
+          `
+        );
 
-        result.innerHTML = `
-          <strong>Verification Error</strong><br>
-          Unable to connect to the verification database.
-          <br>
-          <small>Please try again.</small>
-        `;
       }
 
     });
@@ -430,11 +628,144 @@ document.addEventListener("DOMContentLoaded", () => {
         void el.offsetWidth;
 
         el.classList.add("clicked");
+
       });
 
     });
 
 });
+
+
+// ========================================
+// FIND STUDENT BY ID
+// ========================================
+
+function findStudentById(records, searchId) {
+
+  if (!Array.isArray(records)) {
+    return null;
+  }
+
+  const wanted =
+    String(searchId)
+      .trim()
+      .toLowerCase();
+
+
+  return records.find(record => {
+
+    const possibleId =
+      getColumnValue(
+        record,
+        [
+          "student_id",
+          "Student Id",
+          "Student ID",
+          "student id",
+          "studentid"
+        ]
+      );
+
+    if (!possibleId) {
+      return false;
+    }
+
+    return String(possibleId)
+      .trim()
+      .toLowerCase() === wanted;
+
+  }) || null;
+
+}
+
+
+// ========================================
+// GET COLUMN VALUE
+// ========================================
+
+function getColumnValue(object, possibleNames) {
+
+  if (!object || typeof object !== "object") {
+    return "";
+  }
+
+
+  for (const name of possibleNames) {
+
+    if (
+      Object.prototype.hasOwnProperty.call(object, name)
+      &&
+      object[name] !== null
+      &&
+      object[name] !== undefined
+    ) {
+
+      return object[name];
+
+    }
+
+  }
+
+
+  // Extra flexible matching
+  // Converts:
+  // Student Id
+  // student_id
+  // Student ID
+  // student id
+  // into the same format.
+
+  const normalize = value =>
+    String(value)
+      .toLowerCase()
+      .replace(/[\s_-]/g, "");
+
+
+  const wantedNames =
+    possibleNames.map(normalize);
+
+
+  for (const actualKey of Object.keys(object)) {
+
+    if (
+      wantedNames.includes(normalize(actualKey))
+      &&
+      object[actualKey] !== null
+      &&
+      object[actualKey] !== undefined
+    ) {
+
+      return object[actualKey];
+
+    }
+
+  }
+
+
+  return "";
+
+}
+
+
+// ========================================
+// RESULT MESSAGE
+// ========================================
+
+function showResult(
+  result,
+  background,
+  borderColor,
+  color,
+  html
+) {
+
+  result.style.display = "block";
+  result.style.background = background;
+  result.style.borderColor = borderColor;
+  result.style.color = color;
+  result.innerHTML = html;
+
+}
 
 
 // ========================================
@@ -453,5 +784,7 @@ function escapeHtml(value) {
       '"': "&quot;",
       "'": "&#039;"
     }[c])
+
   );
+
 }
