@@ -4,10 +4,8 @@
 
 const SUPABASE_URL = "https://syoqukavgvrdhwxatdav.supabase.co";
 
-// IMPORTANT:
-// YAHAN APNA SUPABASE PUBLISHABLE KEY PASTE KARO.
-// "PASTE_YOUR_PUBLISHABLE_KEY_HERE" NAHI REHNA CHAHIYE.
-const SUPABASE_PUBLISHABLE_KEY = "YOUR_PUBLISHABLE_KEY_HERE";
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_yUuacAdfZy3k-_Zve5QOZA_6eLh9FeZ";
 
 
 // ========================================
@@ -17,6 +15,10 @@ const SUPABASE_PUBLISHABLE_KEY = "YOUR_PUBLISHABLE_KEY_HERE";
 document.addEventListener("DOMContentLoaded", () => {
 
   document.body.classList.add("loaded");
+
+  // ========================================
+  // WELCOME SCREEN
+  // ========================================
 
   const welcome = document.getElementById("welcomeScreen");
 
@@ -54,8 +56,8 @@ document.addEventListener("DOMContentLoaded", () => {
         "data-analysis.html",
         "artificial-intelligence.html",
         "domains.html"
-      ].includes(currentPage)
-      && href === "internships.html"
+      ].includes(currentPage) &&
+      href === "internships.html"
     ) {
       link.classList.add("active");
     }
@@ -77,9 +79,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     navLinks.querySelectorAll("a").forEach(a => {
+
       a.addEventListener("click", () => {
         navLinks.classList.remove("open");
       });
+
     });
 
   }
@@ -109,13 +113,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!id) {
 
-        showResult(
+        showVerificationMessage(
           result,
-          "#fff7ed",
-          "#fed7aa",
-          "#9a3412",
+          "invalid",
           `
-            <strong>Please enter a valid Student / Letter ID.</strong>
+            <strong>Invalid Official ID</strong><br>
+            Please enter your official Student / Letter ID
+            and try again.
           `
         );
 
@@ -124,23 +128,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
       // ========================================
-      // CHECK SUPABASE KEY
+      // BASIC ID FORMAT CHECK
       // ========================================
 
-      if (
-        !SUPABASE_PUBLISHABLE_KEY ||
-        SUPABASE_PUBLISHABLE_KEY === "YOUR_PUBLISHABLE_KEY_HERE"
-      ) {
+      const idPattern = /^SGT-[A-Z0-9]+-[A-Z0-9]+-\d{4}$/i;
 
-        showResult(
+      if (!idPattern.test(id)) {
+
+        showVerificationMessage(
           result,
-          "#fef2f2",
-          "#fecaca",
-          "#b91c1c",
+          "invalid",
           `
-            <strong>Supabase Configuration Error</strong><br>
+            <strong>Invalid Official ID</strong><br>
+            Please check your Official ID and try again.
+            <br>
             <small>
-              Please add your Supabase Publishable Key in script.js.
+              Enter the exact ID mentioned on your official document.
             </small>
           `
         );
@@ -153,14 +156,14 @@ document.addEventListener("DOMContentLoaded", () => {
       // LOADING
       // ========================================
 
-      showResult(
+      showVerificationMessage(
         result,
-        "#eff6ff",
-        "#bfdbfe",
-        "#1d4ed8",
+        "loading",
         `
-          <strong>Verifying...</strong><br>
-          Please wait while we check the official record.
+          <strong>Verifying Official Record...</strong><br>
+          <small>
+            Please wait while we securely check the verification database.
+          </small>
         `
       );
 
@@ -168,11 +171,15 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
 
         // ========================================
-        // FETCH ALL STUDENT RECORDS
+        // SUPABASE REST API
+        // IMPORTANT: table is "students"
         // ========================================
 
         const apiUrl =
-          `${SUPABASE_URL}/rest/v1/Students?select=*`;
+          `${SUPABASE_URL}/rest/v1/students` +
+          `?student_id=eq.${encodeURIComponent(id)}` +
+          `&select=*`;
+
 
         const response = await fetch(apiUrl, {
 
@@ -189,21 +196,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         // ========================================
-        // API ERROR
+        // DATABASE ERROR
         // ========================================
 
         if (!response.ok) {
 
-          let errorText = "";
+          let errorMessage = "";
 
           try {
-            errorText = await response.text();
-          } catch (_) {}
+            const errorData = await response.json();
+            errorMessage =
+              errorData.message ||
+              errorData.hint ||
+              errorData.error ||
+              "";
+          } catch (_) {
+            // Ignore JSON parsing error
+          }
 
           console.error(
             "Supabase error:",
             response.status,
-            errorText
+            errorMessage
           );
 
           throw new Error(
@@ -214,35 +228,72 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const data = await response.json();
 
-        console.log("Supabase records:", data);
-
 
         // ========================================
-        // FIND STUDENT BY ID
+        // INVALID / FAKE ID
         // ========================================
 
-        const student = findStudentById(data, id);
+        if (!Array.isArray(data) || data.length === 0) {
 
-
-        // ========================================
-        // RECORD NOT FOUND
-        // ========================================
-
-        if (!student) {
-
-          showResult(
+          showVerificationMessage(
             result,
-            "#fff7ed",
-            "#fed7aa",
-            "#9a3412",
+            "invalid",
             `
-              <strong>Document Not Found</strong><br>
-              Student / Letter ID:
-              ${escapeHtml(id)}
-              <br>
-              <small>
-                No verified record was found for this ID.
-              </small>
+              <div style="text-align:left;">
+
+                <div style="
+                  display:flex;
+                  align-items:center;
+                  gap:10px;
+                  margin-bottom:10px;
+                ">
+
+                  <div style="
+                    width:36px;
+                    height:36px;
+                    min-width:36px;
+                    border-radius:50%;
+                    background:#dc2626;
+                    color:#fff;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    font-size:20px;
+                    font-weight:bold;
+                  ">
+                    !
+                  </div>
+
+                  <strong style="font-size:18px;">
+                    Invalid Official ID
+                  </strong>
+
+                </div>
+
+                <div>
+                  The Student / Letter ID you entered could not
+                  be verified in our official records.
+                </div>
+
+                <div style="
+                  margin-top:10px;
+                  padding:10px 12px;
+                  background:#fff;
+                  border-radius:8px;
+                  border:1px solid #fecaca;
+                ">
+                  <strong>Entered ID:</strong>
+                  ${escapeHtml(id)}
+                </div>
+
+                <small style="
+                  display:block;
+                  margin-top:10px;
+                ">
+                  Please check your Official ID and try again.
+                </small>
+
+              </div>
             `
           );
 
@@ -251,540 +302,188 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         // ========================================
-        // GET VALUES
+        // VERIFIED RECORD
         // ========================================
 
-        const studentId =
-          getColumnValue(
-            student,
-            [
-              "student_id",
-              "Student Id",
-              "Student ID",
-              "student id",
-              "studentid"
-            ]
-          ) || id;
+        const student = data[0];
 
+        const studentId =
+          student.student_id || id;
 
         const name =
-          getColumnValue(
-            student,
-            [
-              "name",
-              "Name"
-            ]
-          ) || "Not Available";
-
+          student.name || "Not Available";
 
         const domain =
-          getColumnValue(
-            student,
-            [
-              "domain",
-              "Domain"
-            ]
-          ) || "Not Available";
-
+          student.domain || "Not Available";
 
         const batch =
-          getColumnValue(
-            student,
-            [
-              "batch",
-              "Batch",
-              "batch_date",
-              "Batch date",
-              "batch date"
-            ]
-          ) || "Not Available";
-
+          student.batch || "Not Available";
 
         const offerLetter =
-          getColumnValue(
-            student,
-            [
-              "offer_letter",
-              "Offer Letter",
-              "offer letter"
-            ]
-          ) || "Not Available";
-
+          student.offer_letter || "Not Available";
 
         const certificate =
-          getColumnValue(
-            student,
-            [
-              "certificate",
-              "Certificate"
-            ]
-          ) || "Not Available";
-
+          student.certificate || "Not Available";
 
         const status =
-          getColumnValue(
-            student,
-            [
-              "status",
-              "Status"
-            ]
-          ) || "Not Available";
-
+          student.status || "Verified";
 
         const overallStatus =
-          getColumnValue(
-            student,
-            [
-              "overall_status",
-              "Overall Status",
-              "overall status",
-              "Overall status"
-            ]
-          ) || "Not Available";
+          student.overall_status || "Verified";
 
 
         // ========================================
         // SUCCESS
         // ========================================
 
-        result.style.display = "block";
-        result.style.background = "#f0fdf4";
-        result.style.borderColor = "#bbf7d0";
-        result.style.color = "#166534";
+        showVerificationMessage(
+          result,
+          "success",
+          `
 
-
-        result.innerHTML = `
-
-          <div class="verification-success">
-
-            <div style="
-              display:flex;
-              align-items:center;
-              gap:10px;
-              margin-bottom:15px;
-            ">
+            <div style="text-align:left;">
 
               <div style="
-                width:38px;
-                height:38px;
-                border-radius:50%;
-                background:#22c55e;
-                color:white;
                 display:flex;
                 align-items:center;
-                justify-content:center;
-                font-size:22px;
+                gap:12px;
+                margin-bottom:16px;
               ">
-                ✓
-              </div>
-
-              <div>
-
-                <strong style="font-size:18px;">
-                  Document Record Verified
-                </strong>
 
                 <div style="
-                  font-size:13px;
-                  margin-top:3px;
+                  width:42px;
+                  height:42px;
+                  min-width:42px;
+                  border-radius:50%;
+                  background:#16a34a;
+                  color:#fff;
+                  display:flex;
+                  align-items:center;
+                  justify-content:center;
+                  font-size:24px;
+                  font-weight:bold;
                 ">
-                  The record associated with this Student / Letter ID is valid.
+                  ✓
+                </div>
+
+                <div>
+
+                  <strong style="
+                    display:block;
+                    font-size:19px;
+                  ">
+                    Document Successfully Verified
+                  </strong>
+
+                  <small>
+                    This record has been verified against
+                    the official database.
+                  </small>
+
                 </div>
 
               </div>
-
-            </div>
-
-
-            <div style="
-              display:grid;
-              grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-              gap:10px;
-              margin-top:15px;
-            ">
-
-
-              <div style="
-                background:white;
-                padding:12px;
-                border-radius:10px;
-                border:1px solid #dcfce7;
-              ">
-
-                <small>Student / Letter ID</small>
-
-                <strong style="
-                  display:block;
-                  margin-top:5px;
-                ">
-                  ${escapeHtml(studentId)}
-                </strong>
-
-              </div>
-
-
-              <div style="
-                background:white;
-                padding:12px;
-                border-radius:10px;
-                border:1px solid #dcfce7;
-              ">
-
-                <small>Student Name</small>
-
-                <strong style="
-                  display:block;
-                  margin-top:5px;
-                ">
-                  ${escapeHtml(name)}
-                </strong>
-
-              </div>
-
-
-              <div style="
-                background:white;
-                padding:12px;
-                border-radius:10px;
-                border:1px solid #dcfce7;
-              ">
-
-                <small>Domain</small>
-
-                <strong style="
-                  display:block;
-                  margin-top:5px;
-                ">
-                  ${escapeHtml(domain)}
-                </strong>
-
-              </div>
-
-
-              <div style="
-                background:white;
-                padding:12px;
-                border-radius:10px;
-                border:1px solid #dcfce7;
-              ">
-
-                <small>Batch</small>
-
-                <strong style="
-                  display:block;
-                  margin-top:5px;
-                ">
-                  ${escapeHtml(batch)}
-                </strong>
-
-              </div>
-
-            </div>
-
-
-            <div style="
-              margin-top:15px;
-              background:white;
-              padding:15px;
-              border-radius:10px;
-              border:1px solid #dcfce7;
-            ">
-
-              <strong>Document Status</strong>
 
 
               <div style="
                 display:grid;
+                grid-template-columns:
+                  repeat(auto-fit,minmax(170px,1fr));
                 gap:10px;
-                margin-top:12px;
               ">
 
 
+                <!-- ID -->
+
                 <div style="
-                  display:flex;
-                  justify-content:space-between;
-                  gap:10px;
-                  padding:10px;
-                  background:#f0fdf4;
-                  border-radius:8px;
+                  background:#fff;
+                  padding:13px;
+                  border-radius:9px;
+                  border:1px solid #bbf7d0;
                 ">
 
-                  <span>Offer Letter</span>
+                  <small>Student / Letter ID</small>
 
-                  <strong>
-                    ${escapeHtml(offerLetter)}
+                  <strong style="
+                    display:block;
+                    margin-top:5px;
+                  ">
+                    ${escapeHtml(studentId)}
                   </strong>
 
                 </div>
 
 
+                <!-- NAME -->
+
                 <div style="
-                  display:flex;
-                  justify-content:space-between;
-                  gap:10px;
-                  padding:10px;
-                  background:#f0fdf4;
-                  border-radius:8px;
+                  background:#fff;
+                  padding:13px;
+                  border-radius:9px;
+                  border:1px solid #bbf7d0;
                 ">
 
-                  <span>Certificate</span>
+                  <small>Student Name</small>
 
-                  <strong>
-                    ${escapeHtml(certificate)}
+                  <strong style="
+                    display:block;
+                    margin-top:5px;
+                  ">
+                    ${escapeHtml(name)}
                   </strong>
 
                 </div>
 
 
+                <!-- DOMAIN -->
+
                 <div style="
-                  display:flex;
-                  justify-content:space-between;
-                  gap:10px;
-                  padding:10px;
-                  background:#f0fdf4;
-                  border-radius:8px;
+                  background:#fff;
+                  padding:13px;
+                  border-radius:9px;
+                  border:1px solid #bbf7d0;
                 ">
 
-                  <span>Status</span>
+                  <small>Domain</small>
 
-                  <strong>
-                    ${escapeHtml(status)}
+                  <strong style="
+                    display:block;
+                    margin-top:5px;
+                  ">
+                    ${escapeHtml(domain)}
                   </strong>
 
                 </div>
 
 
+                <!-- BATCH -->
+
                 <div style="
-                  display:flex;
-                  justify-content:space-between;
-                  gap:10px;
-                  padding:10px;
-                  background:#f0fdf4;
-                  border-radius:8px;
+                  background:#fff;
+                  padding:13px;
+                  border-radius:9px;
+                  border:1px solid #bbf7d0;
                 ">
 
-                  <span>Overall Status</span>
+                  <small>Batch</small>
 
-                  <strong>
-                    ${escapeHtml(overallStatus)}
+                  <strong style="
+                    display:block;
+                    margin-top:5px;
+                  ">
+                    ${escapeHtml(batch)}
                   </strong>
 
                 </div>
 
               </div>
 
-            </div>
 
-          </div>
-
-        `;
-
-      }
-
-
-      // ========================================
-      // ERROR
-      // ========================================
-
-      catch (error) {
-
-        console.error("Verification error:", error);
-
-        showResult(
-          result,
-          "#fef2f2",
-          "#fecaca",
-          "#b91c1c",
-          `
-            <strong>Verification Error</strong><br>
-            Unable to connect to the verification database.
-            <br>
-            <small>
-              Please check your Supabase URL, Publishable Key,
-              table access and RLS policy.
-            </small>
-          `
-        );
-
-      }
-
-    });
-
-  });
-
-
-  // ========================================
-  // BUTTON CLICK ANIMATION
-  // ========================================
-
-  document
-    .querySelectorAll(".btn, .nav-apply, .text-link")
-    .forEach(el => {
-
-      el.addEventListener("click", () => {
-
-        el.classList.remove("clicked");
-
-        void el.offsetWidth;
-
-        el.classList.add("clicked");
-
-      });
-
-    });
-
-});
-
-
-// ========================================
-// FIND STUDENT BY ID
-// ========================================
-
-function findStudentById(records, searchId) {
-
-  if (!Array.isArray(records)) {
-    return null;
-  }
-
-  const wanted =
-    String(searchId)
-      .trim()
-      .toLowerCase();
-
-
-  return records.find(record => {
-
-    const possibleId =
-      getColumnValue(
-        record,
-        [
-          "student_id",
-          "Student Id",
-          "Student ID",
-          "student id",
-          "studentid"
-        ]
-      );
-
-    if (!possibleId) {
-      return false;
-    }
-
-    return String(possibleId)
-      .trim()
-      .toLowerCase() === wanted;
-
-  }) || null;
-
-}
-
-
-// ========================================
-// GET COLUMN VALUE
-// ========================================
-
-function getColumnValue(object, possibleNames) {
-
-  if (!object || typeof object !== "object") {
-    return "";
-  }
-
-
-  for (const name of possibleNames) {
-
-    if (
-      Object.prototype.hasOwnProperty.call(object, name)
-      &&
-      object[name] !== null
-      &&
-      object[name] !== undefined
-    ) {
-
-      return object[name];
-
-    }
-
-  }
-
-
-  // Extra flexible matching
-  // Converts:
-  // Student Id
-  // student_id
-  // Student ID
-  // student id
-  // into the same format.
-
-  const normalize = value =>
-    String(value)
-      .toLowerCase()
-      .replace(/[\s_-]/g, "");
-
-
-  const wantedNames =
-    possibleNames.map(normalize);
-
-
-  for (const actualKey of Object.keys(object)) {
-
-    if (
-      wantedNames.includes(normalize(actualKey))
-      &&
-      object[actualKey] !== null
-      &&
-      object[actualKey] !== undefined
-    ) {
-
-      return object[actualKey];
-
-    }
-
-  }
-
-
-  return "";
-
-}
-
-
-// ========================================
-// RESULT MESSAGE
-// ========================================
-
-function showResult(
-  result,
-  background,
-  borderColor,
-  color,
-  html
-) {
-
-  result.style.display = "block";
-  result.style.background = background;
-  result.style.borderColor = borderColor;
-  result.style.color = color;
-  result.innerHTML = html;
-
-}
-
-
-// ========================================
-// SECURITY: ESCAPE HTML
-// ========================================
-
-function escapeHtml(value) {
-
-  return String(value).replace(
-    /[&<>"']/g,
-
-    c => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    }[c])
-
-  );
-
-}
+              <!-- DOCUMENT STATUS -->
+
+              <div style="
+                margin-top:15px;
+                background:#fff;
+                padding:15px;
+                border-radius:10px;
+                border:
