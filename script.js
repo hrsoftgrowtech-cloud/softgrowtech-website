@@ -1,5 +1,44 @@
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Premium scroll-to-top control on every page.
+  const scrollTop = document.createElement("button");
+  scrollTop.type = "button";
+  scrollTop.className = "scroll-top";
+  scrollTop.setAttribute("aria-label", "Back to top");
+  scrollTop.title = "Back to top";
+  scrollTop.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5M6.5 10.5 12 5l5.5 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.body.appendChild(scrollTop);
+  const updateScrollTop = () => scrollTop.classList.toggle("show", window.scrollY > 420);
+  window.addEventListener("scroll", updateScrollTop, {passive:true});
+  updateScrollTop();
+  scrollTop.addEventListener("click", () => {
+    window.scrollTo({top:0,behavior:"smooth"});
+  });
+
+  // Very subtle UI click sound. It is generated locally, so no audio file is required.
+  let audioContext;
+  function playClickSound(){
+    try{
+      audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+      if(audioContext.state === "suspended") audioContext.resume();
+      const now = audioContext.currentTime;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(720, now);
+      osc.frequency.exponentialRampToValueAtTime(430, now + 0.055);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.035, now + 0.006);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.065);
+      osc.connect(gain).connect(audioContext.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+    }catch(_){/* Audio is optional; never block the UI. */}
+  }
+  document.addEventListener("click", (event) => {
+    const target = event.target.closest(".btn, .nav-apply, .menu-btn, .domain-choice, .text-link, .footer-social");
+    if(target && !target.hasAttribute("data-no-click-sound")) playClickSound();
+  }, true);
   document.body.classList.add("loaded");
 
   const welcome = document.getElementById("welcomeScreen");
