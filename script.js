@@ -216,17 +216,10 @@ function showResult(result, type, html) {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  // ==========================================================
   // PAGE LOADED
-  // ==========================================================
 
   document.body.classList.add("loaded");
-
-
-  // ==========================================================
   // WELCOME SCREEN
-  // ==========================================================
-
   const welcome =
     document.getElementById("welcomeScreen");
 
