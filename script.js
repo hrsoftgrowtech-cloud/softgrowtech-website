@@ -1446,4 +1446,3 @@ document.addEventListener("DOMContentLoaded", () => {
   `;
 
 }
-Important: Is baar jo code tumne
