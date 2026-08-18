@@ -216,10 +216,17 @@ function showResult(result, type, html) {
 
 document.addEventListener("DOMContentLoaded", () => {
 
+  // ==========================================================
   // PAGE LOADED
+  // ==========================================================
 
   document.body.classList.add("loaded");
+
+
+  // ==========================================================
   // WELCOME SCREEN
+  // ==========================================================
+
   const welcome =
     document.getElementById("welcomeScreen");
 
@@ -908,3 +915,4 @@ document.addEventListener("DOMContentLoaded", () => {
                         padding:8px 13px;
                         background:#f8fafc;
                         border:1px solid #e2e8f0;
+                        }
