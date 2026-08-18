@@ -1,11 +1,6 @@
 // ============================================================
-// SOFTGROWTECH WEBSITE
-// FINAL SCRIPT
-// ============================================================
-
-
-// ============================================================
-// SUPABASE CONFIGURATION
+// SOFTGROWTECH — FINAL WEBSITE SCRIPT
+// SUPABASE DOCUMENT VERIFICATION
 // ============================================================
 
 const SUPABASE_URL =
@@ -21,16 +16,42 @@ const SUPABASE_PUBLISHABLE_KEY =
 
 document.addEventListener("DOMContentLoaded", () => {
 
+  document.body.classList.add("loaded");
+
 
   // ==========================================================
-  // BACK TO TOP BUTTON
+  // WELCOME SCREEN
   // ==========================================================
 
-  const scrollTop = document.createElement("button");
+  const welcome =
+    document.getElementById("welcomeScreen");
+
+  if (welcome) {
+
+    setTimeout(() => {
+      welcome.classList.add("hide");
+    }, 1600);
+
+    setTimeout(() => {
+      welcome.remove();
+    }, 2450);
+
+  }
+
+
+  // ==========================================================
+  // SCROLL TO TOP
+  // ==========================================================
+
+  const scrollTop =
+    document.createElement("button");
 
   scrollTop.type = "button";
   scrollTop.className = "scroll-top";
-  scrollTop.setAttribute("aria-label", "Back to top");
+  scrollTop.setAttribute(
+    "aria-label",
+    "Back to top"
+  );
   scrollTop.title = "Back to top";
 
   scrollTop.innerHTML = `
@@ -52,14 +73,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document.body.appendChild(scrollTop);
 
 
-  const updateScrollTop = () => {
+  function updateScrollTop() {
 
     scrollTop.classList.toggle(
       "show",
       window.scrollY > 420
     );
 
-  };
+  }
 
 
   window.addEventListener(
@@ -157,7 +178,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
       oscillator.connect(gain);
-      gain.connect(audioContext.destination);
+      gain.connect(
+        audioContext.destination
+      );
 
 
       oscillator.start(now);
@@ -165,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (error) {
 
-      // Sound should never interrupt website functionality.
+      // Sound is optional.
 
     }
 
@@ -199,44 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // ==========================================================
-  // PAGE LOADED
-  // ==========================================================
-
-  document.body.classList.add("loaded");
-
-
-  // ==========================================================
-  // WELCOME SCREEN
-  // ==========================================================
-
-  const welcome =
-    document.getElementById(
-      "welcomeScreen"
-    );
-
-
-  if (welcome) {
-
-    setTimeout(
-      () => {
-        welcome.classList.add("hide");
-      },
-      1600
-    );
-
-
-    setTimeout(
-      () => {
-        welcome.remove();
-      },
-      2450
-    );
-
-  }
-
-
-  // ==========================================================
-  // NAVBAR ACTIVE PAGE
+  // ACTIVE NAVBAR PAGE
   // ==========================================================
 
   const currentPage =
@@ -357,7 +343,6 @@ document.addEventListener("DOMContentLoaded", () => {
     .querySelectorAll("[data-verify]")
     .forEach(form => {
 
-
       form.addEventListener(
         "submit",
         async event => {
@@ -397,20 +382,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (!id) {
 
-            showVerificationResult(
+            showResult(
               result,
-              "invalid",
+              "error",
               `
-                <div>
+                <div class="verify-message">
 
-                  <strong>
+                  <div class="verify-icon error-icon">
+                    !
+                  </div>
+
+                  <h2>
                     Invalid Official ID
-                  </strong>
+                  </h2>
 
-                  <br><br>
-
-                  Please enter your Official ID
-                  and try again.
+                  <p>
+                    Please enter your Official ID
+                    and try again.
+                  </p>
 
                 </div>
               `
@@ -422,36 +411,113 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
           // ==================================================
-          // LOADING
+          // 3 SECOND VERIFICATION PROCESS
           // ==================================================
 
-          showVerificationResult(
-            result,
-            "loading",
-            `
-              <div>
+          result.style.display = "block";
 
-                <strong>
-                  Verifying Official Record...
-                </strong>
 
-                <br>
+          result.innerHTML = `
 
-                <small>
-                  Please wait while we securely
-                  check your official record.
-                </small>
+            <div
+              class="verification-processing"
+              style="
+                text-align:center;
+                padding:45px 20px;
+              "
+            >
+
+              <div
+                class="verification-loader"
+                style="
+                  width:64px;
+                  height:64px;
+                  margin:0 auto 22px;
+                  border:5px solid #dbeafe;
+                  border-top-color:#2563eb;
+                  border-radius:50%;
+                  animation:softgrowSpin 1s linear infinite;
+                "
+              ></div>
+
+
+              <h2
+                style="
+                  margin:0 0 8px;
+                  color:#0f172a;
+                  font-size:22px;
+                "
+              >
+                Verifying Your Document
+              </h2>
+
+
+              <p
+                style="
+                  margin:0;
+                  color:#64748b;
+                  font-size:14px;
+                "
+              >
+                Securely checking your official
+                SoftGrowTech record...
+              </p>
+
+
+              <div
+                style="
+                  margin:22px auto 0;
+                  max-width:300px;
+                  height:5px;
+                  background:#e2e8f0;
+                  border-radius:20px;
+                  overflow:hidden;
+                "
+              >
+
+                <div
+                  style="
+                    width:0%;
+                    height:100%;
+                    background:#2563eb;
+                    border-radius:20px;
+                    animation:verificationProgress 3s ease forwards;
+                  "
+                ></div>
 
               </div>
-            `
-          );
+
+
+              <small
+                style="
+                  display:block;
+                  margin-top:12px;
+                  color:#94a3b8;
+                "
+              >
+                Please wait...
+              </small>
+
+            </div>
+
+          `;
+
+
+          addVerificationAnimation();
+
+
+          // ==================================================
+          // WAIT 3 SECONDS
+          // ==================================================
+
+          await delay(3000);
 
 
           try {
 
 
             // =================================================
-            // SUPABASE REST API
+            // SUPABASE REQUEST
             // =================================================
 
             const apiUrl =
@@ -483,46 +549,27 @@ document.addEventListener("DOMContentLoaded", () => {
               );
 
 
-            // =================================================
-            // DATABASE RESPONSE ERROR
-            // =================================================
-
             if (!response.ok) {
 
-              const errorText =
-                await response.text();
-
-
               console.error(
-                "Supabase response:",
+                "Supabase error:",
                 response.status,
-                errorText
+                await response.text()
               );
 
-
               throw new Error(
-                "Supabase request failed"
+                "Database connection failed"
               );
 
             }
 
 
-            // =================================================
-            // READ DATABASE DATA
-            // =================================================
-
             const data =
               await response.json();
 
 
-            console.log(
-              "SoftGrowTech verification:",
-              data
-            );
-
-
             // =================================================
-            // ID NOT FOUND
+            // INVALID ID
             // =================================================
 
             if (
@@ -530,54 +577,69 @@ document.addEventListener("DOMContentLoaded", () => {
               data.length === 0
             ) {
 
-              showVerificationResult(
+              showResult(
                 result,
-                "invalid",
+                "error",
                 `
-
                   <div
                     style="
-                      text-align:left;
+                      padding:30px;
+                      text-align:center;
                     "
                   >
 
-                    <strong
+                    <div
                       style="
-                        font-size:18px;
+                        width:55px;
+                        height:55px;
+                        margin:0 auto 15px;
+                        border-radius:50%;
+                        background:#fee2e2;
+                        color:#dc2626;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        font-size:28px;
+                        font-weight:700;
+                      "
+                    >
+                      !
+                    </div>
+
+
+                    <h2
+                      style="
+                        margin:0 0 10px;
+                        color:#991b1b;
                       "
                     >
                       Invalid Official ID
-                    </strong>
+                    </h2>
 
 
-                    <br><br>
+                    <p
+                      style="
+                        margin:0;
+                        color:#7f1d1d;
+                      "
+                    >
+                      The ID you entered could not
+                      be found in our official records.
+                    </p>
 
 
-                    The ID you entered
-                    could not be verified
-                    in our official records.
-
-
-                    <br><br>
-
-
-                    <strong>
-                      Entered ID:
-                    </strong>
-
-                    ${escapeHtml(id)}
-
-
-                    <br><br>
-
-
-                    <small>
+                    <p
+                      style="
+                        margin:12px 0 0;
+                        font-size:13px;
+                        color:#64748b;
+                      "
+                    >
                       Please check your Official ID
                       and try again.
-                    </small>
+                    </p>
 
                   </div>
-
                 `
               );
 
@@ -587,7 +649,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             // =================================================
-            // VERIFIED RECORD
+            // VERIFIED STUDENT
             // =================================================
 
             const student =
@@ -610,8 +672,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             const batchDate =
-              student["Batch date"] ||
-              "Not Available";
+              formatDate(
+                student["Batch date"]
+              );
 
 
             const offerLetter =
@@ -630,175 +693,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             // =================================================
-            // SUCCESS RESULT
+            // SHOW PROFESSIONAL VERIFICATION PAGE
             // =================================================
 
-            showVerificationResult(
+            showVerifiedResult(
               result,
-              "success",
-              `
-
-                <div
-                  style="
-                    text-align:left;
-                  "
-                >
-
-
-                  <div
-                    style="
-                      display:flex;
-                      align-items:center;
-                      gap:12px;
-                      margin-bottom:18px;
-                    "
-                  >
-
-                    <div
-                      style="
-                        width:42px;
-                        height:42px;
-                        min-width:42px;
-                        border-radius:50%;
-                        background:#16a34a;
-                        color:#fff;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        font-size:24px;
-                        font-weight:700;
-                      "
-                    >
-                      ✓
-                    </div>
-
-
-                    <div>
-
-                      <strong
-                        style="
-                          font-size:18px;
-                        "
-                      >
-                        Document Successfully Verified
-                      </strong>
-
-
-                      <br>
-
-
-                      <small>
-                        Official SoftGrowTech record
-                        successfully verified.
-                      </small>
-
-                    </div>
-
-                  </div>
-
-
-                  <!-- BASIC INFORMATION -->
-
-                  <div
-                    style="
-                      display:grid;
-                      grid-template-columns:
-                        repeat(
-                          auto-fit,
-                          minmax(150px,1fr)
-                        );
-                      gap:10px;
-                    "
-                  >
-
-                    ${verificationBox(
-                      "Student / Letter ID",
-                      studentId
-                    )}
-
-
-                    ${verificationBox(
-                      "Student Name",
-                      name
-                    )}
-
-
-                    ${verificationBox(
-                      "Domain",
-                      domain
-                    )}
-
-
-                    ${verificationBox(
-                      "Batch Date",
-                      batchDate
-                    )}
-
-                  </div>
-
-
-                  <!-- DOCUMENT STATUS -->
-
-                  <div
-                    style="
-                      margin-top:15px;
-                      background:#fff;
-                      padding:15px;
-                      border-radius:10px;
-                      border:1px solid #bbf7d0;
-                    "
-                  >
-
-                    <strong>
-                      Document Status
-                    </strong>
-
-
-                    ${verificationStatus(
-                      "Offer Letter",
-                      offerLetter
-                    )}
-
-
-                    ${verificationStatus(
-                      "Certificate",
-                      certificate
-                    )}
-
-
-                    ${verificationStatus(
-                      "Current Status",
-                      status
-                    )}
-
-                  </div>
-
-
-                  <div
-                    style="
-                      margin-top:12px;
-                      font-size:12px;
-                      opacity:.75;
-                    "
-                  >
-                    This information has been
-                    retrieved from the official
-                    SoftGrowTech verification record.
-                  </div>
-
-
-                </div>
-
-              `
+              {
+                studentId,
+                name,
+                domain,
+                batchDate,
+                offerLetter,
+                certificate,
+                status
+              }
             );
+
+
+            // =================================================
+            // SMOOTH SCROLL TO RESULT
+            // =================================================
+
+            setTimeout(() => {
+
+              result.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+              });
+
+            }, 100);
 
 
           } catch (error) {
 
-
-            // =================================================
-            // CONNECTION / RLS / API ERROR
-            // =================================================
 
             console.error(
               "Verification error:",
@@ -806,31 +733,67 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
 
-            showVerificationResult(
+            showResult(
               result,
               "error",
               `
+                <div
+                  style="
+                    padding:30px;
+                    text-align:center;
+                  "
+                >
 
-                <div>
+                  <div
+                    style="
+                      width:55px;
+                      height:55px;
+                      margin:0 auto 15px;
+                      border-radius:50%;
+                      background:#fee2e2;
+                      color:#dc2626;
+                      display:flex;
+                      align-items:center;
+                      justify-content:center;
+                      font-size:25px;
+                    "
+                  >
+                    !
+                  </div>
 
-                  <strong>
+
+                  <h2
+                    style="
+                      margin:0 0 10px;
+                      color:#991b1b;
+                    "
+                  >
                     Verification Service Unavailable
-                  </strong>
+                  </h2>
 
-                  <br><br>
 
-                  We are unable to connect
-                  to the verification service
-                  at the moment.
+                  <p
+                    style="
+                      margin:0;
+                      color:#64748b;
+                    "
+                  >
+                    We are unable to connect to the
+                    verification service right now.
+                  </p>
 
-                  <br><br>
 
-                  <small>
+                  <small
+                    style="
+                      display:block;
+                      margin-top:10px;
+                      color:#94a3b8;
+                    "
+                  >
                     Please try again after a few moments.
                   </small>
 
                 </div>
-
               `
             );
 
@@ -843,7 +806,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // ==========================================================
-  // BUTTON CLICK ANIMATION
+  // BUTTON ANIMATION
   // ==========================================================
 
   document
@@ -860,9 +823,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "clicked"
           );
 
-
           void button.offsetWidth;
-
 
           button.classList.add(
             "clicked"
@@ -877,174 +838,195 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // ============================================================
-// VERIFICATION RESULT HELPER
+// SHOW VERIFIED RESULT
 // ============================================================
 
-function showVerificationResult(
+function showVerifiedResult(
   result,
-  type,
-  html
+  student
 ) {
 
-  result.style.display = "block";
+  const status =
+    String(
+      student.status
+    ).toUpperCase();
 
 
-  if (type === "success") {
+  const isCompleted =
+    status.includes("COMPLETE") ||
+    status.includes("VERIFIED");
 
-    result.style.background =
-      "#f0fdf4";
 
-    result.style.borderColor =
-      "#bbf7d0";
+  const isRunning =
+    status.includes("RUNNING");
 
-    result.style.color =
-      "#166534";
 
-  }
+  const isNotVerified =
+    status.includes("NOT");
 
-  else if (type === "invalid") {
 
-    result.style.background =
-      "#fef2f2";
+  let overallTitle =
+    "INTERNSHIP RUNNING";
 
-    result.style.borderColor =
-      "#fecaca";
 
-    result.style.color =
-      "#991b1b";
+  let overallText =
+    "Your internship is currently in progress.";
 
-  }
 
-  else if (type === "loading") {
+  let overallColor =
+    "#15803d";
 
-    result.style.background =
-      "#eff6ff";
 
-    result.style.borderColor =
-      "#bfdbfe";
+  let overallIcon =
+    "↻";
 
-    result.style.color =
+
+  if (isCompleted) {
+
+    overallTitle =
+      "COMPLETE VERIFIED";
+
+    overallText =
+      "All documents are verified successfully.";
+
+    overallColor =
       "#1d4ed8";
 
-  }
-
-  else {
-
-    result.style.background =
-      "#fef2f2";
-
-    result.style.borderColor =
-      "#fecaca";
-
-    result.style.color =
-      "#b91c1c";
+    overallIcon =
+      "✓";
 
   }
 
 
-  result.innerHTML = html;
+  if (isNotVerified) {
 
-}
+    overallTitle =
+      "NOT VERIFIED";
+
+    overallText =
+      "Your certificate is not issued yet.";
+
+    overallColor =
+      "#dc2626";
+
+    overallIcon =
+      "!";
+
+  }
 
 
-// ============================================================
-// INFORMATION BOX
-// ============================================================
+  if (isRunning) {
 
-function verificationBox(
-  label,
-  value
-) {
+    overallTitle =
+      "RUNNING";
 
-  return `
+    overallText =
+      "Your internship is currently in progress.";
+
+    overallColor =
+      "#15803d";
+
+    overallIcon =
+      "↻";
+
+  }
+
+
+  const certificateIssued =
+    String(
+      student.certificate
+    )
+      .toLowerCase()
+      .includes("received") ||
+    String(
+      student.certificate
+    )
+      .toLowerCase()
+      .includes("issued");
+
+
+  const offerVerified =
+    String(
+      student.offerLetter
+    )
+      .toLowerCase()
+      .includes("received") ||
+    String(
+      student.offerLetter
+    )
+      .toLowerCase()
+      .includes("verified");
+
+
+  result.innerHTML = `
 
     <div
+      class="softgrow-verification-page"
       style="
-        background:#fff;
-        padding:12px;
-        border-radius:9px;
-        border:1px solid #bbf7d0;
+        width:100%;
+        max-width:1100px;
+        margin:0 auto;
+        background:#ffffff;
+        border-radius:16px;
+        overflow:hidden;
+        box-shadow:0 12px 40px rgba(15,23,42,.10);
+        font-family:inherit;
       "
     >
 
-      <small>
-        ${escapeHtml(label)}
-      </small>
 
+      <!-- ==========================================
+           VERIFICATION HEADER
+      =========================================== -->
 
-      <strong
+      <div
         style="
-          display:block;
-          margin-top:5px;
+          background:#061a33;
+          color:white;
+          padding:18px 28px;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:20px;
+          flex-wrap:wrap;
         "
       >
-        ${escapeHtml(value)}
-      </strong>
 
-    </div>
+        <div>
 
-  `;
-
-}
-
-
-// ============================================================
-// STATUS ROW
-// ============================================================
-
-function verificationStatus(
-  label,
-  value
-) {
-
-  return `
-
-    <div
-      style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        gap:10px;
-        padding:10px;
-        margin-top:8px;
-        background:#f0fdf4;
-        border-radius:8px;
-      "
-    >
-
-      <span>
-        ${escapeHtml(label)}
-      </span>
+          <div
+            style="
+              font-size:22px;
+              font-weight:800;
+              letter-spacing:.2px;
+            "
+          >
+            SoftGrowTech
+          </div>
 
 
-      <strong>
-        ${escapeHtml(value)}
-      </strong>
+          <div
+            style="
+              font-size:13px;
+              opacity:.85;
+              margin-top:2px;
+            "
+          >
+            Learn • Build • Evolve
+          </div>
 
-    </div>
-
-  `;
-
-}
+        </div>
 
 
-// ============================================================
-// SECURITY
-// ============================================================
+        <div
+          style="
+            display:flex;
+            align-items:center;
+            gap:10px;
+            text-align:right;
+          "
+        >
 
-function escapeHtml(value) {
-
-  return String(value).replace(
-    /[&<>"']/g,
-    character => ({
-
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-
-    }[character])
-  );
-
-}
+          <div
+            style="
+              font-size:27px;
