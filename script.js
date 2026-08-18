@@ -915,4 +915,535 @@ document.addEventListener("DOMContentLoaded", () => {
                         padding:8px 13px;
                         background:#f8fafc;
                         border:1px solid #e2e8f0;
-                        }
+                        border-radius:8px;
+                        color:#475569;
+                        font-size:12px;
+                      "
+                    >
+                      Entered ID:
+                      <strong>
+                        ${escapeHtml(id)}
+                      </strong>
+                    </div>
+
+                  </div>
+
+                `
+              );
+
+              return;
+
+            }
+
+
+            // ==================================================
+            // VALID RECORD
+            // ==================================================
+
+            const student =
+              data[0];
+
+
+            const studentId =
+              student["Student Id"] ||
+              id;
+
+
+            const name =
+              student["Name"] ||
+              "Not Available";
+
+
+            const domain =
+              student["Domain"] ||
+              "Not Available";
+
+
+            const batchDate =
+              formatDate(
+                student["Batch date"]
+              );
+
+
+            const offerLetter =
+              student["Offer Letter"] ||
+              "Not Available";
+
+
+            const certificate =
+              student["Certificate"] ||
+              "Not Available";
+
+
+            const status =
+              student["Status"] ||
+              "Not Available";
+
+
+            // ==================================================
+            // SHOW VERIFIED RESULT
+            // ==================================================
+
+            showVerifiedResult(
+              result,
+             ${escapeHtml(overallTitle)}
+              </strong>
+
+
+              <p
+                style="
+                  margin:8px 0 0;
+                  color:#475569;
+                  font-size:12px;
+                  max-width:180px;
+                "
+              >
+                ${escapeHtml(overallText)}
+              </p>
+
+            </div>
+
+
+            <!-- DOCUMENT STATUS -->
+
+            <div>
+
+              <h2
+                style="
+                  margin:0 0 13px;
+                  color:#0f172a;
+                  font-size:18px;
+                "
+              >
+                Document Status
+              </h2>
+
+
+              <!-- OFFER LETTER -->
+
+              <div
+                class="softgrow-document-row"
+                style="
+                  display:flex;
+                  justify-content:space-between;
+                  align-items:center;
+                  gap:15px;
+                  padding:15px;
+                  background:#ffffff;
+                  border:1px solid #dcfce7;
+                  border-radius:11px;
+                  margin-bottom:10px;
+                "
+              >
+
+                <div>
+
+                  <strong
+                    style="
+                      display:block;
+                      color:#0f172a;
+                      margin-bottom:4px;
+                    "
+                  >
+                    Offer Letter
+                  </strong>
+
+
+                  <span
+                    style="
+                      color:#64748b;
+                      font-size:13px;
+                    "
+                  >
+                    ${offerVerified
+                      ? "Offer letter has been issued and verified."
+                      : escapeHtml(offerLetter)}
+                  </span>
+
+                </div>
+
+
+                <span
+                  class="softgrow-document-badge"
+                  style="
+                    white-space:nowrap;
+                    background:#dcfce7;
+                    color:#15803d;
+                    padding:8px 11px;
+                    border-radius:7px;
+                    font-size:12px;
+                    font-weight:700;
+                  "
+                >
+                  ✓
+                  ${offerVerified
+                    ? "Received & Verified"
+                    : escapeHtml(offerLetter)}
+                </span>
+
+              </div>
+
+
+              <!-- CERTIFICATE -->
+
+              <div
+                class="softgrow-document-row"
+                style="
+                  display:flex;
+                  justify-content:space-between;
+                  align-items:center;
+                  gap:15px;
+                  padding:15px;
+                  background:#ffffff;
+                  border:1px solid #dcfce7;
+                  border-radius:11px;
+                "
+              >
+
+                <div>
+
+                  <strong
+                    style="
+                      display:block;
+                      color:#0f172a;
+                      margin-bottom:4px;
+                    "
+                  >
+                    Certificate
+                  </strong>
+
+
+                  <span
+                    style="
+                      color:#64748b;
+                      font-size:13px;
+                    "
+                  >
+                    ${certificateIssued
+                      ? "Certificate has been issued."
+                      : "Certificate status is currently being updated."}
+                  </span>
+
+                </div>
+
+
+                <span
+                  class="softgrow-document-badge"
+                  style="
+                    white-space:nowrap;
+                    background:${certificateIssued
+                      ? "#dcfce7"
+                      : "#fef3c7"};
+                    color:${certificateIssued
+                      ? "#15803d"
+                      : "#b45309"};
+                    padding:8px 11px;
+                    border-radius:7px;
+                    font-size:12px;
+                    font-weight:700;
+                  "
+                >
+                  ${certificateIssued
+                    ? "✓ Received & Verified"
+                    : "⌛ Coming Soon"}
+                </span>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- ==================================================
+             COMPLETED STATUS
+        =================================================== -->
+
+        ${
+          isCompleted
+            ? `
+
+              <div
+                class="softgrow-status-card"
+                style="
+                  border:1px solid #bfdbfe;
+                  background:#eff6ff;
+                  border-radius:15px;
+                  padding:20px;
+                  margin-bottom:18px;
+                "
+              >
+
+                <div
+                  style="
+                    display:inline-block;
+                    background:#2563eb;
+                    color:#ffffff;
+                    padding:7px 12px;
+                    border-radius:6px;
+                    font-size:12px;
+                    font-weight:800;
+                    margin-bottom:17px;
+                  "
+                >
+                  2. INTERNSHIP COMPLETED
+                </div>
+
+
+                <div
+                  style="
+                    display:grid;
+                    gap:10px;
+                  "
+                >
+
+                  <div
+                    style="
+                      padding:14px;
+                      background:#ffffff;
+                      border:1px solid #dbeafe;
+                      border-radius:10px;
+                    "
+                  >
+                    ✓
+                    <strong>
+                      Offer Letter
+                    </strong>
+
+                    <span
+                      style="
+                        float:right;
+                        color:#15803d;
+                        font-weight:700;
+                      "
+                    >
+                      Received & Verified
+                    </span>
+                  </div>
+
+
+                  <div
+                    style="
+                      padding:14px;
+                      background:#ffffff;
+                      border:1px solid #dbeafe;
+                      border-radius:10px;
+                    "
+                  >
+                    ✓
+                    <strong>
+                      Certificate
+                    </strong>
+
+                    <span
+                      style="
+                        float:right;
+                        color:#15803d;
+                        font-weight:700;
+                      "
+                    >
+                      Received & Verified
+                    </span>
+                  </div>
+
+                </div>
+
+              </div>
+
+            `
+            : ""
+        }
+
+
+        <!-- ==================================================
+             INFORMATION NOTE
+        =================================================== -->
+
+        <div
+          style="
+            padding:14px 16px;
+            background:#eff6ff;
+            border:1px solid #dbeafe;
+            border-radius:10px;
+            color:#1e3a8a;
+            font-size:13px;
+            margin-bottom:20px;
+          "
+        >
+
+          <strong>
+            ● Note:
+          </strong>
+
+          Your verification record is based on the
+          official SoftGrowTech database.
+          Please keep your Student / Letter ID safe
+          for future verification.
+
+        </div>
+
+
+        <!-- ==================================================
+             TRUST SECTION
+        =================================================== -->
+
+        <div
+          style="
+            display:grid;
+            grid-template-columns:
+              repeat(4,minmax(0,1fr));
+            gap:10px;
+            padding:16px;
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            border-radius:12px;
+          "
+        >
+
+          <div
+            style="
+              text-align:center;
+              padding:8px;
+            "
+          >
+            <strong
+              style="
+                display:block;
+                color:#0f172a;
+                font-size:13px;
+              "
+            >
+              ✓ 100% Authentic
+            </strong>
+
+            <small
+              style="
+                display:block;
+                margin-top:4px;
+                color:#64748b;
+                font-size:11px;
+              "
+            >
+              Official record verification
+            </small>
+          </div>
+
+
+          <div
+            style="
+              text-align:center;
+              padding:8px;
+            "
+          >
+            <strong
+              style="
+                display:block;
+                color:#0f172a;
+                font-size:13px;
+              "
+            >
+              🔒 Secure Verification
+            </strong>
+
+            <small
+              style="
+                display:block;
+                margin-top:4px;
+                color:#64748b;
+                font-size:11px;
+              "
+            >
+              Protected verification process
+            </small>
+          </div>
+
+
+          <div
+            style="
+              text-align:center;
+              padding:8px;
+            "
+          >
+            <strong
+              style="
+                display:block;
+                color:#0f172a;
+                font-size:13px;
+              "
+            >
+              ✓ Official Record
+            </strong>
+
+            <small
+              style="
+                display:block;
+                margin-top:4px;
+                color:#64748b;
+                font-size:11px;
+              "
+            >
+              SoftGrowTech database
+            </small>
+          </div>
+
+
+          <div
+            style="
+              text-align:center;
+              padding:8px;
+            "
+          >
+            <strong
+              style="
+                display:block;
+                color:#0f172a;
+                font-size:13px;
+              "
+            >
+              Need Support?
+            </strong>
+
+            <small
+              style="
+                display:block;
+                margin-top:4px;
+                color:#64748b;
+                font-size:11px;
+              "
+            >
+              Contact SoftGrowTech
+            </small>
+          </div>
+
+        </div>
+
+
+        <!-- ==================================================
+             FOOTER
+        =================================================== -->
+
+        <div
+          style="
+            margin-top:20px;
+            padding:17px;
+            background:#061a33;
+            color:#ffffff;
+            text-align:center;
+            border-radius:10px;
+            font-size:12px;
+          "
+        >
+          © 2026 SoftGrowTech. All Rights Reserved.
+        </div>
+
+
+      </div>
+
+    </div>
+
+  `;
+
+}
+Important: Is baar jo code tumne
