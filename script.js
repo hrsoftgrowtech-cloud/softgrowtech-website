@@ -11,10 +11,214 @@ const SUPABASE_PUBLISHABLE_KEY =
 
 
 // ============================================================
-// PAGE LOAD
+// GLOBAL HELPERS
+// ============================================================
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    char => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    }[char])
+  );
+}
+
+
+function formatDate(value) {
+
+  if (!value) {
+    return "Not Available";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return escapeHtml(value);
+  }
+
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+}
+
+
+// ============================================================
+// VERIFICATION ANIMATIONS
+// ============================================================
+
+function addVerificationAnimation() {
+
+  if (document.getElementById("softgrowVerificationStyles")) {
+    return;
+  }
+
+  const style = document.createElement("style");
+
+  style.id = "softgrowVerificationStyles";
+
+  style.textContent = `
+
+    @keyframes softgrowSpin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes softgrowProgress {
+      from {
+        width: 0%;
+      }
+
+      to {
+        width: 100%;
+      }
+    }
+
+    @keyframes softgrowFadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes softgrowPop {
+      0% {
+        opacity: 0;
+        transform: scale(.75);
+      }
+
+      70% {
+        transform: scale(1.08);
+      }
+
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .softgrow-verification-page {
+      animation: softgrowFadeUp .5s ease both;
+    }
+
+    .softgrow-check-icon {
+      animation: softgrowPop .55s ease both;
+    }
+
+    .softgrow-status-card {
+      transition:
+        transform .25s ease,
+        box-shadow .25s ease;
+    }
+
+    .softgrow-status-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(15,23,42,.08);
+    }
+
+    .softgrow-back-button {
+      transition:
+        transform .2s ease,
+        box-shadow .2s ease,
+        background .2s ease;
+    }
+
+    .softgrow-back-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(37,99,235,.20);
+    }
+
+    @media (max-width: 700px) {
+
+      .softgrow-verification-page {
+        border-radius: 12px !important;
+      }
+
+      .softgrow-info-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .softgrow-document-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+      }
+
+      .softgrow-document-badge {
+        align-self: flex-start !important;
+      }
+
+      .softgrow-header {
+        padding: 18px !important;
+      }
+
+      .softgrow-main {
+        padding: 18px !important;
+      }
+
+    }
+
+  `;
+
+  document.head.appendChild(style);
+}
+
+
+// ============================================================
+// SHOW GENERIC RESULT
+// ============================================================
+
+function showResult(result, type, html) {
+
+  if (!result) {
+    return;
+  }
+
+  result.style.display = "block";
+
+  result.innerHTML = html;
+
+  if (type === "error") {
+
+    result.style.background = "#fff7f7";
+    result.style.border = "1px solid #fecaca";
+    result.style.color = "#991b1b";
+
+  } else {
+
+    result.style.background = "#ffffff";
+    result.style.border = "1px solid #e2e8f0";
+    result.style.color = "#0f172a";
+
+  }
+
+}
+
+
+// ============================================================
+// DOCUMENT READY
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", () => {
+
+  // ==========================================================
+  // PAGE LOADED
+  // ==========================================================
 
   document.body.classList.add("loaded");
 
@@ -33,14 +237,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 1600);
 
     setTimeout(() => {
-      welcome.remove();
+
+      if (welcome && welcome.parentNode) {
+        welcome.remove();
+      }
+
     }, 2450);
 
   }
 
 
   // ==========================================================
-  // SCROLL TO TOP
+  // VERIFICATION CSS
+  // ==========================================================
+
+  addVerificationAnimation();
+
+
+  // ==========================================================
+  // SCROLL TO TOP BUTTON
   // ==========================================================
 
   const scrollTop =
@@ -89,7 +304,6 @@ document.addEventListener("DOMContentLoaded", () => {
     { passive: true }
   );
 
-
   updateScrollTop();
 
 
@@ -117,18 +331,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
 
+      const AudioContext =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+      if (!AudioContext) {
+        return;
+      }
+
       audioContext =
         audioContext ||
-        new (
-          window.AudioContext ||
-          window.webkitAudioContext
-        )();
+        new AudioContext();
 
 
       if (
         audioContext.state === "suspended"
       ) {
+
         audioContext.resume();
+
       }
 
 
@@ -166,7 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
       gain.gain.exponentialRampToValueAtTime(
-        0.035,
+        0.025,
         now + 0.006
       );
 
@@ -201,7 +422,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const target =
         event.target.closest(
-          ".btn, .nav-apply, .menu-btn, .domain-choice, .text-link, .footer-social"
+          ".btn, .nav-apply, .menu-btn, .domain-choice, .text-link, .footer-social, button"
         );
 
 
@@ -222,7 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // ==========================================================
-  // ACTIVE NAVBAR PAGE
+  // ACTIVE NAVIGATION
   // ==========================================================
 
   const currentPage =
@@ -256,9 +477,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (href === currentPage) {
 
-        link.classList.add(
-          "active"
-        );
+        link.classList.add("active");
 
       }
 
@@ -273,9 +492,7 @@ document.addEventListener("DOMContentLoaded", () => {
         href === "internships.html"
       ) {
 
-        link.classList.add(
-          "active"
-        );
+        link.classList.add("active");
 
       }
 
@@ -287,15 +504,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // ==========================================================
 
   const menuBtn =
-    document.querySelector(
-      ".menu-btn"
-    );
+    document.querySelector(".menu-btn");
 
 
   const navLinks =
-    document.getElementById(
-      "navLinks"
-    );
+    document.getElementById("navLinks");
 
 
   if (
@@ -307,9 +520,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "click",
       () => {
 
-        navLinks.classList.toggle(
-          "open"
-        );
+        navLinks.classList.toggle("open");
 
       }
     );
@@ -323,9 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
           "click",
           () => {
 
-            navLinks.classList.remove(
-              "open"
-            );
+            navLinks.classList.remove("open");
 
           }
         );
@@ -343,6 +552,7 @@ document.addEventListener("DOMContentLoaded", () => {
     .querySelectorAll("[data-verify]")
     .forEach(form => {
 
+
       form.addEventListener(
         "submit",
         async event => {
@@ -351,23 +561,46 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
           const input =
-            form.querySelector(
-              "input"
-            );
+            form.querySelector("input");
 
 
-          const result =
-            form.parentElement.querySelector(
-              ".verify-result"
-            );
+          let result =
+            form.querySelector(".verify-result");
 
 
-          if (
-            !input ||
-            !result
-          ) {
+          if (!result) {
 
+            result =
+              form.parentElement?.querySelector(
+                ".verify-result"
+              );
+
+          }
+
+
+          if (!input) {
             return;
+          }
+
+
+          // Create result container if HTML
+          // doesn't already contain one.
+
+          if (!result) {
+
+            result =
+              document.createElement("div");
+
+            result.className =
+              "verify-result";
+
+            result.style.marginTop =
+              "20px";
+
+            form.insertAdjacentElement(
+              "afterend",
+              result
+            );
 
           }
 
@@ -386,22 +619,56 @@ document.addEventListener("DOMContentLoaded", () => {
               result,
               "error",
               `
-                <div class="verify-message">
 
-                  <div class="verify-icon error-icon">
+                <div
+                  style="
+                    padding:32px 20px;
+                    text-align:center;
+                  "
+                >
+
+                  <div
+                    style="
+                      width:58px;
+                      height:58px;
+                      margin:0 auto 16px;
+                      border-radius:50%;
+                      background:#fee2e2;
+                      color:#dc2626;
+                      display:flex;
+                      align-items:center;
+                      justify-content:center;
+                      font-size:27px;
+                      font-weight:800;
+                    "
+                  >
                     !
                   </div>
 
-                  <h2>
+
+                  <h2
+                    style="
+                      margin:0 0 9px;
+                      color:#991b1b;
+                      font-size:22px;
+                    "
+                  >
                     Invalid Official ID
                   </h2>
 
-                  <p>
-                    Please enter your Official ID
+
+                  <p
+                    style="
+                      margin:0;
+                      color:#7f1d1d;
+                    "
+                  >
+                    Please check your Official ID
                     and try again.
                   </p>
 
                 </div>
+
               `
             );
 
@@ -415,23 +682,24 @@ document.addEventListener("DOMContentLoaded", () => {
           // ==================================================
 
           result.style.display = "block";
+          result.style.background = "#ffffff";
+          result.style.border =
+            "1px solid #dbeafe";
 
 
           result.innerHTML = `
 
             <div
-              class="verification-processing"
               style="
                 text-align:center;
-                padding:45px 20px;
+                padding:48px 20px;
               "
             >
 
               <div
-                class="verification-loader"
                 style="
-                  width:64px;
-                  height:64px;
+                  width:68px;
+                  height:68px;
                   margin:0 auto 22px;
                   border:5px solid #dbeafe;
                   border-top-color:#2563eb;
@@ -443,7 +711,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
               <h2
                 style="
-                  margin:0 0 8px;
+                  margin:0 0 9px;
                   color:#0f172a;
                   font-size:22px;
                 "
@@ -466,9 +734,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
               <div
                 style="
-                  margin:22px auto 0;
-                  max-width:300px;
-                  height:5px;
+                  max-width:320px;
+                  height:6px;
+                  margin:24px auto 0;
                   background:#e2e8f0;
                   border-radius:20px;
                   overflow:hidden;
@@ -477,48 +745,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 <div
                   style="
-                    width:0%;
+                    width:0;
                     height:100%;
                     background:#2563eb;
                     border-radius:20px;
-                    animation:verificationProgress 3s ease forwards;
+                    animation:softgrowProgress 3s linear forwards;
                   "
                 ></div>
 
               </div>
 
 
-              <small
+              <div
                 style="
-                  display:block;
                   margin-top:12px;
                   color:#94a3b8;
+                  font-size:13px;
                 "
               >
-                Please wait...
-              </small>
+                Authenticating official record...
+              </div>
 
             </div>
 
           `;
 
 
-          addVerificationAnimation();
-
-
-          // ==================================================
-          // WAIT 3 SECONDS
-          // ==================================================
+          // Give browser time to render
+          // the verification animation.
 
           await delay(3000);
 
 
+          // ==================================================
+          // SUPABASE DATABASE REQUEST
+          // ==================================================
+
           try {
-
-
-            // =================================================
-            // SUPABASE REQUEST
-            // =================================================
 
             const apiUrl =
               `${SUPABASE_URL}/rest/v1/Students` +
@@ -544,21 +807,23 @@ document.addEventListener("DOMContentLoaded", () => {
                       "application/json"
 
                   }
-
                 }
               );
 
 
             if (!response.ok) {
 
+              const errorText =
+                await response.text();
+
               console.error(
                 "Supabase error:",
                 response.status,
-                await response.text()
+                errorText
               );
 
               throw new Error(
-                "Database connection failed"
+                "Supabase request failed"
               );
 
             }
@@ -568,9 +833,9 @@ document.addEventListener("DOMContentLoaded", () => {
               await response.json();
 
 
-            // =================================================
-            // INVALID ID
-            // =================================================
+            // ==================================================
+            // INVALID / FAKE ID
+            // ==================================================
 
             if (
               !Array.isArray(data) ||
@@ -581,26 +846,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 result,
                 "error",
                 `
+
                   <div
                     style="
-                      padding:30px;
+                      padding:38px 20px;
                       text-align:center;
                     "
                   >
 
                     <div
                       style="
-                        width:55px;
-                        height:55px;
-                        margin:0 auto 15px;
+                        width:62px;
+                        height:62px;
+                        margin:0 auto 17px;
                         border-radius:50%;
                         background:#fee2e2;
                         color:#dc2626;
                         display:flex;
                         align-items:center;
                         justify-content:center;
-                        font-size:28px;
-                        font-weight:700;
+                        font-size:29px;
+                        font-weight:800;
                       "
                     >
                       !
@@ -611,6 +877,7 @@ document.addEventListener("DOMContentLoaded", () => {
                       style="
                         margin:0 0 10px;
                         color:#991b1b;
+                        font-size:23px;
                       "
                     >
                       Invalid Official ID
@@ -621,6 +888,7 @@ document.addEventListener("DOMContentLoaded", () => {
                       style="
                         margin:0;
                         color:#7f1d1d;
+                        font-size:15px;
                       "
                     >
                       The ID you entered could not
@@ -630,403 +898,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     <p
                       style="
-                        margin:12px 0 0;
-                        font-size:13px;
+                        margin:13px 0 0;
                         color:#64748b;
+                        font-size:13px;
                       "
                     >
                       Please check your Official ID
                       and try again.
                     </p>
 
-                  </div>
-                `
-              );
 
-              return;
-
-            }
-
-
-            // =================================================
-            // VERIFIED STUDENT
-            // =================================================
-
-            const student =
-              data[0];
-
-
-            const studentId =
-              student["Student Id"] ||
-              id;
-
-
-            const name =
-              student["Name"] ||
-              "Not Available";
-
-
-            const domain =
-              student["Domain"] ||
-              "Not Available";
-
-
-            const batchDate =
-              formatDate(
-                student["Batch date"]
-              );
-
-
-            const offerLetter =
-              student["Offer Letter"] ||
-              "Not Available";
-
-
-            const certificate =
-              student["Certificate"] ||
-              "Not Available";
-
-
-            const status =
-              student["Status"] ||
-              "Not Available";
-
-
-            // =================================================
-            // SHOW PROFESSIONAL VERIFICATION PAGE
-            // =================================================
-
-            showVerifiedResult(
-              result,
-              {
-                studentId,
-                name,
-                domain,
-                batchDate,
-                offerLetter,
-                certificate,
-                status
-              }
-            );
-
-
-            // =================================================
-            // SMOOTH SCROLL TO RESULT
-            // =================================================
-
-            setTimeout(() => {
-
-              result.scrollIntoView({
-                behavior: "smooth",
-                block: "start"
-              });
-
-            }, 100);
-
-
-          } catch (error) {
-
-
-            console.error(
-              "Verification error:",
-              error
-            );
-
-
-            showResult(
-              result,
-              "error",
-              `
-                <div
-                  style="
-                    padding:30px;
-                    text-align:center;
-                  "
-                >
-
-                  <div
-                    style="
-                      width:55px;
-                      height:55px;
-                      margin:0 auto 15px;
-                      border-radius:50%;
-                      background:#fee2e2;
-                      color:#dc2626;
-                      display:flex;
-                      align-items:center;
-                      justify-content:center;
-                      font-size:25px;
-                    "
-                  >
-                    !
-                  </div>
-
-
-                  <h2
-                    style="
-                      margin:0 0 10px;
-                      color:#991b1b;
-                    "
-                  >
-                    Verification Service Unavailable
-                  </h2>
-
-
-                  <p
-                    style="
-                      margin:0;
-                      color:#64748b;
-                    "
-                  >
-                    We are unable to connect to the
-                    verification service right now.
-                  </p>
-
-
-                  <small
-                    style="
-                      display:block;
-                      margin-top:10px;
-                      color:#94a3b8;
-                    "
-                  >
-                    Please try again after a few moments.
-                  </small>
-
-                </div>
-              `
-            );
-
-          }
-
-        }
-      );
-
-    });
-
-
-  // ==========================================================
-  // BUTTON ANIMATION
-  // ==========================================================
-
-  document
-    .querySelectorAll(
-      ".btn, .nav-apply, .text-link"
-    )
-    .forEach(button => {
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          button.classList.remove(
-            "clicked"
-          );
-
-          void button.offsetWidth;
-
-          button.classList.add(
-            "clicked"
-          );
-
-        }
-      );
-
-    });
-
-});
-
-
-// ============================================================
-// SHOW VERIFIED RESULT
-// ============================================================
-
-function showVerifiedResult(
-  result,
-  student
-) {
-
-  const status =
-    String(
-      student.status
-    ).toUpperCase();
-
-
-  const isCompleted =
-    status.includes("COMPLETE") ||
-    status.includes("VERIFIED");
-
-
-  const isRunning =
-    status.includes("RUNNING");
-
-
-  const isNotVerified =
-    status.includes("NOT");
-
-
-  let overallTitle =
-    "INTERNSHIP RUNNING";
-
-
-  let overallText =
-    "Your internship is currently in progress.";
-
-
-  let overallColor =
-    "#15803d";
-
-
-  let overallIcon =
-    "↻";
-
-
-  if (isCompleted) {
-
-    overallTitle =
-      "COMPLETE VERIFIED";
-
-    overallText =
-      "All documents are verified successfully.";
-
-    overallColor =
-      "#1d4ed8";
-
-    overallIcon =
-      "✓";
-
-  }
-
-
-  if (isNotVerified) {
-
-    overallTitle =
-      "NOT VERIFIED";
-
-    overallText =
-      "Your certificate is not issued yet.";
-
-    overallColor =
-      "#dc2626";
-
-    overallIcon =
-      "!";
-
-  }
-
-
-  if (isRunning) {
-
-    overallTitle =
-      "RUNNING";
-
-    overallText =
-      "Your internship is currently in progress.";
-
-    overallColor =
-      "#15803d";
-
-    overallIcon =
-      "↻";
-
-  }
-
-
-  const certificateIssued =
-    String(
-      student.certificate
-    )
-      .toLowerCase()
-      .includes("received") ||
-    String(
-      student.certificate
-    )
-      .toLowerCase()
-      .includes("issued");
-
-
-  const offerVerified =
-    String(
-      student.offerLetter
-    )
-      .toLowerCase()
-      .includes("received") ||
-    String(
-      student.offerLetter
-    )
-      .toLowerCase()
-      .includes("verified");
-
-
-  result.innerHTML = `
-
-    <div
-      class="softgrow-verification-page"
-      style="
-        width:100%;
-        max-width:1100px;
-        margin:0 auto;
-        background:#ffffff;
-        border-radius:16px;
-        overflow:hidden;
-        box-shadow:0 12px 40px rgba(15,23,42,.10);
-        font-family:inherit;
-      "
-    >
-
-
-      <!-- ==========================================
-           VERIFICATION HEADER
-      =========================================== -->
-
-      <div
-        style="
-          background:#061a33;
-          color:white;
-          padding:18px 28px;
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          gap:20px;
-          flex-wrap:wrap;
-        "
-      >
-
-        <div>
-
-          <div
-            style="
-              font-size:22px;
-              font-weight:800;
-              letter-spacing:.2px;
-            "
-          >
-            SoftGrowTech
-          </div>
-
-
-          <div
-            style="
-              font-size:13px;
-              opacity:.85;
-              margin-top:2px;
-            "
-          >
-            Learn • Build • Evolve
-          </div>
-
-        </div>
-
-
-        <div
-          style="
-            display:flex;
-            align-items:center;
-            gap:10px;
-            text-align:right;
-          "
-        >
-
-          <div
-            style="
-              font-size:27px;
+                    <div
+                      style="
+                        margin-top:18px;
+                        display:inline-block;
+                        padding:8px 13px;
+                        background:#f8fafc;
+                        border:1px solid #e2e8f0;
