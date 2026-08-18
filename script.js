@@ -986,7 +986,721 @@ document.addEventListener("DOMContentLoaded", () => {
 
             showVerifiedResult(
               result,
-             ${escapeHtml(overallTitle)}
+              {
+                studentId,
+                name,
+                domain,
+                batchDate,
+                offerLetter,
+                certificate,
+                status
+              }
+            );
+
+
+            // ==================================================
+            // SMOOTH SCROLL TO RESULT
+            // ==================================================
+
+            setTimeout(() => {
+
+              result.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+              });
+
+            }, 100);
+
+
+          } catch (error) {
+
+            console.error(
+              "Verification error:",
+              error
+            );
+
+
+            showResult(
+              result,
+              "error",
+              `
+
+                <div
+                  style="
+                    padding:38px 20px;
+                    text-align:center;
+                  "
+                >
+
+                  <div
+                    style="
+                      width:60px;
+                      height:60px;
+                      margin:0 auto 16px;
+                      border-radius:50%;
+                      background:#fee2e2;
+                      color:#dc2626;
+                      display:flex;
+                      align-items:center;
+                      justify-content:center;
+                      font-size:25px;
+                      font-weight:800;
+                    "
+                  >
+                    !
+                  </div>
+
+
+                  <h2
+                    style="
+                      margin:0 0 10px;
+                      color:#991b1b;
+                    "
+                  >
+                    Verification Service Unavailable
+                  </h2>
+
+
+                  <p
+                    style="
+                      margin:0;
+                      color:#64748b;
+                    "
+                  >
+                    We are unable to connect to the
+                    verification service right now.
+                  </p>
+
+
+                  <small
+                    style="
+                      display:block;
+                      margin-top:10px;
+                      color:#94a3b8;
+                    "
+                  >
+                    Please try again after a few moments.
+                  </small>
+
+                </div>
+
+              `
+            );
+
+          }
+
+        }
+      );
+
+    });
+
+
+  // ==========================================================
+  // BUTTON CLICK ANIMATION
+  // ==========================================================
+
+  document
+    .querySelectorAll(
+      ".btn, .nav-apply, .text-link, button"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          button.classList.remove(
+            "clicked"
+          );
+
+          void button.offsetWidth;
+
+          button.classList.add(
+            "clicked"
+          );
+
+        }
+      );
+
+    });
+
+});
+
+
+// ============================================================
+// VERIFIED RESULT PAGE
+// ============================================================
+
+function showVerifiedResult(
+  result,
+  student
+) {
+
+  const status =
+    String(
+      student.status
+    ).toUpperCase();
+
+
+  const offerLetter =
+    String(
+      student.offerLetter
+    );
+
+
+  const certificate =
+    String(
+      student.certificate
+    );
+
+
+  // ==========================================================
+  // STATUS DETECTION
+  // ==========================================================
+
+  const isCompleted =
+    status.includes("COMPLETE") ||
+    status.includes("COMPLETED");
+
+
+  const isRunning =
+    status.includes("RUNNING") ||
+    status.includes("ONGOING") ||
+    status.includes("ACTIVE");
+
+
+  const isNotVerified =
+    status.includes("NOT VERIFIED") ||
+    status.includes("NOT");
+
+
+  let overallTitle =
+    "INTERNSHIP RUNNING";
+
+
+  let overallText =
+    "Your internship is currently in progress.";
+
+
+  let overallColor =
+    "#15803d";
+
+
+  let overallIcon =
+    "↻";
+
+
+  if (isCompleted) {
+
+    overallTitle =
+      "COMPLETE VERIFIED";
+
+    overallText =
+      "All documents are verified successfully.";
+
+    overallColor =
+      "#1d4ed8";
+
+    overallIcon =
+      "✓";
+
+  }
+
+
+  if (isNotVerified) {
+
+    overallTitle =
+      "NOT VERIFIED";
+
+    overallText =
+      "Your certificate is not issued yet.";
+
+    overallColor =
+      "#dc2626";
+
+    overallIcon =
+      "!";
+
+  }
+
+
+  if (isRunning) {
+
+    overallTitle =
+      "RUNNING";
+
+    overallText =
+      "Your internship is currently in progress.";
+
+    overallColor =
+      "#15803d";
+
+    overallIcon =
+      "↻";
+
+  }
+
+
+  // ==========================================================
+  // DOCUMENT STATUS DETECTION
+  // ==========================================================
+
+  const offerVerified =
+    /received|verified|issued/i.test(
+      offerLetter
+    );
+
+
+  const certificateIssued =
+    /received|verified|issued/i.test(
+      certificate
+    );
+
+
+  // ==========================================================
+  // RESULT HTML
+  // ==========================================================
+
+  result.style.display = "block";
+  result.style.background = "#ffffff";
+  result.style.border = "0";
+  result.style.padding = "0";
+
+
+  result.innerHTML = `
+
+    <div
+      class="softgrow-verification-page"
+      style="
+        width:100%;
+        max-width:1100px;
+        margin:0 auto;
+        background:#ffffff;
+        border-radius:16px;
+        overflow:hidden;
+        box-shadow:0 12px 40px rgba(15,23,42,.10);
+        font-family:inherit;
+      "
+    >
+
+
+      <!-- ==================================================
+           HEADER
+      =================================================== -->
+
+      <div
+        class="softgrow-header"
+        style="
+          background:#061a33;
+          color:#ffffff;
+          padding:18px 28px;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:20px;
+          flex-wrap:wrap;
+        "
+      >
+
+        <div>
+
+          <div
+            style="
+              font-size:22px;
+              font-weight:800;
+              letter-spacing:.2px;
+            "
+          >
+            SoftGrowTech
+          </div>
+
+
+          <div
+            style="
+              font-size:13px;
+              opacity:.85;
+              margin-top:3px;
+            "
+          >
+            Learn • Build • Evolve
+          </div>
+
+        </div>
+
+
+        <div
+          style="
+            display:flex;
+            align-items:center;
+            gap:10px;
+          "
+        >
+
+          <div
+            style="
+              width:38px;
+              height:38px;
+              border:2px solid #2563eb;
+              border-radius:10px;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              color:#3b82f6;
+              font-size:22px;
+            "
+          >
+            ✓
+          </div>
+
+
+          <div>
+
+            <div
+              style="
+                font-weight:700;
+                font-size:15px;
+              "
+            >
+              Official Verification
+            </div>
+
+
+            <div
+              style="
+                font-size:12px;
+                opacity:.8;
+                margin-top:2px;
+              "
+            >
+              100% Trusted & Secure
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- ==================================================
+           MAIN
+      =================================================== -->
+
+      <div
+        class="softgrow-main"
+        style="
+          padding:28px;
+          background:#ffffff;
+        "
+      >
+
+
+        <!-- VERIFIED TITLE -->
+
+        <div
+          style="
+            text-align:center;
+            margin-bottom:22px;
+          "
+        >
+
+          <div
+            class="softgrow-check-icon"
+            style="
+              width:54px;
+              height:54px;
+              margin:0 auto 10px;
+              border-radius:50%;
+              background:#22c55e;
+              color:#ffffff;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              font-size:31px;
+              font-weight:800;
+              box-shadow:0 8px 22px rgba(34,197,94,.20);
+            "
+          >
+            ✓
+          </div>
+
+
+          <h1
+            style="
+              margin:0;
+              color:#0f172a;
+              font-size:29px;
+              line-height:1.2;
+            "
+          >
+            Document Record Verified
+          </h1>
+
+
+          <p
+            style="
+              margin:8px 0 0;
+              color:#475569;
+              font-size:14px;
+            "
+          >
+            The record associated with this Student /
+            Letter ID is valid.
+          </p>
+
+        </div>
+
+
+        <!-- ==================================================
+             STUDENT INFORMATION
+        =================================================== -->
+
+        <div
+          class="softgrow-info-grid"
+          style="
+            display:grid;
+            grid-template-columns:
+              repeat(4,minmax(0,1fr));
+            border:1px solid #e2e8f0;
+            border-radius:14px;
+            overflow:hidden;
+            box-shadow:0 5px 18px rgba(15,23,42,.05);
+            margin-bottom:22px;
+          "
+        >
+
+
+          <!-- ID -->
+
+          <div
+            style="
+              padding:18px;
+              border-right:1px solid #e2e8f0;
+            "
+          >
+
+            <small
+              style="
+                display:block;
+                color:#64748b;
+                font-size:12px;
+                margin-bottom:6px;
+              "
+            >
+              Student / Letter ID
+            </small>
+
+
+            <strong
+              style="
+                color:#1d4ed8;
+                font-size:16px;
+                word-break:break-word;
+              "
+            >
+              ${escapeHtml(student.studentId)}
+            </strong>
+
+          </div>
+
+
+          <!-- NAME -->
+
+          <div
+            style="
+              padding:18px;
+              border-right:1px solid #e2e8f0;
+            "
+          >
+
+            <small
+              style="
+                display:block;
+                color:#64748b;
+                font-size:12px;
+                margin-bottom:6px;
+              "
+            >
+              Student Name
+            </small>
+
+
+            <strong
+              style="
+                color:#0f172a;
+                font-size:16px;
+              "
+            >
+              ${escapeHtml(student.name)}
+            </strong>
+
+          </div>
+
+
+          <!-- DOMAIN -->
+
+          <div
+            style="
+              padding:18px;
+              border-right:1px solid #e2e8f0;
+            "
+          >
+
+            <small
+              style="
+                display:block;
+                color:#64748b;
+                font-size:12px;
+                margin-bottom:6px;
+              "
+            >
+              Domain
+            </small>
+
+
+            <strong
+              style="
+                color:#0f172a;
+                font-size:16px;
+              "
+            >
+              ${escapeHtml(student.domain)}
+            </strong>
+
+          </div>
+
+
+          <!-- BATCH -->
+
+          <div
+            style="
+              padding:18px;
+            "
+          >
+
+            <small
+              style="
+                display:block;
+                color:#64748b;
+                font-size:12px;
+                margin-bottom:6px;
+              "
+            >
+              Batch
+            </small>
+
+
+            <strong
+              style="
+                color:#0f172a;
+                font-size:16px;
+              "
+            >
+              ${escapeHtml(student.batchDate)}
+            </strong>
+
+          </div>
+
+
+        </div>
+
+
+        <!-- ==================================================
+             RUNNING STATUS
+        =================================================== -->
+
+        <div
+          class="softgrow-status-card"
+          style="
+            border:1px solid #bbf7d0;
+            background:#f0fdf4;
+            border-radius:15px;
+            padding:20px;
+            margin-bottom:18px;
+          "
+        >
+
+          <div
+            style="
+              display:inline-block;
+              background:#16a34a;
+              color:#ffffff;
+              padding:7px 12px;
+              border-radius:6px;
+              font-size:12px;
+              font-weight:800;
+              margin-bottom:18px;
+            "
+          >
+            1. ${escapeHtml(overallTitle)}
+          </div>
+
+
+          <div
+            style="
+              display:grid;
+              grid-template-columns:
+                minmax(170px,.75fr)
+                minmax(0,2fr);
+              gap:22px;
+              align-items:center;
+            "
+          >
+
+            <!-- OVERALL STATUS -->
+
+            <div
+              style="
+                text-align:center;
+                padding:18px;
+                border-radius:50%;
+                min-height:170px;
+                display:flex;
+                flex-direction:column;
+                justify-content:center;
+                align-items:center;
+                background:rgba(255,255,255,.75);
+                border:1px solid #dcfce7;
+              "
+            >
+
+              <div
+                style="
+                  width:52px;
+                  height:52px;
+                  border-radius:50%;
+                  background:#dcfce7;
+                  color:${overallColor};
+                  display:flex;
+                  align-items:center;
+                  justify-content:center;
+                  font-size:26px;
+                  font-weight:800;
+                  margin-bottom:8px;
+                "
+              >
+                ${overallIcon}
+              </div>
+
+
+              <small
+                style="
+                  color:#475569;
+                  margin-bottom:5px;
+                "
+              >
+                Overall Status
+              </small>
+
+
+              <strong
+                style="
+                  color:${overallColor};
+                  font-size:20px;
+                  line-height:1.1;
+                "
+              >
+${escapeHtml(overallTitle)}
               </strong>
 
 
