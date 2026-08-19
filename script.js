@@ -140,7 +140,54 @@ async function handleVerification(form) {
     form.appendChild(result);
   }
 
-  const id = input.value.trim();
+  
+  // Validate the ID format BEFORE showing the verification animation.
+  // IDs not starting with "SGT-" are rejected immediately.
+  const rawVerificationId =
+    (typeof studentId !== "undefined" ? studentId :
+    (typeof id !== "undefined" ? id :
+    (document.querySelector("#studentId, #letterId, input[name='studentId'], input[name='letterId']")?.value || "")));
+
+  const normalizedVerificationId = String(rawVerificationId).trim().toUpperCase();
+
+  if (!normalizedVerificationId.startsWith("SGT-")) {
+    // Stop here: do NOT show "Verifying Your Document" and do NOT route
+    // to the official Invalid ID result page for malformed input.
+    resetVerificationPageState();
+
+    const input =
+      document.querySelector("#studentId, #letterId, input[name='studentId'], input[name='letterId']");
+    if (input) input.focus();
+
+    // Use the existing page's inline validation/error area if available.
+    const errorBox =
+      document.querySelector("#verificationError, .verification-error, [data-verification-error]");
+
+    if (errorBox) {
+      errorBox.textContent = "Incorrect ID, please fill correct ID.";
+      errorBox.style.display = "block";
+      errorBox.setAttribute("role", "alert");
+    } else {
+      // Fall back to a small inline message without changing the existing
+      // invalid-ID result page.
+      let inlineError = document.getElementById("softgrow-format-error");
+      if (!inlineError) {
+        inlineError = document.createElement("div");
+        inlineError.id = "softgrow-format-error";
+        inlineError.setAttribute("role", "alert");
+        inlineError.style.cssText =
+          "margin-top:10px;color:#dc2626;font-weight:600;font-size:14px;text-align:left;";
+        const target = input?.parentElement || document.querySelector("form") || document.body;
+        target.appendChild(inlineError);
+      }
+      inlineError.textContent = "Incorrect ID, please fill correct ID.";
+      inlineError.style.display = "block";
+    }
+    return;
+  }
+
+  // Correct prefix: continue with the existing verification flow.
+const id = input.value.trim();
   if (!id) {
     showInvalidOnVerification(result, "");
     return;
