@@ -301,6 +301,7 @@ function initResultPage() {
 }
 
 function renderVerified(student) {
+  ensureRecordFooterStyles();
   const root = document.getElementById("verificationResult");
   const backUrl = "documents-verification.html";
   const id = student["Student Id"] || "Not Available";
@@ -375,40 +376,132 @@ function renderVerified(student) {
           </div>
         </section>
         ${bottomMessage}
-        <div class="result-actions">
-          <button class="result-button download-record" type="button" data-download-record>Download Verification Record <span>⇩</span></button>
-          <a class="result-button verify-another" href="${backUrl}">Verify Another Letter ID <span>→</span></a>
-        </div>
-        <p class="result-bottom-line">Verify another ID or need to apply for a new internship application.</p>
+
+        <!-- Complete record footer: assurance + actions + copyright.
+             This stays INSIDE the downloadable result shell. -->
+        <footer class="record-footer" aria-label="Verification record footer">
+          <section class="verification-trust-strip" aria-label="Verification assurance">
+            <div class="trust-item">
+              <div class="trust-icon">✓</div>
+              <div><strong>100% Authentic</strong><span>All documents are verified and genuine.</span></div>
+            </div>
+            <div class="trust-item">
+              <div class="trust-icon">♙</div>
+              <div><strong>Secure Verification</strong><span>Your privacy and data are fully protected.</span></div>
+            </div>
+            <div class="trust-item">
+              <div class="trust-icon">✦</div>
+              <div><strong>Trusted by Thousands</strong><span>Thousands of students trust SoftGrowTech.</span></div>
+            </div>
+            <div class="trust-item">
+              <div class="trust-icon">◉</div>
+              <div><strong>Need Support?</strong><span>We're here to help you whenever you need.</span></div>
+            </div>
+          </section>
+
+          <div class="record-footer-actions">
+            <button class="result-button download-record" type="button" data-download-record>
+              Download Verification Record <span>⇩</span>
+            </button>
+            <a class="result-button verify-another" href="${backUrl}">
+              Verify Another Letter ID <span>→</span>
+            </a>
+          </div>
+
+          <p class="result-bottom-line">Verify another ID or need to apply for a new internship application.</p>
+          <div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div>
+        </footer>
       </div>
     </div>`;
-  renderVerificationTrust();
   bindVerificationResultActions();
 }
 
+
+function ensureRecordFooterStyles() {
+  if (document.getElementById("softgrow-record-footer-styles")) return;
+  const style = document.createElement("style");
+  style.id = "softgrow-record-footer-styles";
+  style.textContent = `
+    .record-footer{
+      margin-top:22px;
+      width:100%;
+      background:#fff;
+      border-top:1px solid #dbe7f5;
+      padding-top:14px;
+    }
+    .record-footer .verification-trust-strip{
+      width:100%;
+      margin:0;
+      box-sizing:border-box;
+      padding:18px 20px;
+      background:#f8fbff;
+      border:1px solid #dbe7f5;
+      border-radius:14px;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px;
+      box-shadow:0 8px 24px rgba(15,23,42,.06);
+    }
+    .record-footer .trust-item{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .record-footer .trust-icon{
+      width:40px;height:40px;min-width:40px;border-radius:50%;
+      background:#eaf2ff;color:#2563eb;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:800;font-size:18px;
+    }
+    .record-footer .trust-item strong{
+      display:block;font-size:12px;color:#0f172a;
+    }
+    .record-footer .trust-item span{
+      display:block;font-size:10px;color:#64748b;line-height:1.35;margin-top:3px;
+    }
+    .record-footer-actions{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:14px;
+      flex-wrap:wrap;
+      padding:18px 10px 8px;
+    }
+    .record-footer-actions .result-button{
+      min-width:260px;
+    }
+    .record-footer .result-bottom-line{
+      margin:2px 0 12px;
+      text-align:center;
+    }
+    .record-footer .verification-copyright{
+      width:100%;
+      box-sizing:border-box;
+      margin:0;
+      background:#061a33;
+      color:#fff;
+      text-align:center;
+      padding:15px 10px;
+      font-size:11px;
+      border-radius:0 0 10px 10px;
+      box-shadow:0 8px 20px rgba(6,26,51,.12);
+    }
+    @media(max-width:760px){
+      .record-footer .verification-trust-strip{grid-template-columns:1fr 1fr;padding:14px}
+      .record-footer-actions{flex-direction:column}
+      .record-footer-actions .result-button{width:100%;max-width:360px;min-width:0}
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+
 function renderVerificationTrust() {
+  // Trust/support content is now rendered inside .record-footer so the
+  // complete record is part of the downloadable verification shell.
   const trust = document.getElementById("verificationTrust");
-  if (!trust) return;
-  trust.innerHTML = `
-    <section class="verification-trust-strip" aria-label="Verification assurance">
-      <div class="trust-item">
-        <div class="trust-icon">✓</div>
-        <div><strong>100% Authentic</strong><span>All documents are verified and genuine.</span></div>
-      </div>
-      <div class="trust-item">
-        <div class="trust-icon">♙</div>
-        <div><strong>Secure Verification</strong><span>Your privacy and data are fully protected.</span></div>
-      </div>
-      <div class="trust-item">
-        <div class="trust-icon">✦</div>
-        <div><strong>Trusted by Thousands</strong><span>Thousands of students trust SoftGrowTech.</span></div>
-      </div>
-      <div class="trust-item">
-        <div class="trust-icon">◉</div>
-        <div><strong>Need Support?</strong><span>We're here to help you whenever you need.</span></div>
-      </div>
-    </section>
-    <div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div>`;
+  if (trust) trust.innerHTML = "";
 }
 
 function downloadVerificationRecord() {
