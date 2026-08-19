@@ -205,12 +205,8 @@ function initResultPage() {
 
   const renderInvalid = () => {
     root.innerHTML = `
-      <div class="result-shell">
-        <div class="result-header">
-          <div class="result-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div></div>
-          <div class="result-official"><span class="shield">✓</span><div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div></div>
-        </div>
-        <div class="result-main invalid-result">
+      <div class="invalid-only-page">
+        <div class="invalid-result">
           <div class="invalid-icon">!</div>
           <h1>Invalid Official ID</h1>
           <p>The Student / Letter ID you entered could not be found in the official SoftGrowTech records.</p>
@@ -219,11 +215,15 @@ function initResultPage() {
           <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
         </div>
       </div>`;
-    renderVerificationTrust();
   };
 
-  // The verification page already performed the secure database lookup.
-  // Reuse that verified record here instead of making a second Supabase request.
+  if (invalid) {
+    sessionStorage.removeItem("softgrowVerificationResult");
+    renderInvalid();
+    return;
+  }
+
+  // First choice: use the exact record already verified on the verification page.
   let savedRecord = null;
   try {
     const raw = sessionStorage.getItem("softgrowVerificationResult");
@@ -232,51 +232,72 @@ function initResultPage() {
     savedRecord = null;
   }
 
-  if (invalid) {
-    sessionStorage.removeItem("softgrowVerificationResult");
-    renderInvalid();
-    return;
-  }
-
-  if (savedRecord && savedRecord.type === "valid") {
+  if (savedRecord && savedRecord.type === "valid" && savedRecord.student) {
     renderVerified(savedRecord.student);
     return;
   }
 
   if (!id) {
     root.innerHTML = `
-      <div class="result-shell">
-        <div class="result-header">
-          <div class="result-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div></div>
-          <div class="result-official"><span class="shield">✓</span><div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div></div>
-        </div>
-        <div class="result-main invalid-result">
+      <div class="invalid-only-page">
+        <div class="invalid-result">
           <div class="invalid-icon">!</div>
-          <h1>Verification Record Not Found</h1>
-          <p>Please start a new document verification request.</p>
+          <h1>Verification Session Expired</h1>
+          <p>Please return to the official verification page and verify the Student / Letter ID again.</p>
           <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
         </div>
       </div>`;
-    renderVerificationTrust();
     return;
   }
 
-  // If a user opens a result URL directly without the verification session,
-  // do not display a misleading "service unavailable" state.
+  // Fallback for direct opening/refresh: one database lookup, then render the
+  // same full result page. This prevents the result page from appearing blank.
   root.innerHTML = `
     <div class="result-shell">
       <div class="result-header">
         <div class="result-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div></div>
         <div class="result-official"><span class="shield">✓</span><div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div></div>
       </div>
-      <div class="result-main invalid-result">
-        <div class="invalid-icon">!</div>
-        <h1>Verification Session Expired</h1>
-        <p>Please return to the official verification page and verify the Student / Letter ID again.</p>
-        <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
+      <div class="result-main result-loading">
+        <div class="result-spinner"></div>
+        <h2>Loading Verified Record</h2>
+        <p>Retrieving your official SoftGrowTech record...</p>
       </div>
     </div>`;
-  renderVerificationTrust();
+
+  fetch(`${SUPABASE_URL}/rest/v1/Students?Student%20Id=eq.${encodeURIComponent(id)}&select=*`, {
+    headers: {
+      "apikey": SUPABASE_PUBLISHABLE_KEY,
+      "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+    }
+  })
+  .then(async response => {
+    if (!response.ok) throw new Error("Database request failed");
+    return response.json();
+  })
+  .then(data => {
+    if (!Array.isArray(data) || !data.length) {
+      renderInvalid();
+      return;
+    }
+    sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
+      type: "valid",
+      student: data[0]
+    }));
+    renderVerified(data[0]);
+  })
+  .catch(error => {
+    console.error("Result page verification error:", error);
+    root.innerHTML = `
+      <div class="invalid-only-page">
+        <div class="invalid-result">
+          <div class="invalid-icon">!</div>
+          <h1>Verification Service Unavailable</h1>
+          <p>We are unable to connect to the verification service right now.</p>
+          <a class="result-button" href="${backUrl}">Try Again <span>→</span></a>
+        </div>
+      </div>`;
+  });
 }
 
 function renderVerified(student) {
@@ -426,12 +447,20 @@ function downloadVerificationRecord() {
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
   ]).then(async () => {
-    const canvas = await window.html2canvas(shell, {
+    const clone = shell.cloneNode(true);
+    clone.querySelectorAll(".download-record, .verify-another, .result-bottom-line").forEach(el => el.remove());
+    const staging = document.createElement("div");
+    staging.style.cssText = "position:fixed;left:-100000px;top:0;width:" + shell.offsetWidth + "px;background:#fff;padding:0;margin:0;";
+    staging.appendChild(clone);
+    document.body.appendChild(staging);
+
+    const canvas = await window.html2canvas(staging, {
       scale: 2,
       useCORS: true,
       backgroundColor: "#ffffff",
       logging: false
     });
+    staging.remove();
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF("p", "mm", "a4");
