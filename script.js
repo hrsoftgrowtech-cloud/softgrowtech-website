@@ -302,7 +302,6 @@ function initResultPage() {
 
 function renderVerified(student) {
   const root = document.getElementById("verificationResult");
-  const backUrl = "documents-verification.html";
   const id = student["Student Id"] || "Not Available";
   const name = student["Name"] || "Not Available";
   const email = student["Student Email"] || student["Email"] || student["email"] || student["Email Address"] || student["Email address"] || "Not Available";
@@ -412,8 +411,10 @@ function renderVerificationTrust() {
 }
 
 function downloadVerificationRecord() {
-  const shell = document.querySelector("#verificationResult .result-shell");
-  if (!shell) return;
+  // Download the complete verification record page, including the
+  // verification trust section and copyright at the bottom.
+  const page = document.querySelector(".verification-result-page");
+  if (!page) return;
 
   const original = document.querySelector("[data-download-record]");
   if (original) {
@@ -448,10 +449,10 @@ function downloadVerificationRecord() {
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
   ]).then(async () => {
-    const clone = shell.cloneNode(true);
+    const clone = page.cloneNode(true);
     clone.querySelectorAll(".download-record, .verify-another, .result-bottom-line").forEach(el => el.remove());
     const staging = document.createElement("div");
-    staging.style.cssText = "position:fixed;left:-100000px;top:0;width:" + shell.offsetWidth + "px;background:#fff;padding:0;margin:0;";
+    staging.style.cssText = "position:fixed;left:-100000px;top:0;width:" + page.offsetWidth + "px;background:#fff;padding:0;margin:0;";
     staging.appendChild(clone);
     document.body.appendChild(staging);
 
