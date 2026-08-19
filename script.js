@@ -256,7 +256,7 @@ function initResultPage() {
     <div class="result-shell">
       <div class="result-header">
         <div class="result-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div></div>
-        <div class="result-official"><span class="shield">✓</span><div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div></div>
+        <div class="result-official"><span class="verified-shield" aria-hidden="true"><span>✓</span></span><div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div></div>
       </div>
       <div class="result-main result-loading">
         <div class="result-spinner"></div>
@@ -302,6 +302,7 @@ function initResultPage() {
 
 function renderVerified(student) {
   ensureRecordFooterStyles();
+  ensureDownloadAndBadgeStyles();
   const root = document.getElementById("verificationResult");
   const backUrl = "documents-verification.html";
   const id = student["Student Id"] || "Not Available";
@@ -357,7 +358,7 @@ function renderVerified(student) {
     <div class="result-shell softgrow-result-animate">
       <div class="result-header">
         <div class="result-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div></div>
-        <div class="result-official"><span class="shield">✓</span><div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div></div>
+        <div class="result-official"><span class="verified-shield" aria-hidden="true"><span>✓</span></span><div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div></div>
       </div>
       <div class="result-main">
         <div class="verified-title"><div class="verified-icon">✓</div><div><h1>Document Record Verified</h1><p>The record associated with this Student / Letter ID is valid.</p></div></div>
@@ -416,6 +417,50 @@ function renderVerified(student) {
   bindVerificationResultActions();
 }
 
+
+function ensureDownloadAndBadgeStyles() {
+  if (document.getElementById("softgrow-download-badge-styles")) return;
+  const style = document.createElement("style");
+  style.id = "softgrow-download-badge-styles";
+  style.textContent = `
+    .result-official .verified-shield{
+      width:42px;height:42px;min-width:42px;
+      display:inline-flex;align-items:center;justify-content:center;
+      position:relative;
+      border:2px solid #2563eb;
+      border-radius:12px 12px 16px 16px;
+      background:linear-gradient(180deg,#eff6ff,#dbeafe);
+      box-shadow:0 4px 10px rgba(37,99,235,.16);
+      clip-path:polygon(50% 0%, 92% 17%, 88% 66%, 72% 86%, 50% 100%, 28% 86%, 12% 66%, 8% 17%);
+    }
+    .result-official .verified-shield::before{
+      content:"";
+      position:absolute;inset:4px;
+      border:1px solid rgba(37,99,235,.25);
+      border-radius:9px 9px 12px 12px;
+      clip-path:polygon(50% 0%, 92% 17%, 88% 66%, 72% 86%, 50% 100%, 28% 86%, 12% 66%, 8% 17%);
+    }
+    .result-official .verified-shield > span{
+      position:relative;z-index:1;
+      color:#2563eb;font-weight:900;font-size:20px;line-height:1;
+    }
+    .pdf-capture-root{
+      width:100% !important;
+      max-width:none !important;
+      min-width:0 !important;
+      box-sizing:border-box !important;
+      overflow:visible !important;
+      transform:none !important;
+    }
+    .pdf-capture-root .record-footer{
+      break-inside:avoid;
+    }
+    .pdf-capture-hide{
+      display:none !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 function ensureRecordFooterStyles() {
   if (document.getElementById("softgrow-record-footer-styles")) return;
@@ -514,20 +559,22 @@ function downloadVerificationRecord() {
     original.innerHTML = "Preparing Record…";
   }
 
-  const fallbackPrint = () => {
+  const restoreButton = () => {
     if (original) {
       original.disabled = false;
       original.innerHTML = 'Download Verification Record <span>⇩</span>';
     }
-    window.print();
   };
 
   const loadScript = (src) => new Promise((resolve, reject) => {
     const existing = document.querySelector(`script[src="${src}"]`);
     if (existing) {
-      if (window.html2canvas && window.jspdf) resolve();
-      else existing.addEventListener("load", resolve, { once:true });
-      existing.addEventListener("error", reject, { once:true });
+      if (window.html2canvas && window.jspdf) {
+        resolve();
+        return;
+      }
+      existing.addEventListener("load", resolve, { once: true });
+      existing.addEventListener("error", reject, { once: true });
       return;
     }
     const s = document.createElement("script");
@@ -541,59 +588,91 @@ function downloadVerificationRecord() {
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
   ]).then(async () => {
-    const clone = shell.cloneNode(true);
-    clone.querySelectorAll(".download-record, .verify-another, .result-bottom-line").forEach(el => el.remove());
-    const staging = document.createElement("div");
-    staging.style.cssText = "position:fixed;left:-100000px;top:0;width:" + shell.offsetWidth + "px;background:#fff;padding:0;margin:0;";
-    staging.appendChild(clone);
-    document.body.appendChild(staging);
+    // Capture the LIVE rendered record instead of cloning it.
+    // The live DOM already has the correct desktop/mobile layout, fonts,
+    // widths and positioning. Cloning was the reason some elements drifted.
+    const hideTargets = shell.querySelectorAll(
+      ".download-record, .verify-another, .result-bottom-line"
+    );
+    hideTargets.forEach(el => el.classList.add("pdf-capture-hide"));
+    shell.classList.add("pdf-capture-root");
 
-    const canvas = await window.html2canvas(staging, {
-      scale: 2,
+    // Let the browser finish layout/paint before taking the snapshot.
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(resolve);
+    }));
+
+    const rect = shell.getBoundingClientRect();
+    const canvas = await window.html2canvas(shell, {
+      scale: Math.max(2, Math.min(3, window.devicePixelRatio || 2)),
       useCORS: true,
+      allowTaint: false,
       backgroundColor: "#ffffff",
-      logging: false
+      logging: false,
+      width: Math.ceil(rect.width),
+      height: Math.ceil(shell.scrollHeight),
+      windowWidth: Math.max(document.documentElement.clientWidth, Math.ceil(rect.right)),
+      windowHeight: Math.max(window.innerHeight, Math.ceil(shell.scrollHeight))
     });
-    staging.remove();
+
+    hideTargets.forEach(el => el.classList.remove("pdf-capture-hide"));
+    shell.classList.remove("pdf-capture-root");
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF("p", "mm", "a4");
+
     const pageWidth = 210;
     const pageHeight = 297;
-    const margin = 8;
-    const imgWidth = pageWidth - margin * 2;
-    const imgHeight = canvas.height * imgWidth / canvas.width;
+    const margin = 6;
+    const imageWidth = pageWidth - margin * 2;
+    const pxPerMm = canvas.width / imageWidth;
+    const maxSlicePx = Math.floor((pageHeight - margin * 2) * pxPerMm);
 
-    let y = margin;
-    let remaining = imgHeight;
     let sourceY = 0;
-    const pxPerMm = canvas.width / imgWidth;
+    let firstPage = true;
 
-    while (remaining > 0) {
-      const slicePx = Math.min(canvas.height - sourceY, Math.floor((pageHeight - margin * 2) * pxPerMm));
-      const sliceCanvas = document.createElement("canvas");
-      sliceCanvas.width = canvas.width;
-      sliceCanvas.height = slicePx;
-      sliceCanvas.getContext("2d").drawImage(canvas, 0, sourceY, canvas.width, slicePx, 0, 0, canvas.width, slicePx);
-      const sliceHeightMm = slicePx / pxPerMm;
+    while (sourceY < canvas.height) {
+      const slicePx = Math.min(maxSlicePx, canvas.height - sourceY);
 
-      if (sourceY > 0) pdf.addPage();
-      pdf.addImage(sliceCanvas.toDataURL("image/jpeg", 0.95), "JPEG", margin, margin, imgWidth, sliceHeightMm);
+      const slice = document.createElement("canvas");
+      slice.width = canvas.width;
+      slice.height = slicePx;
+
+      const ctx = slice.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, slice.width, slice.height);
+      ctx.drawImage(
+        canvas,
+        0, sourceY, canvas.width, slicePx,
+        0, 0, canvas.width, slicePx
+      );
+
+      if (!firstPage) pdf.addPage();
+      firstPage = false;
+
+      pdf.addImage(
+        slice.toDataURL("image/png"),
+        "PNG",
+        margin,
+        margin,
+        imageWidth,
+        slicePx / pxPerMm,
+        undefined,
+        "FAST"
+      );
 
       sourceY += slicePx;
-      remaining -= sliceHeightMm;
     }
 
-    const recordId = (sessionStorage.getItem("softgrowVerificationResult") || "record").slice(0, 30);
     pdf.save(`SoftGrowTech-Verification-Record-${Date.now()}.pdf`);
-
-    if (original) {
-      original.disabled = false;
-      original.innerHTML = 'Download Verification Record <span>⇩</span>';
-    }
-  }).catch(() => fallbackPrint());
+    restoreButton();
+  }).catch(error => {
+    console.error("Verification record download failed:", error);
+    restoreButton();
+    // Keep the existing record page available if a PDF library fails.
+    window.print();
+  });
 }
-
 function bindVerificationResultActions() {
   const downloadButton = document.querySelector("[data-download-record]");
   if (downloadButton) {
