@@ -140,7 +140,75 @@ async function handleVerification(form) {
     form.appendChild(result);
   }
 
-  const id = input.value.trim();
+  
+
+const id = input.value.trim();
+
+          // --------------------------------------------------
+          // ID FORMAT VALIDATION
+          // Reject malformed input BEFORE the 3-second
+          // verification animation starts.
+          // IDs beginning with SGT- continue to the normal
+          // Supabase verification flow.
+          // --------------------------------------------------
+
+          if (!/^SGT-/i.test(id)) {
+
+            showResult(
+              result,
+              "error",
+              `
+                <div
+                  style="
+                    padding:30px 20px;
+                    text-align:center;
+                  "
+                >
+                  <div
+                    style="
+                      width:52px;
+                      height:52px;
+                      margin:0 auto 14px;
+                      border-radius:50%;
+                      background:#fff7ed;
+                      color:#ea580c;
+                      display:flex;
+                      align-items:center;
+                      justify-content:center;
+                      font-size:24px;
+                      font-weight:800;
+                    "
+                  >
+                    !
+                  </div>
+
+                  <h2
+                    style="
+                      margin:0 0 8px;
+                      color:#9a3412;
+                      font-size:21px;
+                    "
+                  >
+                    Incorrect ID
+                  </h2>
+
+                  <p
+                    style="
+                      margin:0;
+                      color:#64748b;
+                      font-size:14px;
+                    "
+                  >
+                    Please fill in a correct ID starting with
+                    <strong>SGT-</strong>.
+                  </p>
+                </div>
+              `
+            );
+
+            return;
+          }
+
   if (!id) {
     showInvalidOnVerification(result, "");
     return;
