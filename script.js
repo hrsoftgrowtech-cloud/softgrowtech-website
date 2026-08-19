@@ -411,10 +411,9 @@ function renderVerificationTrust() {
 }
 
 function downloadVerificationRecord() {
-  // Download the complete verification record page, including the
-  // verification trust section and copyright at the bottom.
-  const page = document.querySelector(".verification-result-page");
-  if (!page) return;
+  const shell = document.querySelector("#verificationResult .result-shell");
+  const trust = document.querySelector("#verificationTrust");
+  if (!shell) return;
 
   const original = document.querySelector("[data-download-record]");
   if (original) {
@@ -449,59 +448,111 @@ function downloadVerificationRecord() {
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
   ]).then(async () => {
-    const clone = page.cloneNode(true);
-    clone.querySelectorAll(".download-record, .verify-another, .result-bottom-line").forEach(el => el.remove());
+    /*
+      IMPORTANT:
+      Do not change the live verification page DOM.
+      Build a temporary copy containing BOTH:
+      1) the complete verification record
+      2) the trust/support strip + copyright below it
+
+      This fixes the missing bottom section without affecting
+      the working verification-result page.
+    */
     const staging = document.createElement("div");
-    staging.style.cssText = "position:fixed;left:-100000px;top:0;width:" + page.offsetWidth + "px;background:#fff;padding:0;margin:0;";
-    staging.appendChild(clone);
+    const pageWidth = Math.max(shell.offsetWidth, trust ? trust.offsetWidth : 0);
+
+    staging.style.cssText =
+      "position:fixed;left:-100000px;top:0;width:" + pageWidth +
+      "px;background:#fff;padding:0;margin:0;z-index:-1;";
+
+    const shellClone = shell.cloneNode(true);
+
+    // Download controls are intentionally NOT part of the saved record.
+    shellClone.querySelectorAll(
+      ".download-record, .verify-another, .result-bottom-line"
+    ).forEach(el => el.remove());
+
+    staging.appendChild(shellClone);
+
+    if (trust) {
+      const trustClone = trust.cloneNode(true);
+      staging.appendChild(trustClone);
+    }
+
     document.body.appendChild(staging);
+
+    // Wait one frame so the cloned layout has fully settled.
+    await new Promise(resolve => requestAnimationFrame(resolve));
 
     const canvas = await window.html2canvas(staging, {
       scale: 2,
       useCORS: true,
       backgroundColor: "#ffffff",
-      logging: false
+      logging: false,
+      width: staging.scrollWidth,
+      height: staging.scrollHeight,
+      windowWidth: staging.scrollWidth,
+      windowHeight: staging.scrollHeight
     });
+
     staging.remove();
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF("p", "mm", "a4");
-    const pageWidth = 210;
-    const pageHeight = 297;
+    const pageWidthMm = 210;
+    const pageHeightMm = 297;
     const margin = 8;
-    const imgWidth = pageWidth - margin * 2;
-    const imgHeight = canvas.height * imgWidth / canvas.width;
-
-    let y = margin;
-    let remaining = imgHeight;
-    let sourceY = 0;
+    const imgWidth = pageWidthMm - margin * 2;
     const pxPerMm = canvas.width / imgWidth;
 
-    while (remaining > 0) {
-      const slicePx = Math.min(canvas.height - sourceY, Math.floor((pageHeight - margin * 2) * pxPerMm));
+    let sourceY = 0;
+    const slicePxPerPage = Math.floor(
+      (pageHeightMm - margin * 2) * pxPerMm
+    );
+
+    while (sourceY < canvas.height) {
+      const slicePx = Math.min(
+        slicePxPerPage,
+        canvas.height - sourceY
+      );
+
       const sliceCanvas = document.createElement("canvas");
       sliceCanvas.width = canvas.width;
       sliceCanvas.height = slicePx;
-      sliceCanvas.getContext("2d").drawImage(canvas, 0, sourceY, canvas.width, slicePx, 0, 0, canvas.width, slicePx);
-      const sliceHeightMm = slicePx / pxPerMm;
+
+      sliceCanvas.getContext("2d").drawImage(
+        canvas,
+        0, sourceY, canvas.width, slicePx,
+        0, 0, canvas.width, slicePx
+      );
 
       if (sourceY > 0) pdf.addPage();
-      pdf.addImage(sliceCanvas.toDataURL("image/jpeg", 0.95), "JPEG", margin, margin, imgWidth, sliceHeightMm);
+
+      const sliceHeightMm = slicePx / pxPerMm;
+
+      pdf.addImage(
+        sliceCanvas.toDataURL("image/jpeg", 0.95),
+        "JPEG",
+        margin,
+        margin,
+        imgWidth,
+        sliceHeightMm
+      );
 
       sourceY += slicePx;
-      remaining -= sliceHeightMm;
     }
 
-    const recordId = (sessionStorage.getItem("softgrowVerificationResult") || "record").slice(0, 30);
     pdf.save(`SoftGrowTech-Verification-Record-${Date.now()}.pdf`);
 
     if (original) {
       original.disabled = false;
       original.innerHTML = 'Download Verification Record <span>⇩</span>';
     }
-  }).catch(() => fallbackPrint());
+  }).catch((error) => {
+    console.error("Verification record download failed:", error);
+    fallbackPrint();
+  });
 }
-
 function bindVerificationResultActions() {
   const downloadButton = document.querySelector("[data-download-record]");
   if (downloadButton) {
