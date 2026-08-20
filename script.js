@@ -51,6 +51,44 @@ function playPremiumClick() {
   } catch (_) {}
 }
 
+
+function initHomeReviewPopup() {
+  const popup = document.getElementById("reviewPopup");
+  if (!popup) return;
+  if (sessionStorage.getItem("softgrowHomeReviewShown") === "1") return;
+
+  const reviews = [
+    {name:"Kashish Chandel", text:"SoftGrowTech provides the best opportunity to enhance the skills and we work on real-world problems and improve our skills.", stars:"★★★★★"},
+    {name:"Annu Kumar", text:"I had a fantastic experience. The program offered hands-on practical training and project-based learning in a structured way.", stars:"★★★★★"},
+    {name:"Pragavi Gajendran", text:"The internship was a valuable learning experience and helped me gain practical knowledge beyond the classroom.", stars:"★★★★★"},
+    {name:"Habeeba Ruhi", text:"I got hands-on exposure to web development and learned how real projects are structured from start to deployment.", stars:"★★★★★"},
+    {name:"Vaishali Genz", text:"Grateful for the hands-on project experience and expert mentorship that helped me bridge the gap between learning and industry-ready skills.", stars:"★★★★★"},
+    {name:"Khushi Bhatnagar", text:"SoftGrowTech provides a good opportunity to enhance skills. The project experience helped me learn something new and prepare for the next task.", stars:"★★★★★"}
+  ];
+  const review = reviews[Math.floor(Math.random() * reviews.length)];
+  const text = document.getElementById("reviewPopupText");
+  const name = document.getElementById("reviewPopupName");
+  const stars = document.getElementById("reviewPopupStars");
+  if (text) text.textContent = review.text;
+  if (name) name.textContent = review.name;
+  if (stars) stars.textContent = review.stars;
+
+  const close = () => {
+    popup.classList.remove("show");
+    popup.setAttribute("aria-hidden", "true");
+    sessionStorage.setItem("softgrowHomeReviewShown", "1");
+  };
+  const closeBtn = document.getElementById("reviewPopupClose");
+  if (closeBtn) closeBtn.addEventListener("click", close);
+
+  setTimeout(() => {
+    if (popup.classList.contains("show")) return;
+    popup.classList.add("show");
+    popup.setAttribute("aria-hidden", "false");
+    sessionStorage.setItem("softgrowHomeReviewShown", "1");
+  }, 10000);
+}
+
 function initCommonUI() {
   document.body.classList.add("loaded");
   addVerificationStyles();
@@ -100,6 +138,8 @@ function initCommonUI() {
       el.classList.add("clicked");
     });
   });
+
+  if (currentPage === "index.html") initHomeReviewPopup();
 }
 
 function showVerificationProcessing(result) {

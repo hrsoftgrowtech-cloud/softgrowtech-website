@@ -359,3 +359,32 @@ footer{background:#060c16;color:#fff;padding:60px 0 25px}
   .footer-grid{grid-template-columns:1fr}
   .domain-skills-panel{padding:22px}
 }
+
+
+/* Learner feedback — limited to the requested home popup and internship cards */
+.career-highlight-note{margin-left:auto;max-width:560px;text-align:right}
+.career-highlight-note strong{display:block;font-size:1.02rem;color:var(--ink)}
+.career-highlight-note p{margin:5px 0 0;color:var(--muted);font-size:.86rem}
+.review-popup{position:fixed;right:24px;bottom:24px;width:min(360px,calc(100vw - 32px));padding:20px 20px 18px;background:rgba(255,255,255,.98);border:1px solid #dbeafe;border-radius:18px;box-shadow:0 22px 60px rgba(15,23,42,.18);z-index:1800;opacity:0;visibility:hidden;transform:translateY(18px) scale(.98);transition:opacity .3s ease,transform .3s ease,visibility .3s ease}
+.review-popup.show{opacity:1;visibility:visible;transform:translateY(0) scale(1)}
+.review-popup-close{position:absolute;top:7px;right:9px;width:25px;height:25px;border:0;background:transparent;color:#64748b;font-size:20px;line-height:25px;cursor:pointer;border-radius:50%;display:grid;place-items:center}
+.review-popup-close:hover{background:#f1f5f9;color:#0f172a}
+.review-popup-label{font-size:.7rem;font-weight:850;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);padding-right:24px}
+.review-popup-stars,.review-stars{color:#f5b51b;letter-spacing:2px;font-size:.9rem;margin:7px 0 9px}
+.review-popup-text{color:#334155;font-size:.9rem;line-height:1.58;padding-right:5px}
+.review-popup-name{margin-top:10px;font-size:.78rem;font-weight:800;color:#0f172a}
+.learner-feedback-section{border-top:1px solid var(--line)}
+.review-card-grid{align-items:stretch}
+.review-card{padding:24px;display:flex;flex-direction:column}
+.review-card:hover{transform:translateY(-4px)}
+.review-card-top{display:flex;align-items:center;gap:11px;margin-bottom:5px}
+.review-card-top strong{display:block;color:var(--ink);font-size:.96rem}
+.review-card-top small{display:block;color:#94a3b8;font-size:.72rem;margin-top:1px}
+.review-avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#eff6ff;color:var(--blue);font-weight:850;border:1px solid #dbeafe}
+.review-card .review-stars{margin:8px 0 9px;font-size:.82rem}
+.review-card p{font-size:.88rem;line-height:1.68}
+@media(max-width:700px){
+  .career-highlight{align-items:flex-start}
+  .career-highlight-note{margin-left:0;text-align:left}
+  .review-popup{right:16px;left:16px;bottom:16px;width:auto}
+}
