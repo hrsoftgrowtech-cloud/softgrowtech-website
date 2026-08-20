@@ -55,11 +55,7 @@ function playPremiumClick() {
 function initHomeReviewPopup() {
   const popup = document.getElementById("reviewPopup");
   if (!popup) return;
-
-  // Once the visitor closes the popup, do not show it again.
-  if (localStorage.getItem("softgrowHomeReviewClosed") === "1") return;
-
-  // These are separate from the Internship-page review cards.
+// These are separate from the Internship-page review cards.
   // They use feedback from other reviewers visible in the supplied review
   // screenshots, so the same internship-card feedback is not repeated here.
   const reviews = [
@@ -142,7 +138,7 @@ function initHomeReviewPopup() {
     popup.classList.remove("show");
     popup.setAttribute("aria-hidden", "true");
 
-    // 5 seconds after disappearing, show another review.
+    // Normal cycle: hidden for 5 seconds, then show the next feedback.
     nextTimer = setTimeout(() => {
       if (!closed) showPopup();
     }, 5000);
@@ -155,22 +151,27 @@ function initHomeReviewPopup() {
     popup.classList.add("show");
     popup.setAttribute("aria-hidden", "false");
 
-    // Keep each review visible for a comfortable 5 seconds.
+    // Keep each feedback visible for exactly 5 seconds.
     hideTimer = setTimeout(hidePopup, 5000);
   };
 
   const close = () => {
-    closed = true;
+    // Manual close: hide immediately and keep it away for 20 seconds.
     clearTimers();
+    closed = true;
     popup.classList.remove("show");
     popup.setAttribute("aria-hidden", "true");
-    localStorage.setItem("softgrowHomeReviewClosed", "1");
+
+    nextTimer = setTimeout(() => {
+      closed = false;
+      showPopup();
+    }, 20000);
   };
 
   const closeBtn = document.getElementById("reviewPopupClose");
   if (closeBtn) closeBtn.addEventListener("click", close);
 
-  // First review appears only after the visitor has had time to read the page.
+  // First feedback appears 10 seconds after opening the home page.
   showTimer = setTimeout(showPopup, 10000);
 }
 
