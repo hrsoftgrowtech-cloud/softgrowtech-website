@@ -133,6 +133,7 @@ function showInvalidOnVerification(result, id) {
 async function handleVerification(form) {
   const input = form.querySelector("input");
   let result = form.querySelector(".verify-result") || form.parentElement.querySelector(".verify-result");
+  const inlineError = form.querySelector(".verify-inline-error");
   if (!input) return;
   if (!result) {
     result = document.createElement("div");
@@ -140,77 +141,36 @@ async function handleVerification(form) {
     form.appendChild(result);
   }
 
-  
+  const id = input.value.trim();
 
-const id = input.value.trim();
+  // Keep format feedback beside the ID field. These checks happen BEFORE
+  // the verification animation/database request so malformed input never
+  // enters the official-ID verification flow.
+  if (inlineError) {
+    inlineError.hidden = true;
+    inlineError.textContent = "";
+    inlineError.classList.remove("show");
+  }
+  result.style.display = "none";
+  result.innerHTML = "";
 
-          // --------------------------------------------------
-          // ID FORMAT VALIDATION
-          // Reject malformed input BEFORE the 3-second
-          // verification animation starts.
-          // IDs beginning with SGT- continue to the normal
-          // Supabase verification flow.
-          // --------------------------------------------------
+  if (!/^SGT-/i.test(id)) {
+    if (inlineError) {
+      inlineError.textContent = "Incorrect ID format. Please enter a valid official ID starting with SGT-.";
+      inlineError.hidden = false;
+      inlineError.classList.add("show");
+    }
+    input.focus();
+    return;
+  }
 
-          if (!/^SGT-/i.test(id)) {
-
-            showResult(
-              result,
-              "error",
-              `
-                <div
-                  style="
-                    padding:30px 20px;
-                    text-align:center;
-                  "
-                >
-                  <div
-                    style="
-                      width:52px;
-                      height:52px;
-                      margin:0 auto 14px;
-                      border-radius:50%;
-                      background:#fff7ed;
-                      color:#ea580c;
-                      display:flex;
-                      align-items:center;
-                      justify-content:center;
-                      font-size:24px;
-                      font-weight:800;
-                    "
-                  >
-                    !
-                  </div>
-
-                  <h2
-                    style="
-                      margin:0 0 8px;
-                      color:#9a3412;
-                      font-size:21px;
-                    "
-                  >
-                    Incorrect ID
-                  </h2>
-
-                  <p
-                    style="
-                      margin:0;
-                      color:#64748b;
-                      font-size:14px;
-                    "
-                  >
-                    Please fill in a correct ID starting with
-                    <strong>SGT-</strong>.
-                  </p>
-                </div>
-              `
-            );
-
-            return;
-          }
-
-  if (!id) {
-    showInvalidOnVerification(result, "");
+  if (/^SGT-$/i.test(id)) {
+    if (inlineError) {
+      inlineError.textContent = "Please enter the complete official ID after SGT-.";
+      inlineError.hidden = false;
+      inlineError.classList.add("show");
+    }
+    input.focus();
     return;
   }
 
@@ -236,8 +196,6 @@ const id = input.value.trim();
       return;
     }
 
-    // Store the exact verified record so verification-result.html can render
-    // the result without performing a second database request.
     sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
       type: "valid",
       student: data[0]
@@ -253,6 +211,22 @@ const id = input.value.trim();
   }
 }
 
+function resetVerificationPageState() {
+  document.querySelectorAll("[data-verify]").forEach(form => {
+    const result = form.querySelector(".verify-result");
+    const inlineError = form.querySelector(".verify-inline-error");
+    if (result) {
+      result.style.display = "none";
+      result.innerHTML = "";
+    }
+    if (inlineError) {
+      inlineError.hidden = true;
+      inlineError.textContent = "";
+      inlineError.classList.remove("show");
+    }
+  });
+}
+
 function initVerificationPage() {
   document.querySelectorAll("[data-verify]").forEach(form => {
     form.addEventListener("submit", event => {
@@ -260,6 +234,11 @@ function initVerificationPage() {
       handleVerification(form);
     });
   });
+
+  // When the browser Back button restores this page from its bfcache,
+  // clear any old "Verifying Your Document" state so the form is fresh.
+  window.addEventListener("pageshow", resetVerificationPageState);
+  resetVerificationPageState();
 }
 
 function initResultPage() {
