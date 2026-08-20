@@ -502,6 +502,17 @@ function initResultPage() {
   });
 }
 
+
+  const certificateActionStyle = document.createElement("style");
+  certificateActionStyle.textContent = `
+    .certificate-action { animation: certificatePulse 1.8s ease-in-out infinite; transform-origin:center; }
+    .certificate-action span { display:inline-block; animation: certificateArrow 1s ease-in-out infinite; }
+    .certificate-action:hover, .certificate-action:hover span { animation-play-state:paused; }
+    @keyframes certificatePulse { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+    @keyframes certificateArrow { 0%,100%{transform:translateX(0)} 50%{transform:translateX(5px)} }
+  `;
+  document.head.appendChild(certificateActionStyle);
+
 function renderVerified(student) {
   ensureRecordFooterStyles();
   ensureDownloadAndBadgeStyles();
@@ -532,7 +543,7 @@ function renderVerified(student) {
   let statusColor = mode === "completed" ? "#2563eb" : mode === "certificate-missing" ? "#d97706" : "#16a34a";
   let statusBg = mode === "completed" ? "#eff6ff" : mode === "certificate-missing" ? "#fffbeb" : "#f0fdf4";
   let overall = mode === "completed" ? "COMPLETE VERIFIED" : mode === "certificate-missing" ? "NOT VERIFIED" : "RUNNING";
-  let overallText = mode === "completed" ? "All required documents have been verified successfully." : mode === "certificate-missing" ? "Your internship is complete, but the certificate has not been verified." : "Your internship is currently in progress.";
+  let overallText = mode === "completed" ? "All required documents have been verified successfully." : mode === "certificate-missing" ? "Your internship is complete, but the certificate has not been issued." : "Your internship is currently in progress.";
 
   const whatsapp = "https://wa.me/917839686310";
   const certificateAction = `<a class="mini-action certificate-action" href="${whatsapp}" target="_blank" rel="noopener noreferrer">Get Your Certificate <span>→</span></a>`;
@@ -546,7 +557,7 @@ function renderVerified(student) {
   } else if (mode === "completed") {
     documentRows += `<div class="doc-row"><div><strong>Certificate</strong><small>Certificate has been issued and verified.</small></div><span class="badge green">✓ Received &amp; Verified</span></div>`;
   } else {
-    documentRows += `<div class="doc-row"><div><strong>Certificate</strong><small>Certificate has not been verified.</small></div><span class="badge red">✕ Not Verified</span></div>`;
+    documentRows += `<div class="doc-row"><div><strong>Certificate</strong><small>Certificate has not been issued.</small></div><span class="badge red">✕ Not Issued</span></div>`;
   }
 
   let bottomMessage = "";
