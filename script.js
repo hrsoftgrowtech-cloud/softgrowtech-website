@@ -55,38 +55,123 @@ function playPremiumClick() {
 function initHomeReviewPopup() {
   const popup = document.getElementById("reviewPopup");
   if (!popup) return;
-  if (sessionStorage.getItem("softgrowHomeReviewShown") === "1") return;
 
+  // Once the visitor closes the popup, do not show it again.
+  if (localStorage.getItem("softgrowHomeReviewClosed") === "1") return;
+
+  // These are separate from the Internship-page review cards.
+  // They use feedback from other reviewers visible in the supplied review
+  // screenshots, so the same internship-card feedback is not repeated here.
   const reviews = [
-    {name:"Kashish Chandel", text:"SoftGrowTech provides the best opportunity to enhance the skills and we work on real-world problems and improve our skills.", stars:"★★★★★"},
-    {name:"Annu Kumar", text:"I had a fantastic experience. The program offered hands-on practical training and project-based learning in a structured way.", stars:"★★★★★"},
-    {name:"Pragavi Gajendran", text:"The internship was a valuable learning experience and helped me gain practical knowledge beyond the classroom.", stars:"★★★★★"},
-    {name:"Habeeba Ruhi", text:"I got hands-on exposure to web development and learned how real projects are structured from start to deployment.", stars:"★★★★★"},
-    {name:"Vaishali Genz", text:"Grateful for the hands-on project experience and expert mentorship that helped me bridge the gap between learning and industry-ready skills.", stars:"★★★★★"},
-    {name:"Khushi Bhatnagar", text:"SoftGrowTech provides a good opportunity to enhance skills. The project experience helped me learn something new and prepare for the next task.", stars:"★★★★★"}
+    {
+      name: "Pragavi Gajendran",
+      text: "The internship at SoftGrowTech was a valuable learning experience. It helped me gain practical knowledge beyond classroom concepts.",
+      variant: "blue"
+    },
+    {
+      name: "Sadiya Afreen",
+      text: "I had a good learning experience at SoftGrowTech. Working on projects helped me improve my programming and problem-solving skills.",
+      variant: "minimal"
+    },
+    {
+      name: "Roshani Kumari",
+      text: "I gained great knowledge and found the learning experience valuable.",
+      variant: "soft"
+    },
+    {
+      name: "Anchal Shukla",
+      text: "SoftGrowTech gave me a good opportunity to improve my skills.",
+      variant: "dark"
+    },
+    {
+      name: "Khushi Bhatnagar",
+      text: "It was a good experience. I enjoyed the project work and learning something new.",
+      variant: "blue"
+    }
   ];
-  const review = reviews[Math.floor(Math.random() * reviews.length)];
-  const text = document.getElementById("reviewPopupText");
-  const name = document.getElementById("reviewPopupName");
-  const stars = document.getElementById("reviewPopupStars");
-  if (text) text.textContent = review.text;
-  if (name) name.textContent = review.name;
-  if (stars) stars.textContent = review.stars;
 
-  const close = () => {
+  const textEl = document.getElementById("reviewPopupText");
+  const nameEl = document.getElementById("reviewPopupName");
+  const starsEl = document.getElementById("reviewPopupStars");
+  const labelEl = popup.querySelector(".review-popup-label");
+
+  let currentIndex = -1;
+  let showTimer = null;
+  let hideTimer = null;
+  let nextTimer = null;
+  let closed = false;
+
+  const clearTimers = () => {
+    if (showTimer) clearTimeout(showTimer);
+    if (hideTimer) clearTimeout(hideTimer);
+    if (nextTimer) clearTimeout(nextTimer);
+    showTimer = hideTimer = nextTimer = null;
+  };
+
+  const chooseNextReview = () => {
+    if (reviews.length <= 1) {
+      currentIndex = 0;
+      return reviews[0];
+    }
+
+    let nextIndex;
+    do {
+      nextIndex = Math.floor(Math.random() * reviews.length);
+    } while (nextIndex === currentIndex);
+
+    currentIndex = nextIndex;
+    return reviews[currentIndex];
+  };
+
+  const renderReview = () => {
+    const review = chooseNextReview();
+
+    if (textEl) textEl.textContent = review.text;
+    if (nameEl) nameEl.textContent = review.name;
+    if (starsEl) starsEl.textContent = "★★★★★";
+
+    popup.classList.remove("review-popup-blue", "review-popup-minimal", "review-popup-soft", "review-popup-dark");
+    popup.classList.add(`review-popup-${review.variant}`);
+
+    if (labelEl) labelEl.textContent = "Learner Feedback";
+  };
+
+  const hidePopup = () => {
+    if (closed) return;
+
     popup.classList.remove("show");
     popup.setAttribute("aria-hidden", "true");
-    sessionStorage.setItem("softgrowHomeReviewShown", "1");
+
+    // 5 seconds after disappearing, show another review.
+    nextTimer = setTimeout(() => {
+      if (!closed) showPopup();
+    }, 5000);
   };
+
+  const showPopup = () => {
+    if (closed) return;
+
+    renderReview();
+    popup.classList.add("show");
+    popup.setAttribute("aria-hidden", "false");
+
+    // Keep each review visible for a comfortable 5 seconds.
+    hideTimer = setTimeout(hidePopup, 5000);
+  };
+
+  const close = () => {
+    closed = true;
+    clearTimers();
+    popup.classList.remove("show");
+    popup.setAttribute("aria-hidden", "true");
+    localStorage.setItem("softgrowHomeReviewClosed", "1");
+  };
+
   const closeBtn = document.getElementById("reviewPopupClose");
   if (closeBtn) closeBtn.addEventListener("click", close);
 
-  setTimeout(() => {
-    if (popup.classList.contains("show")) return;
-    popup.classList.add("show");
-    popup.setAttribute("aria-hidden", "false");
-    sessionStorage.setItem("softgrowHomeReviewShown", "1");
-  }, 10000);
+  // First review appears only after the visitor has had time to read the page.
+  showTimer = setTimeout(showPopup, 10000);
 }
 
 function initCommonUI() {
@@ -194,7 +279,19 @@ async function handleVerification(form) {
   result.style.display = "none";
   result.innerHTML = "";
 
-  if (!/^SGT-/i.test(id)) {
+  // Lowercase SGT- / lowercase alphabet anywhere in an otherwise
+  // SGT-formatted ID gets a dedicated capital-letter message.
+  if (/^sgt-/i.test(id) && !/^SGT-/.test(id)) {
+    if (inlineError) {
+      inlineError.textContent = "Please enter the ID using capital letters.";
+      inlineError.hidden = false;
+      inlineError.classList.add("show");
+    }
+    input.focus();
+    return;
+  }
+
+  if (!/^SGT-/.test(id)) {
     if (inlineError) {
       inlineError.textContent = "Incorrect ID format. Please enter a valid official ID starting with SGT-.";
       inlineError.hidden = false;
@@ -204,7 +301,17 @@ async function handleVerification(form) {
     return;
   }
 
-  if (/^SGT-$/i.test(id)) {
+  if (/[a-z]/.test(id)) {
+    if (inlineError) {
+      inlineError.textContent = "Please enter the ID using capital letters.";
+      inlineError.hidden = false;
+      inlineError.classList.add("show");
+    }
+    input.focus();
+    return;
+  }
+
+  if (id === "SGT-") {
     if (inlineError) {
       inlineError.textContent = "Please enter the complete official ID after SGT-.";
       inlineError.hidden = false;
