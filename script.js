@@ -227,6 +227,48 @@ function initCommonUI() {
   if (currentPage === "index.html") initHomeReviewPopup();
 }
 
+
+function ensureMobileLast4Field(form) {
+  let wrap = form.querySelector(".verify-mobile-last4-wrap");
+  if (wrap) return wrap.querySelector("input");
+
+  wrap = document.createElement("div");
+  wrap.className = "verify-mobile-last4-wrap";
+  wrap.style.cssText = "margin-top:14px;text-align:left";
+
+  wrap.innerHTML = `
+    <label for="verifyMobileLast4" style="display:block;margin-bottom:7px;font-weight:700;color:#0f172a;font-size:14px">
+      Registered Mobile — Last 4 Digits
+    </label>
+    <input
+      id="verifyMobileLast4"
+      name="mobile_last4"
+      type="text"
+      inputmode="numeric"
+      autocomplete="off"
+      maxlength="4"
+      pattern="\\d{4}"
+      placeholder="Enter last 4 digits"
+      aria-label="Registered mobile number last 4 digits"
+      style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;outline:none"
+    />
+    <div class="verify-mobile-last4-help" style="margin-top:6px;color:#64748b;font-size:12px">
+      Enter the last 4 digits of the mobile number registered with your internship.
+    </div>
+  `;
+
+  const submit = form.querySelector('button[type="submit"], input[type="submit"]');
+  if (submit) form.insertBefore(wrap, submit);
+  else form.appendChild(wrap);
+
+  const mobileInput = wrap.querySelector("input");
+  mobileInput.addEventListener("input", () => {
+    mobileInput.value = mobileInput.value.replace(/\D/g, "").slice(0, 4);
+  });
+
+  return mobileInput;
+}
+
 function showVerificationProcessing(result) {
   result.style.display = "block";
   result.style.background = "#fff";
@@ -256,40 +298,30 @@ function showInvalidOnVerification(result, id) {
 }
 
 async function handleVerification(form) {
-  const input = form.querySelector("input");
+  const input = form.querySelector('input[name="student_id"], input[id*="student" i], input');
+  const mobileInput = ensureMobileLast4Field(form);
   let result = form.querySelector(".verify-result") || form.parentElement.querySelector(".verify-result");
   const inlineError = form.querySelector(".verify-inline-error");
-  if (!input) return;
+
+  if (!input || !mobileInput) return;
+
   if (!result) {
     result = document.createElement("div");
     result.className = "verify-result";
     form.appendChild(result);
   }
 
-  const id = input.value.trim();
+  const id = input.value.trim().toUpperCase();
+  const mobileLast4 = mobileInput.value.trim();
 
-  // Keep format feedback beside the ID field. These checks happen BEFORE
-  // the verification animation/database request so malformed input never
-  // enters the official-ID verification flow.
   if (inlineError) {
     inlineError.hidden = true;
     inlineError.textContent = "";
     inlineError.classList.remove("show");
   }
+
   result.style.display = "none";
   result.innerHTML = "";
-
-  // Lowercase SGT- / lowercase alphabet anywhere in an otherwise
-  // SGT-formatted ID gets a dedicated capital-letter message.
-  if (/^sgt-/i.test(id) && !/^SGT-/.test(id)) {
-    if (inlineError) {
-      inlineError.textContent = "Please enter the ID using capital letters.";
-      inlineError.hidden = false;
-      inlineError.classList.add("show");
-    }
-    input.focus();
-    return;
-  }
 
   if (!/^SGT-/.test(id)) {
     if (inlineError) {
@@ -301,7 +333,7 @@ async function handleVerification(form) {
     return;
   }
 
-  if (/[a-z]/.test(id)) {
+  if (/[a-z]/.test(input.value)) {
     if (inlineError) {
       inlineError.textContent = "Please enter the ID using capital letters.";
       inlineError.hidden = false;
@@ -321,6 +353,16 @@ async function handleVerification(form) {
     return;
   }
 
+  if (!/^\d{4}$/.test(mobileLast4)) {
+    if (inlineError) {
+      inlineError.textContent = "Please enter exactly the last 4 digits of your registered mobile number.";
+      inlineError.hidden = false;
+      inlineError.classList.add("show");
+    }
+    mobileInput.focus();
+    return;
+  }
+
   showVerificationProcessing(result);
   await new Promise(resolve => setTimeout(resolve, 3000));
 
@@ -333,16 +375,19 @@ async function handleVerification(form) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        p_student_id: id
+        p_student_id: id,
+        p_mobile_last4: mobileLast4
       })
     });
 
     if (!response.ok) throw new Error("Database request failed");
+
     const data = await response.json();
 
     if (!Array.isArray(data) || data.length === 0) {
       sessionStorage.removeItem("softgrowVerificationResult");
-      window.location.href = `verification-result.html?id=${encodeURIComponent(id)}&invalid=1`;
+      window.location.href =
+        `verification-result.html?id=${encodeURIComponent(id)}&invalid=1`;
       return;
     }
 
@@ -351,13 +396,19 @@ async function handleVerification(form) {
       student: data[0]
     }));
 
+    // Do not put the mobile digits in the URL.
     window.location.href = `verification-result.html?id=${encodeURIComponent(id)}`;
   } catch (error) {
     console.error("Verification error:", error);
     result.style.display = "block";
     result.style.background = "#fef2f2";
     result.style.border = "1px solid #fecaca";
-    result.innerHTML = `<div style="padding:30px 20px;text-align:center"><h2 style="margin:0 0 8px;color:#991b1b">Verification Service Unavailable</h2><p style="margin:0;color:#64748b">We are unable to connect to the verification service right now.</p><small style="display:block;margin-top:10px;color:#94a3b8">Please try again after a few moments.</small></div>`;
+    result.innerHTML = `
+      <div style="padding:30px 20px;text-align:center">
+        <h2 style="margin:0 0 8px;color:#991b1b">Verification Service Unavailable</h2>
+        <p style="margin:0;color:#64748b">We are unable to connect to the verification service right now.</p>
+        <small style="display:block;margin-top:10px;color:#94a3b8">Please try again after a few moments.</small>
+      </div>`;
   }
 }
 
@@ -379,6 +430,8 @@ function resetVerificationPageState() {
 
 function initVerificationPage() {
   document.querySelectorAll("[data-verify]").forEach(form => {
+    ensureMobileLast4Field(form);
+
     form.addEventListener("submit", event => {
       event.preventDefault();
       handleVerification(form);
@@ -420,7 +473,7 @@ function initResultPage() {
     return;
   }
 
-  // First choice: use the exact record already verified on the verification page.
+  // Use only the exact record authenticated on the verification page.
   let savedRecord = null;
   try {
     const raw = sessionStorage.getItem("softgrowVerificationResult");
@@ -447,59 +500,18 @@ function initResultPage() {
     return;
   }
 
-  // Fallback for direct opening/refresh: one database lookup, then render the
-  // same full result page. This prevents the result page from appearing blank.
+  // Security: never fetch a student record by ID alone on the result page.
+  // The verification page must first authenticate the ID + mobile last 4 digits
+  // and store the returned record in sessionStorage.
   root.innerHTML = `
-    <div class="result-shell">
-      <div class="result-header">
-        <div class="result-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div></div>
-        <div class="result-official"><span class="verified-shield" aria-hidden="true"><span>✓</span></span><div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div></div>
-      </div>
-      <div class="result-main result-loading">
-        <div class="result-spinner"></div>
-        <h2>Loading Verified Record</h2>
-        <p>Retrieving your official SoftGrowTech record...</p>
+    <div class="invalid-only-page">
+      <div class="invalid-result">
+        <div class="invalid-icon">!</div>
+        <h1>Verification Session Expired</h1>
+        <p>Please return to the official verification page and verify the Student / Letter ID with the last 4 digits of the registered mobile number.</p>
+        <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
       </div>
     </div>`;
-
-  fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_student`, {
-    method: "POST",
-    headers: {
-      "apikey": SUPABASE_PUBLISHABLE_KEY,
-      "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      p_student_id: id
-    })
-  })
-  .then(async response => {
-    if (!response.ok) throw new Error("Database request failed");
-    return response.json();
-  })
-  .then(data => {
-    if (!Array.isArray(data) || !data.length) {
-      renderInvalid();
-      return;
-    }
-    sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
-      type: "valid",
-      student: data[0]
-    }));
-    renderVerified(data[0]);
-  })
-  .catch(error => {
-    console.error("Result page verification error:", error);
-    root.innerHTML = `
-      <div class="invalid-only-page">
-        <div class="invalid-result">
-          <div class="invalid-icon">!</div>
-          <h1>Verification Service Unavailable</h1>
-          <p>We are unable to connect to the verification service right now.</p>
-          <a class="result-button" href="${backUrl}">Try Again <span>→</span></a>
-        </div>
-      </div>`;
-  });
 }
 
 
@@ -577,10 +589,13 @@ function renderVerified(student) {
       </div>
       <div class="result-main">
         <div class="verified-title"><div class="verified-icon">✓</div><div><h1>Document Record Verified</h1><p>The record associated with this Student / Letter ID is valid.</p></div></div>
+        <div class="mobile-last4-privacy-note" style="margin:0 0 16px;padding:10px 14px;border:1px solid #dbeafe;background:#eff6ff;border-radius:10px;color:#1e3a8a;font-size:12px">
+          Verification completed using the Student / Letter ID and the last 4 digits of the registered mobile number. Personal contact details are hidden on this public page.
+        </div>
         <div class="student-grid">
           <div><small>Student / Letter ID</small><strong>${escapeHtml(id)}</strong></div>
           <div><small>Student Name</small><strong>${escapeHtml(name)}</strong></div>
-          <div><small>Student Email</small><strong>${escapeHtml(email)}</strong></div>
+          <div><small>Student Email</small><strong>Hidden for privacy</strong></div>
           <div><small>Domain</small><strong>${escapeHtml(domain)}</strong></div>
           <div><small>Batch</small><strong>${escapeHtml(batch)}</strong></div>
         </div>
