@@ -325,15 +325,18 @@ async function handleVerification(form) {
   await new Promise(resolve => setTimeout(resolve, 3000));
 
   try {
-    const apiUrl = `${SUPABASE_URL}/rest/v1/Students?Student%20Id=eq.${encodeURIComponent(id)}&select=*`;
-    const response = await fetch(apiUrl, {
-      method:"GET",
-      headers:{
-        "apikey":SUPABASE_PUBLISHABLE_KEY,
-        "Authorization":`Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-        "Content-Type":"application/json"
-      }
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_student`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        p_student_id: id
+      })
     });
+
     if (!response.ok) throw new Error("Database request failed");
     const data = await response.json();
 
@@ -459,11 +462,16 @@ function initResultPage() {
       </div>
     </div>`;
 
-  fetch(`${SUPABASE_URL}/rest/v1/Students?Student%20Id=eq.${encodeURIComponent(id)}&select=*`, {
+  fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_student`, {
+    method: "POST",
     headers: {
       "apikey": SUPABASE_PUBLISHABLE_KEY,
-      "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
-    }
+      "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      p_student_id: id
+    })
   })
   .then(async response => {
     if (!response.ok) throw new Error("Database request failed");
