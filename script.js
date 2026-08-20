@@ -1,964 +1,895 @@
 // ============================================================
 // SOFTGROWTECH — FINAL WEBSITE SCRIPT
-// SUPABASE DOCUMENT VERIFICATION
 // ============================================================
 
-const SUPABASE_URL =
-  "https://syoqukavgvrdhwxatdav.supabase.co";
-
-const SUPABASE_PUBLISHABLE_KEY =
-  "sb_publishable_yUuacAdfZy3k-_Zve5QOZA_6eLh9FeZ";
-
-
-// ============================================================
-// GLOBAL HELPERS
-// ============================================================
-
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
+const SUPABASE_URL = "https://syoqukavgvrdhwxatdav.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_yUuacAdfZy3k-_Zve5QOZA_6eLh9FeZ";
 
 function escapeHtml(value) {
-  return String(value ?? "").replace(
-    /[&<>"']/g,
-    char => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    }[char])
-  );
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+  }[c]));
 }
-
 
 function formatDate(value) {
+  if (!value) return "Not Available";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString("en-GB", { day:"numeric", month:"long", year:"numeric" });
+}
 
-  if (!value) {
-    return "Not Available";
-  }
+function addVerificationStyles() {
+  if (document.getElementById("softgrowVerificationStyles")) return;
+  const style = document.createElement("style");
+  style.id = "softgrowVerificationStyles";
+  style.textContent = `
+    @keyframes softgrowSpin { to { transform:rotate(360deg); } }
+    @keyframes softgrowProgress { from { width:0%; } to { width:100%; } }
+    @keyframes softgrowFade { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    .softgrow-result-animate { animation:softgrowFade .45s ease both; }
+  `;
+  document.head.appendChild(style);
+}
 
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return escapeHtml(value);
-  }
-
-  return date.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric"
-  });
+function playPremiumClick() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(720, now);
+    osc.frequency.exponentialRampToValueAtTime(430, now + .055);
+    gain.gain.setValueAtTime(.0001, now);
+    gain.gain.exponentialRampToValueAtTime(.025, now + .006);
+    gain.gain.exponentialRampToValueAtTime(.0001, now + .065);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + .07);
+  } catch (_) {}
 }
 
 
-// ============================================================
-// VERIFICATION ANIMATIONS
-// ============================================================
+function initHomeReviewPopup() {
+  const popup = document.getElementById("reviewPopup");
+  if (!popup) return;
 
-function addVerificationAnimation() {
+  // Once the visitor closes the popup, do not show it again.
+  if (localStorage.getItem("softgrowHomeReviewClosed") === "1") return;
 
-  if (document.getElementById("softgrowVerificationStyles")) {
+  // These are separate from the Internship-page review cards.
+  // They use feedback from other reviewers visible in the supplied review
+  // screenshots, so the same internship-card feedback is not repeated here.
+  const reviews = [
+    {
+      name: "Pragavi Gajendran",
+      text: "The internship at SoftGrowTech was a valuable learning experience. It helped me gain practical knowledge beyond classroom concepts.",
+      variant: "blue"
+    },
+    {
+      name: "Sadiya Afreen",
+      text: "I had a good learning experience at SoftGrowTech. Working on projects helped me improve my programming and problem-solving skills.",
+      variant: "minimal"
+    },
+    {
+      name: "Roshani Kumari",
+      text: "I gained great knowledge and found the learning experience valuable.",
+      variant: "soft"
+    },
+    {
+      name: "Anchal Shukla",
+      text: "SoftGrowTech gave me a good opportunity to improve my skills.",
+      variant: "dark"
+    },
+    {
+      name: "Khushi Bhatnagar",
+      text: "It was a good experience. I enjoyed the project work and learning something new.",
+      variant: "blue"
+    }
+  ];
+
+  const textEl = document.getElementById("reviewPopupText");
+  const nameEl = document.getElementById("reviewPopupName");
+  const starsEl = document.getElementById("reviewPopupStars");
+  const labelEl = popup.querySelector(".review-popup-label");
+
+  let currentIndex = -1;
+  let showTimer = null;
+  let hideTimer = null;
+  let nextTimer = null;
+  let closed = false;
+
+  const clearTimers = () => {
+    if (showTimer) clearTimeout(showTimer);
+    if (hideTimer) clearTimeout(hideTimer);
+    if (nextTimer) clearTimeout(nextTimer);
+    showTimer = hideTimer = nextTimer = null;
+  };
+
+  const chooseNextReview = () => {
+    if (reviews.length <= 1) {
+      currentIndex = 0;
+      return reviews[0];
+    }
+
+    let nextIndex;
+    do {
+      nextIndex = Math.floor(Math.random() * reviews.length);
+    } while (nextIndex === currentIndex);
+
+    currentIndex = nextIndex;
+    return reviews[currentIndex];
+  };
+
+  const renderReview = () => {
+    const review = chooseNextReview();
+
+    if (textEl) textEl.textContent = review.text;
+    if (nameEl) nameEl.textContent = review.name;
+    if (starsEl) starsEl.textContent = "★★★★★";
+
+    popup.classList.remove("review-popup-blue", "review-popup-minimal", "review-popup-soft", "review-popup-dark");
+    popup.classList.add(`review-popup-${review.variant}`);
+
+    if (labelEl) labelEl.textContent = "Learner Feedback";
+  };
+
+  const hidePopup = () => {
+    if (closed) return;
+
+    popup.classList.remove("show");
+    popup.setAttribute("aria-hidden", "true");
+
+    // 5 seconds after disappearing, show another review.
+    nextTimer = setTimeout(() => {
+      if (!closed) showPopup();
+    }, 5000);
+  };
+
+  const showPopup = () => {
+    if (closed) return;
+
+    renderReview();
+    popup.classList.add("show");
+    popup.setAttribute("aria-hidden", "false");
+
+    // Keep each review visible for a comfortable 5 seconds.
+    hideTimer = setTimeout(hidePopup, 5000);
+  };
+
+  const close = () => {
+    closed = true;
+    clearTimers();
+    popup.classList.remove("show");
+    popup.setAttribute("aria-hidden", "true");
+    localStorage.setItem("softgrowHomeReviewClosed", "1");
+  };
+
+  const closeBtn = document.getElementById("reviewPopupClose");
+  if (closeBtn) closeBtn.addEventListener("click", close);
+
+  // First review appears only after the visitor has had time to read the page.
+  showTimer = setTimeout(showPopup, 10000);
+}
+
+function initCommonUI() {
+  document.body.classList.add("loaded");
+  addVerificationStyles();
+
+  const welcome = document.getElementById("welcomeScreen");
+  if (welcome) {
+    setTimeout(() => welcome.classList.add("hide"), 1600);
+    setTimeout(() => { if (welcome.parentNode) welcome.remove(); }, 2450);
+  }
+
+  const currentPage = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  document.querySelectorAll(".nav-links a").forEach(link => {
+    const href = (link.getAttribute("href") || "").split("#")[0].split("?")[0].toLowerCase();
+    if (!href || href.startsWith("http")) return;
+    if (href === currentPage) link.classList.add("active");
+    if (["web-development.html","data-analysis.html","artificial-intelligence.html","domains.html"].includes(currentPage) && href === "internships.html") link.classList.add("active");
+  });
+
+  const menuBtn = document.querySelector(".menu-btn");
+  const navLinks = document.getElementById("navLinks");
+  if (menuBtn && navLinks) {
+    menuBtn.addEventListener("click", () => navLinks.classList.toggle("open"));
+    navLinks.querySelectorAll("a").forEach(a => a.addEventListener("click", () => navLinks.classList.remove("open")));
+  }
+
+  const scrollTop = document.createElement("button");
+  scrollTop.type = "button";
+  scrollTop.className = "scroll-top";
+  scrollTop.setAttribute("aria-label", "Back to top");
+  scrollTop.title = "Back to top";
+  scrollTop.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5M6.5 10.5 12 5l5.5 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.body.appendChild(scrollTop);
+  const updateTop = () => scrollTop.classList.toggle("show", window.scrollY > 420);
+  window.addEventListener("scroll", updateTop, { passive:true });
+  updateTop();
+  scrollTop.addEventListener("click", () => window.scrollTo({ top:0, behavior:"smooth" }));
+
+  document.addEventListener("click", event => {
+    const target = event.target.closest(".btn, .nav-apply, .menu-btn, .domain-choice, .text-link, .footer-social, button");
+    if (target && !target.hasAttribute("data-no-click-sound")) playPremiumClick();
+  }, true);
+
+  document.querySelectorAll(".btn, .nav-apply, .text-link").forEach(el => {
+    el.addEventListener("click", () => {
+      el.classList.remove("clicked");
+      void el.offsetWidth;
+      el.classList.add("clicked");
+    });
+  });
+
+  if (currentPage === "index.html") initHomeReviewPopup();
+}
+
+function showVerificationProcessing(result) {
+  result.style.display = "block";
+  result.style.background = "#fff";
+  result.style.border = "1px solid #dbeafe";
+  result.innerHTML = `
+    <div style="text-align:center;padding:45px 20px">
+      <div style="width:64px;height:64px;margin:0 auto 20px;border:5px solid #dbeafe;border-top-color:#2563eb;border-radius:50%;animation:softgrowSpin 1s linear infinite"></div>
+      <h2 style="margin:0 0 8px;color:#0f172a;font-size:22px">Verifying Your Document</h2>
+      <p style="margin:0;color:#64748b;font-size:14px">Securely checking your official SoftGrowTech record...</p>
+      <div style="max-width:300px;height:5px;margin:22px auto 0;background:#e2e8f0;border-radius:20px;overflow:hidden"><div style="height:100%;width:0;background:#2563eb;border-radius:20px;animation:softgrowProgress 3s linear forwards"></div></div>
+      <small style="display:block;margin-top:12px;color:#94a3b8">Please wait...</small>
+    </div>`;
+}
+
+function showInvalidOnVerification(result, id) {
+  result.style.display = "block";
+  result.style.background = "#fff7f7";
+  result.style.border = "1px solid #fecaca";
+  result.innerHTML = `
+    <div style="padding:30px 20px;text-align:center">
+      <div style="width:56px;height:56px;margin:0 auto 14px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:27px;font-weight:800">!</div>
+      <h2 style="margin:0 0 8px;color:#991b1b;font-size:22px">Invalid Official ID</h2>
+      <p style="margin:0;color:#7f1d1d">The ID you entered could not be found in the official SoftGrowTech records.</p>
+      <small style="display:block;margin-top:10px;color:#64748b">Please check your Official ID and try again.</small>
+      <div style="margin-top:14px;color:#64748b;font-size:12px">Entered ID: <strong>${escapeHtml(id)}</strong></div>
+    </div>`;
+}
+
+async function handleVerification(form) {
+  const input = form.querySelector("input");
+  let result = form.querySelector(".verify-result") || form.parentElement.querySelector(".verify-result");
+  const inlineError = form.querySelector(".verify-inline-error");
+  if (!input) return;
+  if (!result) {
+    result = document.createElement("div");
+    result.className = "verify-result";
+    form.appendChild(result);
+  }
+
+  const id = input.value.trim();
+
+  // Keep format feedback beside the ID field. These checks happen BEFORE
+  // the verification animation/database request so malformed input never
+  // enters the official-ID verification flow.
+  if (inlineError) {
+    inlineError.hidden = true;
+    inlineError.textContent = "";
+    inlineError.classList.remove("show");
+  }
+  result.style.display = "none";
+  result.innerHTML = "";
+
+  // Lowercase SGT- / lowercase alphabet anywhere in an otherwise
+  // SGT-formatted ID gets a dedicated capital-letter message.
+  if (/^sgt-/i.test(id) && !/^SGT-/.test(id)) {
+    if (inlineError) {
+      inlineError.textContent = "Please enter the ID using capital letters.";
+      inlineError.hidden = false;
+      inlineError.classList.add("show");
+    }
+    input.focus();
     return;
   }
 
+  if (!/^SGT-/.test(id)) {
+    if (inlineError) {
+      inlineError.textContent = "Incorrect ID format. Please enter a valid official ID starting with SGT-.";
+      inlineError.hidden = false;
+      inlineError.classList.add("show");
+    }
+    input.focus();
+    return;
+  }
+
+  if (/[a-z]/.test(id)) {
+    if (inlineError) {
+      inlineError.textContent = "Please enter the ID using capital letters.";
+      inlineError.hidden = false;
+      inlineError.classList.add("show");
+    }
+    input.focus();
+    return;
+  }
+
+  if (id === "SGT-") {
+    if (inlineError) {
+      inlineError.textContent = "Please enter the complete official ID after SGT-.";
+      inlineError.hidden = false;
+      inlineError.classList.add("show");
+    }
+    input.focus();
+    return;
+  }
+
+  showVerificationProcessing(result);
+  await new Promise(resolve => setTimeout(resolve, 3000));
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_student`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        p_student_id: id
+      })
+    });
+
+    if (!response.ok) throw new Error("Database request failed");
+    const data = await response.json();
+
+    if (!Array.isArray(data) || data.length === 0) {
+      sessionStorage.removeItem("softgrowVerificationResult");
+      window.location.href = `verification-result.html?id=${encodeURIComponent(id)}&invalid=1`;
+      return;
+    }
+
+    sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
+      type: "valid",
+      student: data[0]
+    }));
+
+    window.location.href = `verification-result.html?id=${encodeURIComponent(id)}`;
+  } catch (error) {
+    console.error("Verification error:", error);
+    result.style.display = "block";
+    result.style.background = "#fef2f2";
+    result.style.border = "1px solid #fecaca";
+    result.innerHTML = `<div style="padding:30px 20px;text-align:center"><h2 style="margin:0 0 8px;color:#991b1b">Verification Service Unavailable</h2><p style="margin:0;color:#64748b">We are unable to connect to the verification service right now.</p><small style="display:block;margin-top:10px;color:#94a3b8">Please try again after a few moments.</small></div>`;
+  }
+}
+
+function resetVerificationPageState() {
+  document.querySelectorAll("[data-verify]").forEach(form => {
+    const result = form.querySelector(".verify-result");
+    const inlineError = form.querySelector(".verify-inline-error");
+    if (result) {
+      result.style.display = "none";
+      result.innerHTML = "";
+    }
+    if (inlineError) {
+      inlineError.hidden = true;
+      inlineError.textContent = "";
+      inlineError.classList.remove("show");
+    }
+  });
+}
+
+function initVerificationPage() {
+  document.querySelectorAll("[data-verify]").forEach(form => {
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      handleVerification(form);
+    });
+  });
+
+  // When the browser Back button restores this page from its bfcache,
+  // clear any old "Verifying Your Document" state so the form is fresh.
+  window.addEventListener("pageshow", resetVerificationPageState);
+  resetVerificationPageState();
+}
+
+function initResultPage() {
+  const root = document.getElementById("verificationResult");
+  if (!root) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id") || "";
+  const invalid = params.get("invalid") === "1";
+  const backUrl = "documents-verification.html";
+
+  const renderInvalid = () => {
+    root.innerHTML = `
+      <div class="invalid-only-page">
+        <div class="invalid-result">
+          <div class="invalid-icon">!</div>
+          <h1>Invalid Official ID</h1>
+          <p>The Student / Letter ID you entered could not be found in the official SoftGrowTech records.</p>
+          <small>Please check your Official ID and try again.</small>
+          ${id ? `<div class="entered-id">Entered ID: <strong>${escapeHtml(id)}</strong></div>` : ""}
+          <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
+        </div>
+      </div>`;
+  };
+
+  if (invalid) {
+    sessionStorage.removeItem("softgrowVerificationResult");
+    renderInvalid();
+    return;
+  }
+
+  // First choice: use the exact record already verified on the verification page.
+  let savedRecord = null;
+  try {
+    const raw = sessionStorage.getItem("softgrowVerificationResult");
+    savedRecord = raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    savedRecord = null;
+  }
+
+  if (savedRecord && savedRecord.type === "valid" && savedRecord.student) {
+    renderVerified(savedRecord.student);
+    return;
+  }
+
+  if (!id) {
+    root.innerHTML = `
+      <div class="invalid-only-page">
+        <div class="invalid-result">
+          <div class="invalid-icon">!</div>
+          <h1>Verification Session Expired</h1>
+          <p>Please return to the official verification page and verify the Student / Letter ID again.</p>
+          <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // Fallback for direct opening/refresh: one database lookup, then render the
+  // same full result page. This prevents the result page from appearing blank.
+  root.innerHTML = `
+    <div class="result-shell">
+      <div class="result-header">
+        <div class="result-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div></div>
+        <div class="result-official"><span class="verified-shield" aria-hidden="true"><span>✓</span></span><div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div></div>
+      </div>
+      <div class="result-main result-loading">
+        <div class="result-spinner"></div>
+        <h2>Loading Verified Record</h2>
+        <p>Retrieving your official SoftGrowTech record...</p>
+      </div>
+    </div>`;
+
+  fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_student`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_PUBLISHABLE_KEY,
+      "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      p_student_id: id
+    })
+  })
+  .then(async response => {
+    if (!response.ok) throw new Error("Database request failed");
+    return response.json();
+  })
+  .then(data => {
+    if (!Array.isArray(data) || !data.length) {
+      renderInvalid();
+      return;
+    }
+    sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
+      type: "valid",
+      student: data[0]
+    }));
+    renderVerified(data[0]);
+  })
+  .catch(error => {
+    console.error("Result page verification error:", error);
+    root.innerHTML = `
+      <div class="invalid-only-page">
+        <div class="invalid-result">
+          <div class="invalid-icon">!</div>
+          <h1>Verification Service Unavailable</h1>
+          <p>We are unable to connect to the verification service right now.</p>
+          <a class="result-button" href="${backUrl}">Try Again <span>→</span></a>
+        </div>
+      </div>`;
+  });
+}
+
+function renderVerified(student) {
+  ensureRecordFooterStyles();
+  ensureDownloadAndBadgeStyles();
+  const root = document.getElementById("verificationResult");
+  const backUrl = "documents-verification.html";
+  const id = student["Student Id"] || "Not Available";
+  const name = student["Name"] || "Not Available";
+  const email = student["Student Email"] || student["Email"] || student["email"] || student["Email Address"] || student["Email address"] || "Not Available";
+  const domain = student["Domain"] || "Not Available";
+  const batch = formatDate(student["Batch date"]);
+  const offer = String(student["Offer Letter"] || "Not Available");
+  const certificate = String(student["Certificate"] || "Not Available");
+  const status = String(student["Status"] || "Not Available").toUpperCase();
+
+  const completed = /COMPLETE|COMPLETED/.test(status);
+  const running = /RUNNING|ONGOING|ACTIVE/.test(status);
+  const notVerifiedStatus = /NOT\s*VERIFIED|NOT\s*ISSUED|INVALID|REJECTED/.test(status);
+  const offerVerified = /RECEIVED|VERIFIED|ISSUED/.test(offer.toUpperCase());
+  const certificateVerified = /RECEIVED|VERIFIED|ISSUED/.test(certificate.toUpperCase());
+
+  let mode = "running";
+  if (completed && certificateVerified) mode = "completed";
+  else if (completed) mode = "certificate-missing";
+  else if (notVerifiedStatus) mode = "certificate-missing";
+  else if (running) mode = "running";
+
+  let statusTitle = mode === "completed" ? "INTERNSHIP COMPLETED" : mode === "certificate-missing" ? "CERTIFICATE NOT VERIFIED" : "INTERNSHIP RUNNING";
+  let statusColor = mode === "completed" ? "#2563eb" : mode === "certificate-missing" ? "#d97706" : "#16a34a";
+  let statusBg = mode === "completed" ? "#eff6ff" : mode === "certificate-missing" ? "#fffbeb" : "#f0fdf4";
+  let overall = mode === "completed" ? "COMPLETE VERIFIED" : mode === "certificate-missing" ? "NOT VERIFIED" : "RUNNING";
+  let overallText = mode === "completed" ? "All required documents have been verified successfully." : mode === "certificate-missing" ? "Your internship is complete, but the certificate has not been verified." : "Your internship is currently in progress.";
+
+  const whatsapp = "https://wa.me/917839686310";
+  const certificateAction = `<a class="mini-action certificate-action" href="${whatsapp}" target="_blank" rel="noopener noreferrer">Get Your Certificate <span>→</span></a>`;
+  const helpAction = `<span class="help-inline">Need Help? Contact Us <a class="whatsapp-icon" href="${whatsapp}" target="_blank" rel="noopener noreferrer" aria-label="Contact SoftGrowTech on WhatsApp" title="WhatsApp">${waIcon()}</a></span>`;
+
+  let documentRows = `
+    <div class="doc-row"><div><strong>Offer Letter</strong><small>${escapeHtml(offerVerified ? "Offer letter has been issued." : offer)}</small></div><span class="badge green">✓ Received &amp; Verified</span></div>`;
+
+  if (mode === "running") {
+    documentRows += `<div class="doc-row"><div><strong>Certificate</strong><small>Certificate will be issued after successful completion of the internship.</small></div><span class="badge yellow">⌛ Coming Soon</span></div>`;
+  } else if (mode === "completed") {
+    documentRows += `<div class="doc-row"><div><strong>Certificate</strong><small>Certificate has been issued and verified.</small></div><span class="badge green">✓ Received &amp; Verified</span></div>`;
+  } else {
+    documentRows += `<div class="doc-row"><div><strong>Certificate</strong><small>Certificate has not been verified.</small></div><span class="badge red">✕ Not Verified</span></div>`;
+  }
+
+  let bottomMessage = "";
+  if (mode === "completed") {
+    bottomMessage = `<div class="congratulations"><div class="congrats-icon">✓</div><div><strong>Congratulations!</strong><p>Your internship has been successfully completed and all required documents have been verified.</p></div></div>`;
+  } else if (mode === "certificate-missing") {
+    bottomMessage = `<div class="certificate-help">${certificateAction}${helpAction}</div>`;
+  } else {
+    bottomMessage = `<div class="running-note"><strong>Note:</strong> Certificate will be issued after successful completion of the internship and evaluation.</div>`;
+  }
+
+  root.innerHTML = `
+    <div class="result-shell softgrow-result-animate">
+      <div class="result-header">
+        <div class="result-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div></div>
+        <div class="result-official"><span class="verified-shield" aria-hidden="true"><span>✓</span></span><div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div></div>
+      </div>
+      <div class="result-main">
+        <div class="verified-title"><div class="verified-icon">✓</div><div><h1>Document Record Verified</h1><p>The record associated with this Student / Letter ID is valid.</p></div></div>
+        <div class="student-grid">
+          <div><small>Student / Letter ID</small><strong>${escapeHtml(id)}</strong></div>
+          <div><small>Student Name</small><strong>${escapeHtml(name)}</strong></div>
+          <div><small>Student Email</small><strong>${escapeHtml(email)}</strong></div>
+          <div><small>Domain</small><strong>${escapeHtml(domain)}</strong></div>
+          <div><small>Batch</small><strong>${escapeHtml(batch)}</strong></div>
+        </div>
+        <section class="status-section" style="--status:${statusColor};--status-bg:${statusBg}">
+          <div class="status-label">1. ${escapeHtml(statusTitle)}</div>
+          <div class="status-content">
+            <div class="overall-circle"><div class="overall-check">${mode === "completed" ? "✓" : mode === "certificate-missing" ? "!" : "↻"}</div><small>Overall Status</small><strong>${escapeHtml(overall)}</strong><p>${escapeHtml(overallText)}</p></div>
+            <div class="document-status"><h2>Document Status</h2>${documentRows}</div>
+          </div>
+        </section>
+        ${bottomMessage}
+
+        <!-- Complete record footer: assurance + actions + copyright.
+             This stays INSIDE the downloadable result shell. -->
+        <footer class="record-footer" aria-label="Verification record footer">
+          <section class="verification-trust-strip" aria-label="Verification assurance">
+            <div class="trust-item">
+              <div class="trust-icon">✓</div>
+              <div><strong>100% Authentic</strong><span>All documents are verified and genuine.</span></div>
+            </div>
+            <div class="trust-item">
+              <div class="trust-icon">♙</div>
+              <div><strong>Secure Verification</strong><span>Your privacy and data are fully protected.</span></div>
+            </div>
+            <div class="trust-item">
+              <div class="trust-icon">✦</div>
+              <div><strong>Trusted by Thousands</strong><span>Thousands of students trust SoftGrowTech.</span></div>
+            </div>
+            <div class="trust-item">
+              <div class="trust-icon">◉</div>
+              <div><strong>Need Support?</strong><span>We're here to help you whenever you need.</span></div>
+            </div>
+          </section>
+
+          <div class="record-footer-actions">
+            <button class="result-button download-record" type="button" data-download-record>
+              Download Verification Record <span>⇩</span>
+            </button>
+            <a class="result-button verify-another" href="${backUrl}">
+              Verify Another Letter ID <span>→</span>
+            </a>
+          </div>
+
+          <p class="result-bottom-line">Verify another ID or need to apply for a new internship application.</p>
+          <div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div>
+        </footer>
+      </div>
+    </div>`;
+  bindVerificationResultActions();
+}
+
+
+function ensureDownloadAndBadgeStyles() {
+  if (document.getElementById("softgrow-download-badge-styles")) return;
   const style = document.createElement("style");
-
-  style.id = "softgrowVerificationStyles";
-
+  style.id = "softgrow-download-badge-styles";
   style.textContent = `
-
-    @keyframes softgrowSpin {
-      to {
-        transform: rotate(360deg);
-      }
+    .result-official .verified-shield{
+      width:42px;height:42px;min-width:42px;
+      display:inline-flex;align-items:center;justify-content:center;
+      position:relative;
+      border:2px solid #2563eb;
+      border-radius:12px 12px 16px 16px;
+      background:linear-gradient(180deg,#eff6ff,#dbeafe);
+      box-shadow:0 4px 10px rgba(37,99,235,.16);
+      clip-path:polygon(50% 0%, 92% 17%, 88% 66%, 72% 86%, 50% 100%, 28% 86%, 12% 66%, 8% 17%);
     }
-
-    @keyframes softgrowProgress {
-      from {
-        width: 0%;
-      }
-
-      to {
-        width: 100%;
-      }
+    .result-official .verified-shield::before{
+      content:"";
+      position:absolute;inset:4px;
+      border:1px solid rgba(37,99,235,.25);
+      border-radius:9px 9px 12px 12px;
+      clip-path:polygon(50% 0%, 92% 17%, 88% 66%, 72% 86%, 50% 100%, 28% 86%, 12% 66%, 8% 17%);
     }
-
-    @keyframes softgrowFadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(18px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .result-official .verified-shield > span{
+      position:relative;z-index:1;
+      color:#2563eb;font-weight:900;font-size:20px;line-height:1;
     }
-
-    @keyframes softgrowPop {
-      0% {
-        opacity: 0;
-        transform: scale(.75);
-      }
-
-      70% {
-        transform: scale(1.08);
-      }
-
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
+    .pdf-capture-root{
+      width:100% !important;
+      max-width:none !important;
+      min-width:0 !important;
+      box-sizing:border-box !important;
+      overflow:visible !important;
+      transform:none !important;
     }
-
-    .softgrow-verification-page {
-      animation: softgrowFadeUp .5s ease both;
+    .pdf-capture-root .record-footer{
+      break-inside:avoid;
     }
-
-    .softgrow-check-icon {
-      animation: softgrowPop .55s ease both;
+    .pdf-capture-hide{
+      display:none !important;
     }
-
-    .softgrow-status-card {
-      transition:
-        transform .25s ease,
-        box-shadow .25s ease;
-    }
-
-    .softgrow-status-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 22px rgba(15,23,42,.08);
-    }
-
-    .softgrow-back-button {
-      transition:
-        transform .2s ease,
-        box-shadow .2s ease,
-        background .2s ease;
-    }
-
-    .softgrow-back-button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(37,99,235,.20);
-    }
-
-    @media (max-width: 700px) {
-
-      .softgrow-verification-page {
-        border-radius: 12px !important;
-      }
-
-      .softgrow-info-grid {
-        grid-template-columns: 1fr !important;
-      }
-
-      .softgrow-document-row {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-      }
-
-      .softgrow-document-badge {
-        align-self: flex-start !important;
-      }
-
-      .softgrow-header {
-        padding: 18px !important;
-      }
-
-      .softgrow-main {
-        padding: 18px !important;
-      }
-
-    }
-
   `;
+  document.head.appendChild(style);
+}
 
+function ensureRecordFooterStyles() {
+  if (document.getElementById("softgrow-record-footer-styles")) return;
+  const style = document.createElement("style");
+  style.id = "softgrow-record-footer-styles";
+  style.textContent = `
+    .record-footer{
+      margin-top:22px;
+      width:100%;
+      background:#fff;
+      border-top:1px solid #dbe7f5;
+      padding-top:14px;
+    }
+    .record-footer .verification-trust-strip{
+      width:100%;
+      margin:0;
+      box-sizing:border-box;
+      padding:18px 20px;
+      background:#f8fbff;
+      border:1px solid #dbe7f5;
+      border-radius:14px;
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:14px;
+      box-shadow:0 8px 24px rgba(15,23,42,.06);
+    }
+    .record-footer .trust-item{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-width:0;
+    }
+    .record-footer .trust-icon{
+      width:40px;height:40px;min-width:40px;border-radius:50%;
+      background:#eaf2ff;color:#2563eb;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:800;font-size:18px;
+    }
+    .record-footer .trust-item strong{
+      display:block;font-size:12px;color:#0f172a;
+    }
+    .record-footer .trust-item span{
+      display:block;font-size:10px;color:#64748b;line-height:1.35;margin-top:3px;
+    }
+    .record-footer-actions{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:14px;
+      flex-wrap:wrap;
+      padding:18px 10px 8px;
+    }
+    .record-footer-actions .result-button{
+      min-width:260px;
+    }
+    .record-footer .result-bottom-line{
+      margin:2px 0 12px;
+      text-align:center;
+    }
+    .record-footer .verification-copyright{
+      width:100%;
+      box-sizing:border-box;
+      margin:0;
+      background:#061a33;
+      color:#fff;
+      text-align:center;
+      padding:15px 10px;
+      font-size:11px;
+      border-radius:0 0 10px 10px;
+      box-shadow:0 8px 20px rgba(6,26,51,.12);
+    }
+    @media(max-width:760px){
+      .record-footer .verification-trust-strip{grid-template-columns:1fr 1fr;padding:14px}
+      .record-footer-actions{flex-direction:column}
+      .record-footer-actions .result-button{width:100%;max-width:360px;min-width:0}
+    }
+  `;
   document.head.appendChild(style);
 }
 
 
-// ============================================================
-// SHOW GENERIC RESULT
-// ============================================================
-
-function showResult(result, type, html) {
-
-  if (!result) {
-    return;
-  }
-
-  result.style.display = "block";
-
-  result.innerHTML = html;
-
-  if (type === "error") {
-
-    result.style.background = "#fff7f7";
-    result.style.border = "1px solid #fecaca";
-    result.style.color = "#991b1b";
-
-  } else {
-
-    result.style.background = "#ffffff";
-    result.style.border = "1px solid #e2e8f0";
-    result.style.color = "#0f172a";
-
-  }
-
+function renderVerificationTrust() {
+  // Trust/support content is now rendered inside .record-footer so the
+  // complete record is part of the downloadable verification shell.
+  const trust = document.getElementById("verificationTrust");
+  if (trust) trust.innerHTML = "";
 }
 
+function downloadVerificationRecord() {
+  const shell = document.querySelector("#verificationResult .result-shell");
+  if (!shell) return;
 
-// ============================================================
-// DOCUMENT READY
-// ============================================================
-
-document.addEventListener("DOMContentLoaded", () => {
-
-  // ==========================================================
-  // PAGE LOADED
-  // ==========================================================
-
-  document.body.classList.add("loaded");
-
-
-  // ==========================================================
-  // WELCOME SCREEN
-  // ==========================================================
-
-  const welcome =
-    document.getElementById("welcomeScreen");
-
-  if (welcome) {
-
-    setTimeout(() => {
-      welcome.classList.add("hide");
-    }, 1600);
-
-    setTimeout(() => {
-
-      if (welcome && welcome.parentNode) {
-        welcome.remove();
-      }
-
-    }, 2450);
-
+  const original = document.querySelector("[data-download-record]");
+  if (original) {
+    original.disabled = true;
+    original.innerHTML = "Preparing Record…";
   }
 
-
-  // ==========================================================
-  // VERIFICATION CSS
-  // ==========================================================
-
-  addVerificationAnimation();
-
-
-  // ==========================================================
-  // SCROLL TO TOP BUTTON
-  // ==========================================================
-
-  const scrollTop =
-    document.createElement("button");
-
-  scrollTop.type = "button";
-  scrollTop.className = "scroll-top";
-  scrollTop.setAttribute(
-    "aria-label",
-    "Back to top"
-  );
-  scrollTop.title = "Back to top";
-
-  scrollTop.innerHTML = `
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-    >
-      <path
-        d="M12 19V5M6.5 10.5 12 5l5.5 5.5"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    </svg>
-  `;
-
-  document.body.appendChild(scrollTop);
-
-
-  function updateScrollTop() {
-
-    scrollTop.classList.toggle(
-      "show",
-      window.scrollY > 420
-    );
-
-  }
-
-
-  window.addEventListener(
-    "scroll",
-    updateScrollTop,
-    { passive: true }
-  );
-
-  updateScrollTop();
-
-
-  scrollTop.addEventListener(
-    "click",
-    () => {
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-
+  const restoreButton = () => {
+    if (original) {
+      original.disabled = false;
+      original.innerHTML = 'Download Verification Record <span>⇩</span>';
     }
-  );
-
-
-  // ==========================================================
-  // PREMIUM CLICK SOUND
-  // ==========================================================
-
-  let audioContext = null;
-
-
-  function playClickSound() {
-
-    try {
-
-      const AudioContext =
-        window.AudioContext ||
-        window.webkitAudioContext;
-
-      if (!AudioContext) {
-        return;
-      }
-
-      audioContext =
-        audioContext ||
-        new AudioContext();
-
-
-      if (
-        audioContext.state === "suspended"
-      ) {
-
-        audioContext.resume();
-
-      }
-
-
-      const now =
-        audioContext.currentTime;
-
-
-      const oscillator =
-        audioContext.createOscillator();
-
-
-      const gain =
-        audioContext.createGain();
-
-
-      oscillator.type = "sine";
-
-
-      oscillator.frequency.setValueAtTime(
-        720,
-        now
-      );
-
-
-      oscillator.frequency.exponentialRampToValueAtTime(
-        430,
-        now + 0.055
-      );
-
-
-      gain.gain.setValueAtTime(
-        0.0001,
-        now
-      );
-
-
-      gain.gain.exponentialRampToValueAtTime(
-        0.025,
-        now + 0.006
-      );
-
-
-      gain.gain.exponentialRampToValueAtTime(
-        0.0001,
-        now + 0.065
-      );
-
-
-      oscillator.connect(gain);
-      gain.connect(
-        audioContext.destination
-      );
-
-
-      oscillator.start(now);
-      oscillator.stop(now + 0.07);
-
-    } catch (error) {
-
-      // Sound is optional.
-
-    }
-
-  }
-
-
-  document.addEventListener(
-    "click",
-    event => {
-
-      const target =
-        event.target.closest(
-          ".btn, .nav-apply, .menu-btn, .domain-choice, .text-link, .footer-social, button"
-        );
-
-
-      if (
-        target &&
-        !target.hasAttribute(
-          "data-no-click-sound"
-        )
-      ) {
-
-        playClickSound();
-
-      }
-
-    },
-    true
-  );
-
-
-  // ==========================================================
-  // ACTIVE NAVIGATION
-  // ==========================================================
-
-  const currentPage =
-    (
-      window.location.pathname
-        .split("/")
-        .pop() || "index.html"
-    ).toLowerCase();
-
-
-  document
-    .querySelectorAll(".nav-links a")
-    .forEach(link => {
-
-      const href =
-        (
-          link.getAttribute("href") || ""
-        )
-          .split("#")[0]
-          .split("?")[0]
-          .toLowerCase();
-
-
-      if (
-        !href ||
-        href.startsWith("http")
-      ) {
-        return;
-      }
-
-
-      if (href === currentPage) {
-
-        link.classList.add("active");
-
-      }
-
-
-      if (
-        [
-          "web-development.html",
-          "data-analysis.html",
-          "artificial-intelligence.html",
-          "domains.html"
-        ].includes(currentPage) &&
-        href === "internships.html"
-      ) {
-
-        link.classList.add("active");
-
-      }
-
-    });
-
-
-  // ==========================================================
-  // MOBILE MENU
-  // ==========================================================
-
-  const menuBtn =
-    document.querySelector(".menu-btn");
-
-
-  const navLinks =
-    document.getElementById("navLinks");
-
-
-  if (
-    menuBtn &&
-    navLinks
-  ) {
-
-    menuBtn.addEventListener(
-      "click",
-      () => {
-
-        navLinks.classList.toggle("open");
-
-      }
-    );
-
-
-    navLinks
-      .querySelectorAll("a")
-      .forEach(link => {
-
-        link.addEventListener(
-          "click",
-          () => {
-
-            navLinks.classList.remove("open");
-
-          }
-        );
-
-      });
-
-  }
-
-
-  // ==========================================================
-  // DOCUMENT VERIFICATION
-  // ==========================================================
-
-  document
-    .querySelectorAll("[data-verify]")
-    .forEach(form => {
-
-      form.addEventListener("submit", async event => {
-        event.preventDefault();
-
-        const input = form.querySelector("input");
-        const result = form.querySelector(".verify-result");
-
-        if (!input || !result) return;
-
-        const id = input.value.trim();
-
-        if (!id) {
-          showResult(result, "error", `
-            <div style="padding:38px 20px;text-align:center">
-              <div style="width:62px;height:62px;margin:0 auto 17px;border-radius:50%;background:#fee2e2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:29px;font-weight:800">!</div>
-              <h2 style="margin:0 0 10px;color:#991b1b;font-size:23px">Invalid Official ID</h2>
-              <p style="margin:0;color:#7f1d1d;font-size:15px">Please enter your Student / Letter ID and try again.</p>
-            </div>
-          `);
-          return;
-        }
-
-        // Keep the verification form clean while the secure check runs.
-        result.style.display = "block";
-        result.style.background = "#fff";
-        result.style.border = "1px solid #dbeafe";
-        result.style.padding = "0";
-        result.innerHTML = `
-          <div style="text-align:center;padding:48px 20px">
-            <div style="width:68px;height:68px;margin:0 auto 22px;border:5px solid #dbeafe;border-top-color:#2563eb;border-radius:50%;animation:softgrowSpin 1s linear infinite"></div>
-            <h2 style="margin:0 0 9px;color:#0f172a;font-size:22px">Verifying Your Document</h2>
-            <p style="margin:0;color:#64748b;font-size:14px">Securely checking your official SoftGrowTech record...</p>
-            <div style="max-width:320px;height:6px;margin:24px auto 0;background:#e2e8f0;border-radius:20px;overflow:hidden">
-              <div style="width:0;height:100%;background:#2563eb;border-radius:20px;animation:softgrowProgress 3s linear forwards"></div>
-            </div>
-            <div style="margin-top:12px;color:#94a3b8;font-size:13px">Authenticating official record...</div>
-          </div>
-        `;
-
-        await delay(3000);
-
-        try {
-          const apiUrl =
-            `${SUPABASE_URL}/rest/v1/Students` +
-            `?Student%20Id=eq.${encodeURIComponent(id)}` +
-            `&select=*`;
-
-          const response = await fetch(apiUrl, {
-            method: "GET",
-            headers: {
-              "apikey": SUPABASE_PUBLISHABLE_KEY,
-              "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-              "Content-Type": "application/json"
-            }
-          });
-
-          if (!response.ok) {
-            console.error("Supabase error:", response.status, await response.text());
-            throw new Error("Supabase request failed");
-          }
-
-          const data = await response.json();
-
-          // Always move the verification outcome to the dedicated result page.
-          if (!Array.isArray(data) || data.length === 0) {
-            sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
-              type: "invalid",
-              id
-            }));
-            window.location.href = "verification-result.html";
-            return;
-          }
-
-          const student = data[0];
-
-          const record = {
-            type: "valid",
-            studentId: student["Student Id"] || id,
-            name: student["Name"] || "Not Available",
-            domain: student["Domain"] || "Not Available",
-            batchDate: formatDate(student["Batch date"]),
-            offerLetter: student["Offer Letter"] || "Not Available",
-            certificate: student["Certificate"] || "Not Available",
-            status: student["Status"] || "Not Available"
-          };
-
-          sessionStorage.setItem("softgrowVerificationResult", JSON.stringify(record));
-          window.location.href = "verification-result.html";
-
-        } catch (error) {
-          console.error("Verification error:", error);
-          sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
-            type: "service-error"
-          }));
-          window.location.href = "verification-result.html";
-        }
-      });
-    });
-
-  // ==========================================================
-  // BUTTON CLICK ANIMATION
-  // ==========================================================
-
-  document
-    .querySelectorAll(
-      ".btn, .nav-apply, .text-link, button"
-    )
-    .forEach(button => {
-
-      button.addEventListener(
-        "click",
-        () => {
-
-          button.classList.remove(
-            "clicked"
-          );
-
-          void button.offsetWidth;
-
-          button.classList.add(
-            "clicked"
-          );
-
-        }
-      );
-
-    });
-
-});
-
-
-// ============================================================
-// DEDICATED VERIFICATION RESULT PAGE
-// ============================================================
-
-function verificationStatusFlags(record) {
-  const status = String(record.status || "").toUpperCase();
-  const offer = String(record.offerLetter || "").toLowerCase();
-  const certificate = String(record.certificate || "").toLowerCase();
-
-  const completed = /complete|completed|finish|finished/.test(status);
-  const running = /running|ongoing|active|progress/.test(status);
-  const notVerifiedStatus = /not\s*verified|not\s*issued|invalid|rejected/.test(status);
-  const offerVerified = /received|verified|issued/.test(offer);
-  const certificateVerified = /received|verified|issued/.test(certificate);
-  const certificateMissing = /not issued|not verified|coming soon|pending|not available|not received/.test(certificate);
-
-  return {
-    completed,
-    running,
-    notVerifiedStatus,
-    offerVerified,
-    certificateVerified,
-    certificateMissing
   };
-}
 
-function renderVerificationResultPage() {
-  const mount = document.getElementById("verificationResultPage");
-  if (!mount) return;
+  const loadScript = (src) => new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing) {
+      if (window.html2canvas && window.jspdf) {
+        resolve();
+        return;
+      }
+      existing.addEventListener("load", resolve, { once: true });
+      existing.addEventListener("error", reject, { once: true });
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
 
-  const raw = sessionStorage.getItem("softgrowVerificationResult");
-  let record = null;
-
-  try {
-    record = raw ? JSON.parse(raw) : null;
-  } catch (_) {
-    record = null;
-  }
-
-  // No verification result in this browser session.
-  if (!record) {
-    mount.innerHTML = invalidVerificationMarkup(
-      "No verification request was found. Please start a new verification."
+  Promise.all([
+    loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
+    loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
+  ]).then(async () => {
+    // Capture the LIVE rendered record instead of cloning it.
+    // The live DOM already has the correct desktop/mobile layout, fonts,
+    // widths and positioning. Cloning was the reason some elements drifted.
+    const hideTargets = shell.querySelectorAll(
+      ".download-record, .verify-another, .result-bottom-line"
     );
-    return;
-  }
+    hideTargets.forEach(el => el.classList.add("pdf-capture-hide"));
+    shell.classList.add("pdf-capture-root");
 
-  if (record.type === "invalid") {
-    mount.innerHTML = invalidVerificationMarkup(
-      "The Student / Letter ID you entered could not be found in the official SoftGrowTech records.",
-      record.id
-    );
-    return;
-  }
+    // Let the browser finish layout/paint before taking the snapshot.
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(resolve);
+    }));
 
-  if (record.type === "service-error") {
-    mount.innerHTML = `
-      <section class="result-shell result-error-shell">
-        <div class="result-error-icon">!</div>
-        <h1>Verification Service Unavailable</h1>
-        <p>We are unable to connect to the official verification service right now.</p>
-        <button class="result-primary-btn" type="button" data-verify-another>Verify Another Letter ID <span>→</span></button>
-      </section>
-    `;
-    bindAnotherIdButton();
-    return;
-  }
-
-  mount.innerHTML = validVerificationMarkup(record);
-  bindAnotherIdButton();
-}
-
-function invalidVerificationMarkup(message, enteredId = "") {
-  return `
-    <section class="result-shell result-invalid-shell">
-      <div class="result-invalid-icon">!</div>
-      <h1>Invalid Official ID</h1>
-      <p>${escapeHtml(message)}</p>
-      ${enteredId ? `<div class="entered-id">Entered ID: <strong>${escapeHtml(enteredId)}</strong></div>` : ""}
-      <button class="result-primary-btn" type="button" data-verify-another>Verify Another Letter ID <span>→</span></button>
-    </section>
-  `;
-}
-
-function validVerificationMarkup(record) {
-  const flags = verificationStatusFlags(record);
-
-  // The completed state with both documents verified is the fully verified result.
-  const completedVerified = flags.completed && flags.offerVerified && flags.certificateVerified;
-  const completedWithoutCertificate = flags.completed && !flags.certificateVerified;
-  const notVerified = flags.notVerifiedStatus || (!flags.completed && !flags.running);
-
-  let section = "";
-
-  if (completedVerified) {
-    section = `
-      <section class="result-status-card completed-card">
-        <div class="status-ribbon blue-ribbon">2. INTERNSHIP COMPLETED (Certificate Received)</div>
-        <div class="status-grid">
-          <div class="overall-circle blue-circle">
-            <div class="overall-icon">✓</div>
-            <span>Overall Status</span>
-            <strong>COMPLETE<br>VERIFIED</strong>
-            <small>All documents are verified successfully.</small>
-          </div>
-          <div class="document-area">
-            <h2>Document Status</h2>
-            ${documentRow("offer", "Offer Letter", "Offer letter has been issued.", "✓ Received & Verified", "verified")}
-            ${documentRow("certificate", "Certificate", "Certificate has been issued.", "✓ Received & Verified", "verified")}
-          </div>
-        </div>
-        <div class="congratulations-box">
-          <div class="congrats-icon">✓</div>
-          <div>
-            <strong>Congratulations!</strong>
-            <p>Your internship has been successfully completed and all required documents have been verified.</p>
-          </div>
-        </div>
-      </section>
-    `;
-  } else if (completedWithoutCertificate) {
-    section = `
-      <section class="result-status-card not-issued-card">
-        <div class="status-ribbon orange-ribbon">3. CERTIFICATE NOT ISSUED</div>
-        <div class="status-grid">
-          <div class="overall-circle orange-circle">
-            <div class="overall-icon">!</div>
-            <span>Overall Status</span>
-            <strong>NOT<br>VERIFIED</strong>
-            <small>Your certificate has not been issued yet.</small>
-          </div>
-          <div class="document-area">
-            <h2>Document Status</h2>
-            ${documentRow("offer", "Offer Letter", "Offer letter has been issued.", "✓ Received & Verified", "verified")}
-            ${documentRow("certificate", "Certificate", "Certificate has not been issued yet.", "× Not Verified", "not-verified", true)}
-          </div>
-        </div>
-        <div class="help-strip">
-          <div class="help-contact">Need Help? Contact Us <a class="whatsapp-icon" href="https://wa.me/917839686310" target="_blank" rel="noopener noreferrer" aria-label="Contact SoftGrowTech on WhatsApp" title="Contact SoftGrowTech on WhatsApp">${whatsappSvg()}</a></div>
-        </div>
-      </section>
-    `;
-  } else if (notVerified) {
-    section = `
-      <section class="result-status-card not-issued-card">
-        <div class="status-ribbon orange-ribbon">3. CERTIFICATE NOT ISSUED</div>
-        <div class="status-grid">
-          <div class="overall-circle orange-circle">
-            <div class="overall-icon">!</div>
-            <span>Overall Status</span>
-            <strong>NOT<br>VERIFIED</strong>
-            <small>Your certificate has not been issued yet.</small>
-          </div>
-          <div class="document-area">
-            <h2>Document Status</h2>
-            ${documentRow("offer", "Offer Letter", "Offer letter has been issued.", "✓ Received & Verified", "verified")}
-            ${documentRow("certificate", "Certificate", "Certificate has not been issued yet.", "× Not Verified", "not-verified", true)}
-          </div>
-        </div>
-        <div class="help-strip">
-          <div class="help-contact">Need Help? Contact Us <a class="whatsapp-icon" href="https://wa.me/917839686310" target="_blank" rel="noopener noreferrer" aria-label="Contact SoftGrowTech on WhatsApp" title="Contact SoftGrowTech on WhatsApp">${whatsappSvg()}</a></div>
-        </div>
-      </section>
-    `;
-  } else {
-    section = `
-      <section class="result-status-card running-card">
-        <div class="status-ribbon green-ribbon">1. INTERNSHIP RUNNING (Certificate Coming Soon)</div>
-        <div class="status-grid">
-          <div class="overall-circle green-circle">
-            <div class="overall-icon">↻</div>
-            <span>Overall Status</span>
-            <strong>RUNNING</strong>
-            <small>Your internship is currently in progress.</small>
-          </div>
-          <div class="document-area">
-            <h2>Document Status</h2>
-            ${documentRow("offer", "Offer Letter", "Offer letter has been issued.", "✓ Received & Verified", "verified")}
-            ${documentRow("certificate", "Certificate", "Certificate will be issued after successful completion of the internship.", "⌛ Coming Soon", "coming")}
-          </div>
-        </div>
-        <div class="note-strip"><strong>● Note:</strong> Certificate will be issued after successful completion of the internship and evaluation.</div>
-      </section>
-    `;
-  }
-
-  return `
-    <div class="result-page-card">
-      <header class="result-header">
-        <div class="result-brand">
-          <img src="assets/softgrowtech-logo.png" alt="SoftGrowTech logo">
-          <div>
-            <div class="brand-name">SoftGrowTech</div>
-            <div class="brand-tagline">Learn • Build • Evolve</div>
-          </div>
-        </div>
-        <div class="official-badge">
-          <div class="shield-icon">✓</div>
-          <div>
-            <strong>Official Verification</strong>
-            <span>100% Trusted &amp; Secure</span>
-          </div>
-        </div>
-      </header>
-
-      <main class="result-main">
-        <div class="verified-heading">
-          <div class="verified-check">✓</div>
-          <h1>Document Record Verified</h1>
-          <p>The record associated with this Student / Letter ID is valid.</p>
-        </div>
-
-        <section class="student-record">
-          <div class="record-item record-id">
-            <div class="record-icon person-icon">${personSvg()}</div>
-            <div><span>Student / Letter ID</span><strong>${escapeHtml(record.studentId)}</strong></div>
-          </div>
-          <div class="record-item"><span>Student Name</span><strong>${escapeHtml(record.name)}</strong></div>
-          <div class="record-item"><span>Domain</span><strong>${escapeHtml(record.domain)}</strong></div>
-          <div class="record-item"><span>Batch</span><strong>${escapeHtml(record.batchDate)}</strong></div>
-        </section>
-
-        ${section}
-
-        <div class="result-actions">
-          <button class="result-primary-btn" type="button" data-verify-another>Verify Another Letter ID <span>→</span></button>
-          <p>Verify another ID or need to apply for a new internship application.</p>
-        </div>
-      </main>
-    </div>
-  `;
-}
-
-function documentRow(icon, title, description, badge, badgeClass, certificateAction = false) {
-  return `
-    <div class="document-row">
-      <div class="document-left">
-        <div class="document-icon ${icon}-doc">${icon === "offer" ? documentSvg() : certificateSvg()}</div>
-        <div>
-          <strong>${title}</strong>
-          <span>${description}</span>
-          ${certificateAction ? `<a class="certificate-mini-link" href="https://wa.me/917839686310?text=Hello%20SoftGrowTech%2C%20I%20would%20like%20to%20get%20my%20internship%20certificate." target="_blank" rel="noopener noreferrer">Get Your Certificate <span>→</span></a>` : ""}
-        </div>
-      </div>
-      <span class="document-badge ${badgeClass}">${badge}</span>
-    </div>
-  `;
-}
-
-function bindAnotherIdButton() {
-  document.querySelectorAll("[data-verify-another]").forEach(button => {
-    button.addEventListener("click", () => {
-      sessionStorage.removeItem("softgrowVerificationResult");
-      window.location.href = "documents-verification.html";
+    const rect = shell.getBoundingClientRect();
+    const canvas = await window.html2canvas(shell, {
+      scale: Math.max(2, Math.min(3, window.devicePixelRatio || 2)),
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: "#ffffff",
+      logging: false,
+      width: Math.ceil(rect.width),
+      height: Math.ceil(shell.scrollHeight),
+      windowWidth: Math.max(document.documentElement.clientWidth, Math.ceil(rect.right)),
+      windowHeight: Math.max(window.innerHeight, Math.ceil(shell.scrollHeight))
     });
+
+    hideTargets.forEach(el => el.classList.remove("pdf-capture-hide"));
+    shell.classList.remove("pdf-capture-root");
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const margin = 6;
+    const imageWidth = pageWidth - margin * 2;
+    const pxPerMm = canvas.width / imageWidth;
+    const maxSlicePx = Math.floor((pageHeight - margin * 2) * pxPerMm);
+
+    let sourceY = 0;
+    let firstPage = true;
+
+    while (sourceY < canvas.height) {
+      const slicePx = Math.min(maxSlicePx, canvas.height - sourceY);
+
+      const slice = document.createElement("canvas");
+      slice.width = canvas.width;
+      slice.height = slicePx;
+
+      const ctx = slice.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, slice.width, slice.height);
+      ctx.drawImage(
+        canvas,
+        0, sourceY, canvas.width, slicePx,
+        0, 0, canvas.width, slicePx
+      );
+
+      if (!firstPage) pdf.addPage();
+      firstPage = false;
+
+      pdf.addImage(
+        slice.toDataURL("image/png"),
+        "PNG",
+        margin,
+        margin,
+        imageWidth,
+        slicePx / pxPerMm,
+        undefined,
+        "FAST"
+      );
+
+      sourceY += slicePx;
+    }
+
+    pdf.save(`SoftGrowTech-Verification-Record-${Date.now()}.pdf`);
+    restoreButton();
+  }).catch(error => {
+    console.error("Verification record download failed:", error);
+    restoreButton();
+    // Keep the existing record page available if a PDF library fails.
+    window.print();
   });
 }
-
-function personSvg() {
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.2"></circle><path d="M5.5 20c.5-3.4 2.8-5.2 6.5-5.2s6 1.8 6.5 5.2"></path></svg>`;
+function bindVerificationResultActions() {
+  const downloadButton = document.querySelector("[data-download-record]");
+  if (downloadButton) {
+    downloadButton.addEventListener("click", downloadVerificationRecord);
+  }
 }
 
-function documentSvg() {
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h7l4 4V20.5H7z"></path><path d="M14 3.5v4h4M9.5 12h5M9.5 15.5h5"></path></svg>`;
+function waIcon() {
+  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 11.5a8.2 8.2 0 0 1-12.1 7.1L4 20l1.4-4A8.2 8.2 0 1 1 20.2 11.5Z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M9.2 8.2c.2-.4.4-.4.7-.4h.5c.2 0 .4.1.5.4l.7 1.6c.1.3.1.5-.1.7l-.5.6c.5 1 1.3 1.8 2.3 2.3l.6-.5c.2-.2.4-.2.7-.1l1.6.7c.3.1.4.3.4.5v.5c0 .3 0 .5-.4.7-.5.3-1.1.4-1.7.2-1.2-.3-2.5-1.1-3.6-2.1-1.1-1-1.8-2.3-2.1-3.6-.2-.6-.1-1.2.2-1.7Z" fill="currentColor"/></svg>`;
 }
 
-function certificateSvg() {
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10v12.2H7z"></path><path d="M10 7h4M10 10h4M10.5 15.7 9 21l3-1.7 3 1.7-1.5-5.3"></path></svg>`;
-}
-
-function whatsappSvg() {
-  return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 11.5a8.2 8.2 0 0 1-12.1 7.1L4 20l1.4-4A8.2 8.2 0 1 1 20.2 11.5Z"></path><path d="M9.2 8.2c.2-.4.4-.4.7-.4h.5c.2 0 .4.1.5.4l.7 1.6c.1.3.1.5-.1.7l-.5.6c.5 1 1.3 1.8 2.3 2.3l.6-.5c.2-.2.4-.2.7-.1l1.6.7c.3.1.4.3.4.5v.5c0 .3 0 .5-.4.7-.5.3-1.1.4-1.7.2-1.2-.3-2.5-1.1-3.6-2.1-1.1-1-1.8-2.3-2.1-3.6-.2-.6-.1-1.2.2-1.7Z"></path></svg>`;
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", renderVerificationResultPage);
-} else {
-  renderVerificationResultPage();
-}
-
+document.addEventListener("DOMContentLoaded", () => {
+  initCommonUI();
+  initVerificationPage();
+  initResultPage();
+});
