@@ -57,9 +57,11 @@ function addReviewPopupResponsiveStyles(){if(document.getElementById("softgrow-r
 function initHomeReviewPopup() {
   const popup = document.getElementById("reviewPopup");
   if (!popup) return;
+
   const path = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
   const allowed = ["index.html","about.html","how-it-works.html","how-it-work.html","how-it-works-page.html"];
   if (!allowed.includes(path)) return;
+
   const reviews = [
     {name:"Aarav Mehta",text:"The website made the internship information and verification process easy to understand.",variant:"blue"},
     {name:"Nisha Verma",text:"The verification section is straightforward, and the overall website feels clean and easy to navigate.",variant:"minimal"},
@@ -69,18 +71,83 @@ function initHomeReviewPopup() {
     {name:"Mehak Gupta",text:"Everything feels well organized, from the internship details to the verification experience.",variant:"minimal"},
     {name:"Vivek Kumar",text:"The website is easy to navigate and the information is presented in a professional way.",variant:"soft"}
   ];
-  const textEl=document.getElementById("reviewPopupText"), nameEl=document.getElementById("reviewPopupName"), starsEl=document.getElementById("reviewPopupStars"), labelEl=popup.querySelector(".review-popup-label"), closeBtn=document.getElementById("reviewPopupClose");
-  const showDelay = path === "index.html" ? 10000 : 15000, visible=3000, gap=5000, closeGap=20000;
+
+  const textEl=document.getElementById("reviewPopupText");
+  const nameEl=document.getElementById("reviewPopupName");
+  const starsEl=document.getElementById("reviewPopupStars");
+  const labelEl=popup.querySelector(".review-popup-label");
+  const closeBtn=document.getElementById("reviewPopupClose");
+  const pageLabel = path === "index.html" ? "Community Feedback" : "Visitor Feedback";
+  const showDelay = path === "index.html" ? 10000 : 15000;
+  const visible = 3000;
+  const gap = 5000;
+  const closeGap = 20000;
+
   let idx=-1, showTimer=null, hideTimer=null, nextTimer=null, closed=false;
-  const key=`softgrowPopupUsed_${path}`; let used=new Set(); try { used=new Set(JSON.parse(sessionStorage.getItem(key)||"[]")); } catch(_){}
-  const clear=()=>{[showTimer,hideTimer,nextTimer].forEach(x=>x&&clearTimeout(x)); showTimer=hideTimer=nextTimer=null;};
-  const choose=()=>{let a=reviews.map((_,i)=>i).filter(i=>!used.has(i)); if(!a.length){used.clear();a=reviews.map((_,i)=>i);} let n=a[Math.floor(Math.random()*a.length)]; if(a.length>1&&n===idx)n=a.find(i=>i!==idx); idx=n; used.add(n); try{sessionStorage.setItem(key,JSON.stringify([...used]));}catch(_){} return reviews[n];};
-  const render=()=>{const r=choose(); if(textEl)textEl.textContent=r.text;if(nameEl)nameEl.textContent=r.name;if(starsEl)starsEl.textContent="★★★★★";popup.classList.remove("review-popup-blue","review-popup-minimal","review-popup-soft","review-popup-dark");popup.classList.add(`review-popup-${r.variant}`);if(labelEl)labelEl.textContent="Learner Feedback";};
-  const show=()=>{if(closed)return;render();popup.classList.add("show");popup.setAttribute("aria-hidden","false");hideTimer=setTimeout(hide,visible);};
-  const hide=()=>{if(closed)return;popup.classList.remove("show");popup.setAttribute("aria-hidden","true");nextTimer=setTimeout(show,gap);};
-  const close=()=>{clear();closed=true;popup.classList.remove("show");popup.setAttribute("aria-hidden","true");nextTimer=setTimeout(()=>{closed=false;show();},closeGap);};
+  const usedKey="softgrowPopupUsedAllPages";
+  const closeKey="softgrowPopupClosedAt";
+  let used=new Set();
+  try { used=new Set(JSON.parse(sessionStorage.getItem(usedKey)||"[]")); } catch(_){}
+
+  const clear=()=>{[showTimer,hideTimer,nextTimer].forEach(x=>x&&clearTimeout(x));showTimer=hideTimer=nextTimer=null;};
+
+  const choose=()=>{
+    let available=reviews.map((_,i)=>i).filter(i=>!used.has(i));
+    if(!available.length){used.clear();available=reviews.map((_,i)=>i);}
+    let n=available[Math.floor(Math.random()*available.length)];
+    if(available.length>1&&n===idx)n=available.find(i=>i!==idx);
+    idx=n; used.add(n);
+    try{sessionStorage.setItem(usedKey,JSON.stringify([...used]));}catch(_){}
+    return reviews[n];
+  };
+
+  const render=()=>{
+    const r=choose();
+    if(textEl)textEl.textContent=r.text;
+    if(nameEl)nameEl.textContent=r.name;
+    if(starsEl)starsEl.textContent="★★★★★";
+    popup.classList.remove("review-popup-blue","review-popup-minimal","review-popup-soft","review-popup-dark");
+    popup.classList.add(`review-popup-${r.variant}`);
+    if(labelEl)labelEl.textContent=pageLabel;
+  };
+
+  const show=()=>{
+    if(closed)return;
+    render();
+    popup.classList.add("show");
+    popup.setAttribute("aria-hidden","false");
+    hideTimer=setTimeout(hide,visible);
+  };
+
+  const hide=()=>{
+    if(closed)return;
+    popup.classList.remove("show");
+    popup.setAttribute("aria-hidden","true");
+    nextTimer=setTimeout(show,gap);
+  };
+
+  const close=()=>{
+    clear();
+    closed=true;
+    popup.classList.remove("show");
+    popup.setAttribute("aria-hidden","true");
+    try{sessionStorage.setItem(closeKey,String(Date.now()));}catch(_){}
+    nextTimer=setTimeout(()=>{closed=false;show();},closeGap);
+  };
+
   if(closeBtn)closeBtn.addEventListener("click",close);
-  showTimer=setTimeout(show,showDelay);
+
+  let initialDelay=showDelay;
+  try{
+    const closedAt=Number(sessionStorage.getItem(closeKey)||0);
+    if(closedAt){
+      const remaining=closeGap-(Date.now()-closedAt);
+      if(remaining>0) initialDelay=remaining;
+      else sessionStorage.removeItem(closeKey);
+    }
+  }catch(_){}
+
+  showTimer=setTimeout(show,initialDelay);
 }
 
 function initCommonUI() {

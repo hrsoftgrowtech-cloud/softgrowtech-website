@@ -399,3 +399,15 @@ footer{background:#060c16;color:#fff;padding:60px 0 25px}
   .career-highlight-note{margin-left:0;text-align:left}
   .review-popup{right:16px;left:16px;bottom:16px;width:auto}
 }
+
+/* Secondary feedback popup for About / How It Works — intentionally distinct from Internship feedback cards. */
+.review-popup-secondary{width:min(360px,calc(100vw - 32px));padding:17px 19px 16px 21px;border-radius:18px;border:1px solid #d9e4f0;background:linear-gradient(145deg,#ffffff 0%,#f7fafc 100%);box-shadow:0 20px 55px rgba(15,23,42,.18);overflow:hidden}
+.review-popup-secondary .review-popup-accent{position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#0f766e,#2563eb)}
+.review-popup-secondary .review-popup-topline{display:flex;align-items:center;gap:8px;padding-right:26px}
+.review-popup-secondary .review-popup-icon{width:25px;height:25px;border-radius:8px;display:grid;place-items:center;background:#eef6ff;color:#2563eb;font-size:13px;font-weight:900}
+.review-popup-secondary .review-popup-label{padding-right:0;color:#334155;font-size:.62rem;letter-spacing:.12em}
+.review-popup-secondary .review-popup-stars{margin:7px 0 8px;font-size:.75rem;letter-spacing:1.8px}
+.review-popup-secondary .review-popup-text{font-size:.82rem;line-height:1.55;color:#334155}
+.review-popup-secondary .review-popup-name{margin-top:9px;font-size:.72rem;color:#0f172a}
+.review-popup-secondary .review-popup-close{top:8px;right:8px}
+@media(max-width:600px){.review-popup-secondary{width:calc(100vw - 24px)!important;max-width:350px!important;right:12px!important;bottom:12px!important;padding:15px 16px 14px 18px}.review-popup-secondary .review-popup-text{font-size:.8rem;line-height:1.48}.review-popup-secondary .review-popup-name{font-size:.7rem}}
