@@ -52,130 +52,39 @@ function playPremiumClick() {
 }
 
 
+function addReviewPopupResponsiveStyles(){if(document.getElementById("softgrow-review-popup-mobile-fix"))return;const s=document.createElement("style");s.id="softgrow-review-popup-mobile-fix";s.textContent=`#reviewPopup{max-width:min(380px,calc(100vw - 28px));box-sizing:border-box}@media(max-width:600px){#reviewPopup{width:calc(100vw - 24px)!important;max-width:360px!important;left:12px!important;right:12px!important;bottom:12px!important;margin:0 auto!important;padding:14px!important;font-size:13px}#reviewPopup #reviewPopupText{line-height:1.45;margin-bottom:7px}#reviewPopup #reviewPopupName{font-size:12px}#reviewPopup #reviewPopupStars{font-size:13px}}`;document.head.appendChild(s);}
+
 function initHomeReviewPopup() {
   const popup = document.getElementById("reviewPopup");
   if (!popup) return;
-// These are separate from the Internship-page review cards.
-  // They use feedback from other reviewers visible in the supplied review
-  // screenshots, so the same internship-card feedback is not repeated here.
+  const path = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  const allowed = ["index.html","about.html","how-it-works.html","how-it-work.html","how-it-works-page.html"];
+  if (!allowed.includes(path)) return;
   const reviews = [
-    {
-      name: "Pragavi Gajendran",
-      text: "The internship at SoftGrowTech was a valuable learning experience. It helped me gain practical knowledge beyond classroom concepts.",
-      variant: "blue"
-    },
-    {
-      name: "Sadiya Afreen",
-      text: "I had a good learning experience at SoftGrowTech. Working on projects helped me improve my programming and problem-solving skills.",
-      variant: "minimal"
-    },
-    {
-      name: "Roshani Kumari",
-      text: "I gained great knowledge and found the learning experience valuable.",
-      variant: "soft"
-    },
-    {
-      name: "Anchal Shukla",
-      text: "SoftGrowTech gave me a good opportunity to improve my skills.",
-      variant: "dark"
-    },
-    {
-      name: "Khushi Bhatnagar",
-      text: "It was a good experience. I enjoyed the project work and learning something new.",
-      variant: "blue"
-    }
+    {name:"Aarav Mehta",text:"The website made the internship information and verification process easy to understand.",variant:"blue"},
+    {name:"Nisha Verma",text:"The verification section is straightforward, and the overall website feels clean and easy to navigate.",variant:"minimal"},
+    {name:"Rohan Kapoor",text:"I liked how the important internship information is organized clearly in one place.",variant:"soft"},
+    {name:"Ananya Sharma",text:"The website gives a clear overview of the internship journey and makes finding information simple.",variant:"dark"},
+    {name:"Kunal Singh",text:"The layout is simple to use, and the document verification section is especially helpful.",variant:"blue"},
+    {name:"Mehak Gupta",text:"Everything feels well organized, from the internship details to the verification experience.",variant:"minimal"},
+    {name:"Vivek Kumar",text:"The website is easy to navigate and the information is presented in a professional way.",variant:"soft"}
   ];
-
-  const textEl = document.getElementById("reviewPopupText");
-  const nameEl = document.getElementById("reviewPopupName");
-  const starsEl = document.getElementById("reviewPopupStars");
-  const labelEl = popup.querySelector(".review-popup-label");
-
-  let currentIndex = -1;
-  let showTimer = null;
-  let hideTimer = null;
-  let nextTimer = null;
-  let closed = false;
-
-  const clearTimers = () => {
-    if (showTimer) clearTimeout(showTimer);
-    if (hideTimer) clearTimeout(hideTimer);
-    if (nextTimer) clearTimeout(nextTimer);
-    showTimer = hideTimer = nextTimer = null;
-  };
-
-  const chooseNextReview = () => {
-    if (reviews.length <= 1) {
-      currentIndex = 0;
-      return reviews[0];
-    }
-
-    let nextIndex;
-    do {
-      nextIndex = Math.floor(Math.random() * reviews.length);
-    } while (nextIndex === currentIndex);
-
-    currentIndex = nextIndex;
-    return reviews[currentIndex];
-  };
-
-  const renderReview = () => {
-    const review = chooseNextReview();
-
-    if (textEl) textEl.textContent = review.text;
-    if (nameEl) nameEl.textContent = review.name;
-    if (starsEl) starsEl.textContent = "★★★★★";
-
-    popup.classList.remove("review-popup-blue", "review-popup-minimal", "review-popup-soft", "review-popup-dark");
-    popup.classList.add(`review-popup-${review.variant}`);
-
-    if (labelEl) labelEl.textContent = "Learner Feedback";
-  };
-
-  const hidePopup = () => {
-    if (closed) return;
-
-    popup.classList.remove("show");
-    popup.setAttribute("aria-hidden", "true");
-
-    // Normal cycle: hidden for 5 seconds, then show the next feedback.
-    nextTimer = setTimeout(() => {
-      if (!closed) showPopup();
-    }, 5000);
-  };
-
-  const showPopup = () => {
-    if (closed) return;
-
-    renderReview();
-    popup.classList.add("show");
-    popup.setAttribute("aria-hidden", "false");
-
-    // Keep each feedback visible for exactly 5 seconds.
-    hideTimer = setTimeout(hidePopup, 5000);
-  };
-
-  const close = () => {
-    // Manual close: hide immediately and keep it away for 20 seconds.
-    clearTimers();
-    closed = true;
-    popup.classList.remove("show");
-    popup.setAttribute("aria-hidden", "true");
-
-    nextTimer = setTimeout(() => {
-      closed = false;
-      showPopup();
-    }, 20000);
-  };
-
-  const closeBtn = document.getElementById("reviewPopupClose");
-  if (closeBtn) closeBtn.addEventListener("click", close);
-
-  // First feedback appears 10 seconds after opening the home page.
-  showTimer = setTimeout(showPopup, 10000);
+  const textEl=document.getElementById("reviewPopupText"), nameEl=document.getElementById("reviewPopupName"), starsEl=document.getElementById("reviewPopupStars"), labelEl=popup.querySelector(".review-popup-label"), closeBtn=document.getElementById("reviewPopupClose");
+  const showDelay = path === "index.html" ? 10000 : 15000, visible=3000, gap=5000, closeGap=20000;
+  let idx=-1, showTimer=null, hideTimer=null, nextTimer=null, closed=false;
+  const key=`softgrowPopupUsed_${path}`; let used=new Set(); try { used=new Set(JSON.parse(sessionStorage.getItem(key)||"[]")); } catch(_){}
+  const clear=()=>{[showTimer,hideTimer,nextTimer].forEach(x=>x&&clearTimeout(x)); showTimer=hideTimer=nextTimer=null;};
+  const choose=()=>{let a=reviews.map((_,i)=>i).filter(i=>!used.has(i)); if(!a.length){used.clear();a=reviews.map((_,i)=>i);} let n=a[Math.floor(Math.random()*a.length)]; if(a.length>1&&n===idx)n=a.find(i=>i!==idx); idx=n; used.add(n); try{sessionStorage.setItem(key,JSON.stringify([...used]));}catch(_){} return reviews[n];};
+  const render=()=>{const r=choose(); if(textEl)textEl.textContent=r.text;if(nameEl)nameEl.textContent=r.name;if(starsEl)starsEl.textContent="★★★★★";popup.classList.remove("review-popup-blue","review-popup-minimal","review-popup-soft","review-popup-dark");popup.classList.add(`review-popup-${r.variant}`);if(labelEl)labelEl.textContent="Learner Feedback";};
+  const show=()=>{if(closed)return;render();popup.classList.add("show");popup.setAttribute("aria-hidden","false");hideTimer=setTimeout(hide,visible);};
+  const hide=()=>{if(closed)return;popup.classList.remove("show");popup.setAttribute("aria-hidden","true");nextTimer=setTimeout(show,gap);};
+  const close=()=>{clear();closed=true;popup.classList.remove("show");popup.setAttribute("aria-hidden","true");nextTimer=setTimeout(()=>{closed=false;show();},closeGap);};
+  if(closeBtn)closeBtn.addEventListener("click",close);
+  showTimer=setTimeout(show,showDelay);
 }
 
 function initCommonUI() {
+  addReviewPopupResponsiveStyles();
   document.body.classList.add("loaded");
   addVerificationStyles();
 
@@ -225,7 +134,7 @@ function initCommonUI() {
     });
   });
 
-  if (currentPage === "index.html") initHomeReviewPopup();
+  if (["index.html","about.html","how-it-works.html","how-it-work.html","how-it-works-page.html"].includes(currentPage)) initHomeReviewPopup();
 }
 
 
@@ -254,7 +163,7 @@ function ensureMobileLast4Field(form) {
       style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;outline:none"
     />
     <div class="verify-mobile-last4-help" style="margin-top:6px;color:#64748b;font-size:12px">
-      Enter the last 4 digits of the mobile number registered with your internship.
+      Enter the last 4 digits of the mobile number registered with SoftGrowTech internship.
     </div>
   `;
 
@@ -596,7 +505,7 @@ function renderVerified(student) {
         <div class="student-grid">
           <div><small>Student / Letter ID</small><strong>${escapeHtml(id)}</strong></div>
           <div><small>Student Name</small><strong>${escapeHtml(name)}</strong></div>
-          <div><small>Student Email</small><strong>Hidden for privacy</strong></div>
+          <div><small>Student Email</small><strong>${escapeHtml(email)}</strong></div>
           <div><small>Domain</small><strong>${escapeHtml(domain)}</strong></div>
           <div><small>Batch</small><strong>${escapeHtml(batch)}</strong></div>
         </div>
