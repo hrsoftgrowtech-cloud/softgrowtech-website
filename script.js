@@ -58,96 +58,94 @@ function initHomeReviewPopup() {
   const popup = document.getElementById("reviewPopup");
   if (!popup) return;
 
-  const path = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
-  const allowed = ["index.html","about.html","how-it-works.html","how-it-work.html","how-it-works-page.html"];
-  if (!allowed.includes(path)) return;
-
+  // Internship-focused social proof only. This popup is intentionally separate
+  // from the Internship page feedback cards and uses one consistent design.
   const reviews = [
-    {name:"Aarav Mehta",text:"The website made the internship information and verification process easy to understand.",variant:"blue"},
-    {name:"Nisha Verma",text:"The verification section is straightforward, and the overall website feels clean and easy to navigate.",variant:"minimal"},
-    {name:"Rohan Kapoor",text:"I liked how the important internship information is organized clearly in one place.",variant:"soft"},
-    {name:"Ananya Sharma",text:"The website gives a clear overview of the internship journey and makes finding information simple.",variant:"dark"},
-    {name:"Kunal Singh",text:"The layout is simple to use, and the document verification section is especially helpful.",variant:"blue"},
-    {name:"Mehak Gupta",text:"Everything feels well organized, from the internship details to the verification experience.",variant:"minimal"},
-    {name:"Vivek Kumar",text:"The website is easy to navigate and the information is presented in a professional way.",variant:"soft"}
+    { name: "Pragavi Gajendran", text: "The SoftGrowTech internship was a valuable learning experience and helped me gain practical knowledge beyond classroom concepts." },
+    { name: "Sadiya Afreen", text: "Working on projects during my SoftGrowTech internship helped me improve my programming and problem-solving skills." },
+    { name: "Roshani Kumari", text: "I gained useful knowledge and practical exposure through my SoftGrowTech internship experience." },
+    { name: "Anchal Shukla", text: "SoftGrowTech gave me a good opportunity to improve my technical skills through practical internship work." },
+    { name: "Khushi Bhatnagar", text: "The project work made my internship experience engaging and gave me the opportunity to learn something new." },
+    { name: "Vivek Kumar", text: "The internship provided a clear learning path with practical work that helped me build confidence in my skills." },
+    { name: "Mehak Gupta", text: "I found the internship well structured and appreciated the practical learning experience throughout the program." }
   ];
 
-  const textEl=document.getElementById("reviewPopupText");
-  const nameEl=document.getElementById("reviewPopupName");
-  const starsEl=document.getElementById("reviewPopupStars");
-  const labelEl=popup.querySelector(".review-popup-label");
-  const closeBtn=document.getElementById("reviewPopupClose");
-  const pageLabel = path === "index.html" ? "Community Feedback" : "Visitor Feedback";
-  const showDelay = path === "index.html" ? 10000 : 15000;
-  const visible = 3000;
-  const gap = 5000;
-  const closeGap = 20000;
+  const textEl = document.getElementById("reviewPopupText");
+  const nameEl = document.getElementById("reviewPopupName");
+  const starsEl = document.getElementById("reviewPopupStars");
+  const labelEl = popup.querySelector(".review-popup-label");
+  const closeBtn = document.getElementById("reviewPopupClose");
+  const path = (window.location.pathname.split("/").pop() || "index.html").toLowerCase();
+  const isHome = path === "index.html" || path === "";
+  const isAbout = path === "about.html";
+  const isHowItWorks = path === "how-it-works.html";
+  if (!isHome && !isAbout && !isHowItWorks) return;
 
-  let idx=-1, showTimer=null, hideTimer=null, nextTimer=null, closed=false;
-  const usedKey="softgrowPopupUsedAllPages";
-  const closeKey="softgrowPopupClosedAt";
-  let used=new Set();
-  try { used=new Set(JSON.parse(sessionStorage.getItem(usedKey)||"[]")); } catch(_){}
+  const showDelay = isHome ? 10000 : 15000;
+  const visibleTime = 3000;
+  const normalGap = 5000;
+  const manualCloseGap = 20000;
+  let currentIndex = -1, showTimer = null, hideTimer = null, nextTimer = null, closed = false;
+  let usedReviews = new Set();
 
-  const clear=()=>{[showTimer,hideTimer,nextTimer].forEach(x=>x&&clearTimeout(x));showTimer=hideTimer=nextTimer=null;};
+  try {
+    const stored = JSON.parse(sessionStorage.getItem("softgrowInternshipPopupUsed") || "[]");
+    if (Array.isArray(stored)) usedReviews = new Set(stored);
+  } catch (_) {}
 
-  const choose=()=>{
-    let available=reviews.map((_,i)=>i).filter(i=>!used.has(i));
-    if(!available.length){used.clear();available=reviews.map((_,i)=>i);}
-    let n=available[Math.floor(Math.random()*available.length)];
-    if(available.length>1&&n===idx)n=available.find(i=>i!==idx);
-    idx=n; used.add(n);
-    try{sessionStorage.setItem(usedKey,JSON.stringify([...used]));}catch(_){}
-    return reviews[n];
+  const clearTimers = () => {
+    if (showTimer) clearTimeout(showTimer);
+    if (hideTimer) clearTimeout(hideTimer);
+    if (nextTimer) clearTimeout(nextTimer);
+    showTimer = hideTimer = nextTimer = null;
   };
 
-  const render=()=>{
-    const r=choose();
-    if(textEl)textEl.textContent=r.text;
-    if(nameEl)nameEl.textContent=r.name;
-    if(starsEl)starsEl.textContent="★★★★★";
-    popup.classList.remove("review-popup-blue","review-popup-minimal","review-popup-soft","review-popup-dark");
-    popup.classList.add(`review-popup-${r.variant}`);
-    if(labelEl)labelEl.textContent=pageLabel;
+  const chooseNextReview = () => {
+    let available = reviews.map((_, i) => i).filter(i => !usedReviews.has(i));
+    if (!available.length) { usedReviews.clear(); available = reviews.map((_, i) => i); }
+    if (available.length > 1 && currentIndex !== -1) available = available.filter(i => i !== currentIndex);
+    currentIndex = available[Math.floor(Math.random() * available.length)];
+    usedReviews.add(currentIndex);
+    try { sessionStorage.setItem("softgrowInternshipPopupUsed", JSON.stringify([...usedReviews])); } catch (_) {}
+    return reviews[currentIndex];
   };
 
-  const show=()=>{
-    if(closed)return;
-    render();
+  const renderReview = () => {
+    const review = chooseNextReview();
+    if (textEl) textEl.textContent = review.text;
+    if (nameEl) nameEl.textContent = review.name;
+    if (starsEl) starsEl.textContent = "★★★★★";
+    // One fixed popup design; do not switch visual variants between reviews.
+    popup.classList.remove("review-popup-blue", "review-popup-minimal", "review-popup-soft", "review-popup-dark");
+    popup.classList.add("review-popup-internship");
+    if (labelEl) labelEl.textContent = "Internship Experience";
+  };
+
+  const showPopup = () => {
+    if (closed) return;
+    renderReview();
     popup.classList.add("show");
-    popup.setAttribute("aria-hidden","false");
-    hideTimer=setTimeout(hide,visible);
+    popup.setAttribute("aria-hidden", "false");
+    hideTimer = setTimeout(hidePopup, visibleTime);
   };
 
-  const hide=()=>{
-    if(closed)return;
+  const hidePopup = () => {
+    if (closed) return;
     popup.classList.remove("show");
-    popup.setAttribute("aria-hidden","true");
-    nextTimer=setTimeout(show,gap);
+    popup.setAttribute("aria-hidden", "true");
+    nextTimer = setTimeout(() => { if (!closed) showPopup(); }, normalGap);
   };
 
-  const close=()=>{
-    clear();
-    closed=true;
+  const close = () => {
+    clearTimers();
+    closed = true;
     popup.classList.remove("show");
-    popup.setAttribute("aria-hidden","true");
-    try{sessionStorage.setItem(closeKey,String(Date.now()));}catch(_){}
-    nextTimer=setTimeout(()=>{closed=false;show();},closeGap);
+    popup.setAttribute("aria-hidden", "true");
+    nextTimer = setTimeout(() => { closed = false; showPopup(); }, manualCloseGap);
   };
 
-  if(closeBtn)closeBtn.addEventListener("click",close);
-
-  let initialDelay=showDelay;
-  try{
-    const closedAt=Number(sessionStorage.getItem(closeKey)||0);
-    if(closedAt){
-      const remaining=closeGap-(Date.now()-closedAt);
-      if(remaining>0) initialDelay=remaining;
-      else sessionStorage.removeItem(closeKey);
-    }
-  }catch(_){}
-
-  showTimer=setTimeout(show,initialDelay);
+  if (closeBtn) closeBtn.addEventListener("click", close);
+  showTimer = setTimeout(showPopup, showDelay);
 }
 
 function initCommonUI() {
@@ -217,19 +215,33 @@ function ensureMobileLast4Field(form) {
     <label for="verifyMobileLast4" style="display:block;margin-bottom:7px;font-weight:700;color:#0f172a;font-size:14px">
       Registered Mobile — Last 4 Digits
     </label>
-    <input
-      id="verifyMobileLast4"
-      name="mobile_last4"
-      type="text"
-      inputmode="numeric"
-      autocomplete="off"
-      maxlength="4"
-      pattern="\\d{4}"
-      placeholder="Enter last 4 digits"
-      aria-label="Registered mobile number last 4 digits"
-      style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;outline:none"
-    />
-    <div class="verify-mobile-last4-help" style="margin-top:6px;color:#64748b;font-size:12px">
+
+    <div class="verify-mobile-input-shell">
+      <input
+        id="verifyMobileLast4"
+        name="mobile_last4"
+        type="password"
+        inputmode="numeric"
+        autocomplete="off"
+        maxlength="4"
+        pattern="\\d{4}"
+        placeholder="••••"
+        aria-label="Registered mobile number last 4 digits"
+      />
+      <button
+        type="button"
+        class="verify-mobile-visibility"
+        id="verifyMobileVisibility"
+        aria-label="Show mobile digits"
+        aria-pressed="false"
+        title="Show digits"
+      >
+        <span class="verify-eye-icon" aria-hidden="true">◉</span>
+        <span class="verify-visibility-text">Show</span>
+      </button>
+    </div>
+
+    <div class="verify-mobile-last4-help">
       Enter the last 4 digits of the mobile number registered with SoftGrowTech internship.
     </div>
   `;
@@ -238,13 +250,29 @@ function ensureMobileLast4Field(form) {
   if (submit) form.insertBefore(wrap, submit);
   else form.appendChild(wrap);
 
-  const mobileInput = wrap.querySelector("input");
+  const mobileInput = wrap.querySelector("#verifyMobileLast4");
+  const visibilityBtn = wrap.querySelector("#verifyMobileVisibility");
+  const visibilityText = wrap.querySelector(".verify-visibility-text");
+  const eye = wrap.querySelector(".verify-eye-icon");
+
   mobileInput.addEventListener("input", () => {
     mobileInput.value = mobileInput.value.replace(/\D/g, "").slice(0, 4);
   });
 
+  visibilityBtn.addEventListener("click", () => {
+    const isHidden = mobileInput.type === "password";
+    mobileInput.type = isHidden ? "text" : "password";
+    visibilityBtn.setAttribute("aria-pressed", String(isHidden));
+    visibilityBtn.setAttribute("aria-label", isHidden ? "Hide mobile digits" : "Show mobile digits");
+    visibilityBtn.setAttribute("title", isHidden ? "Hide digits" : "Show digits");
+    visibilityText.textContent = isHidden ? "Hide" : "Show";
+    eye.textContent = isHidden ? "◉" : "◌";
+    mobileInput.focus();
+  });
+
   return mobileInput;
 }
+
 
 function showVerificationProcessing(result) {
   result.style.display = "block";
@@ -363,8 +391,16 @@ async function handleVerification(form) {
 
     if (!Array.isArray(data) || data.length === 0) {
       sessionStorage.removeItem("softgrowVerificationResult");
-      window.location.href =
-        `verification-result.html?id=${encodeURIComponent(id)}&invalid=1`;
+
+      if (inlineError) {
+        inlineError.textContent =
+          "Verification Failed. Please check your official ID and registered mobile number's last 4 digits.";
+        inlineError.hidden = false;
+        inlineError.classList.add("show");
+      }
+
+      result.style.display = "none";
+      input.focus();
       return;
     }
 
@@ -405,6 +441,127 @@ function resetVerificationPageState() {
   });
 }
 
+
+function addVerificationSecurityStyles() {
+  if (document.getElementById("softgrow-verification-security-styles")) return;
+
+  const style = document.createElement("style");
+  style.id = "softgrow-verification-security-styles";
+  style.textContent = `
+    .verify-mobile-input-shell {
+      position: relative;
+      width: 100%;
+    }
+
+    .verify-mobile-input-shell input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px 82px 12px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 15px;
+      letter-spacing: 2px;
+      outline: none;
+      background: #fff;
+      color: #0f172a;
+    }
+
+    .verify-mobile-input-shell input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+    }
+
+    .verify-mobile-visibility {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      color: #475569;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .verify-mobile-visibility:hover {
+      background: #f1f5f9;
+      color: #1d4ed8;
+    }
+
+    .verification-help-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 20px 0 12px;
+    }
+
+    .verification-help-icon {
+      width: 42px;
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #dbeafe;
+      border-radius: 50%;
+      background: #eff6ff;
+      color: #2563eb;
+      text-decoration: none;
+      font-size: 18px;
+      font-weight: 800;
+      transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .verification-help-icon:hover {
+      transform: translateY(-1px);
+      background: #dbeafe;
+      box-shadow: 0 5px 16px rgba(37,99,235,.12);
+    }
+
+    .verification-help-label {
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .verification-incomplete .invalid-icon {
+      background: #fff7ed;
+      color: #ea580c;
+    }
+
+    .verification-incomplete h1 {
+      color: #9a3412;
+    }
+
+    .verification-incomplete p {
+      color: #7c2d12;
+    }
+
+    @media (max-width: 600px) {
+      .verify-mobile-input-shell input {
+        padding-right: 76px;
+      }
+
+      .verify-mobile-visibility {
+        right: 6px;
+        padding: 7px 6px;
+      }
+
+      .verification-help-icon {
+        width: 40px;
+        height: 40px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function initVerificationPage() {
   document.querySelectorAll("[data-verify]").forEach(form => {
     ensureMobileLast4Field(form);
@@ -432,17 +589,30 @@ function initResultPage() {
 
   const renderInvalid = () => {
     root.innerHTML = `
-      <div class="invalid-only-page">
-        <div class="invalid-result">
-          <div class="invalid-icon">!</div>
-          <h1>Invalid Official ID</h1>
-          <p>The Student / Letter ID you entered could not be found in the official SoftGrowTech records.</p>
-          <small>Please check your Official ID and try again.</small>
-          ${id ? `<div class="entered-id">Entered ID: <strong>${escapeHtml(id)}</strong></div>` : ""}
-          <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
+    <div class="invalid-only-page">
+      <div class="invalid-result verification-incomplete">
+        <div class="invalid-icon">!</div>
+        <h1>Verification Incomplete</h1>
+        <p>Your record could not be found in our verification database. Please check your official Student / Letter ID and try again.</p>
+
+        <div class="verification-help-wrap">
+          <a
+            class="verification-help-icon"
+            href="https://wa.me/917839686310?text=${encodeURIComponent("Hello SoftGrowTech, I need help with internship record verification.")}"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Need Help with verification"
+            title="Need Help"
+          >
+            <span aria-hidden="true">?</span>
+          </a>
+          <span class="verification-help-label">Need Help?</span>
         </div>
-      </div>`;
-  };
+
+        <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
+      </div>
+    </div>`;
+};
 
   if (invalid) {
     sessionStorage.removeItem("softgrowVerificationResult");
@@ -892,6 +1062,7 @@ function waIcon() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  addVerificationSecurityStyles();
   initCommonUI();
   initVerificationPage();
   initResultPage();
