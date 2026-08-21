@@ -206,70 +206,25 @@ function initCommonUI() {
 function ensureMobileLast4Field(form) {
   let wrap = form.querySelector(".verify-mobile-last4-wrap");
   if (wrap) return wrap.querySelector("input");
-
   wrap = document.createElement("div");
   wrap.className = "verify-mobile-last4-wrap";
   wrap.style.cssText = "margin-top:14px;text-align:left";
-
   wrap.innerHTML = `
-    <label for="verifyMobileLast4" style="display:block;margin-bottom:7px;font-weight:700;color:#0f172a;font-size:14px">
-      Registered Mobile — Last 4 Digits
-    </label>
-
+    <label for="verifyMobileLast4" style="display:block;margin-bottom:7px;font-weight:700;color:#0f172a;font-size:14px">Registered Mobile — Last 4 Digits</label>
     <div class="verify-mobile-input-shell">
-      <input
-        id="verifyMobileLast4"
-        name="mobile_last4"
-        type="password"
-        inputmode="numeric"
-        autocomplete="off"
-        maxlength="4"
-        pattern="\\d{4}"
-        placeholder="••••"
-        aria-label="Registered mobile number last 4 digits"
-      />
-      <button
-        type="button"
-        class="verify-mobile-visibility"
-        id="verifyMobileVisibility"
-        aria-label="Show mobile digits"
-        aria-pressed="false"
-        title="Show mobile digits"
-      >
-        <span class="verify-eye-icon" aria-hidden="true">👁️</span>
+      <input id="verifyMobileLast4" name="mobile_last4" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="\\d{4}" placeholder="••••" aria-label="Registered mobile number last 4 digits" />
+      <button type="button" class="verify-mobile-visibility" id="verifyMobileVisibility" aria-label="Show mobile digits" aria-pressed="false" title="Show mobile digits">
+        <svg class="verify-eye-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="eye-open" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle class="eye-open" cx="12" cy="12" r="2.5"/><path class="eye-closed" d="M3 3l18 18M5.5 7.5C3.6 9 2.5 12 2.5 12s3.5 6 9.5 6c1.7 0 3.2-.4 4.5-1M9.5 6.4C10.1 6.1 10.8 6 12 6c6 0 9.5 6 9.5 6s-1 2.1-2.7 3.7"/></svg>
       </button>
     </div>
-
-    <div class="verify-mobile-last4-help">
-      Enter the last 4 digits of the mobile number registered with SoftGrowTech internship.
-    </div>
-  `;
-
-  const submit = form.querySelector('button[type="submit"], input[type="submit"]');
-  if (submit) form.insertBefore(wrap, submit);
-  else form.appendChild(wrap);
-
-  const mobileInput = wrap.querySelector("#verifyMobileLast4");
-  const visibilityBtn = wrap.querySelector("#verifyMobileVisibility");
-const eye = wrap.querySelector(".verify-eye-icon");
-
-  mobileInput.addEventListener("input", () => {
-    mobileInput.value = mobileInput.value.replace(/\D/g, "").slice(0, 4);
-  });
-
-  visibilityBtn.addEventListener("click", () => {
-    const isHidden = mobileInput.type === "password";
-    mobileInput.type = isHidden ? "text" : "password";
-    visibilityBtn.setAttribute("aria-pressed", String(isHidden));
-    visibilityBtn.setAttribute("aria-label", isHidden ? "Hide mobile digits" : "Show mobile digits");
-    visibilityBtn.setAttribute("title", isHidden ? "Hide digits" : "Show digits");
-    eye.textContent = isHidden ? "👁️" : "👁️";
-    mobileInput.focus();
-  });
-
-  return mobileInput;
+    <div class="verify-mobile-last4-help">Enter the last 4 digits of the mobile number registered with SoftGrowTech internship.</div>`;
+  const submit=form.querySelector('button[type="submit"], input[type="submit"]');
+  if(submit) form.insertBefore(wrap,submit); else form.appendChild(wrap);
+  const input=wrap.querySelector('#verifyMobileLast4'); const btn=wrap.querySelector('#verifyMobileVisibility');
+  input.addEventListener('input',()=>{input.value=input.value.replace(/\D/g,'').slice(0,4);});
+  btn.addEventListener('click',()=>{const hidden=input.type==='password'; input.type=hidden?'text':'password'; btn.setAttribute('aria-pressed',String(hidden)); btn.setAttribute('aria-label',hidden?'Hide mobile digits':'Show mobile digits'); btn.setAttribute('title',hidden?'Hide mobile digits':'Show mobile digits'); btn.querySelector('.verify-eye-icon').classList.toggle('is-closed',!hidden); input.focus();});
+  return input;
 }
-
 
 function showVerificationProcessing(result) {
   result.style.display = "block";
@@ -440,6 +395,12 @@ function addVerificationSecurityStyles() {
   const style = document.createElement("style");
   style.id = "softgrow-verification-security-styles";
   style.textContent = `
+    .verify-inline-error[hidden]{display:none !important;}
+    .sg-icon{width:1.25em;height:1.25em;display:inline-block;vertical-align:-.2em;flex:0 0 auto;}
+    .verify-eye-icon{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+    .verify-eye-icon .eye-closed{display:none;}
+    .verify-eye-icon.is-closed .eye-open{display:none;}
+    .verify-eye-icon.is-closed .eye-closed{display:block;}
     .verify-mobile-input-shell {
       position: relative;
       width: 100%;
@@ -486,6 +447,10 @@ function addVerificationSecurityStyles() {
       color: #1d4ed8;
     }
 
+    .verification-help-icon{position:relative;}
+    .verification-help-icon::after{content:"";position:absolute;inset:-5px;border:1px solid currentColor;border-radius:50%;opacity:0;animation:verificationHelpPulse 2.4s ease-out infinite;pointer-events:none;}
+    @keyframes verificationHelpPulse{0%{transform:scale(.86);opacity:.35}65%,100%{transform:scale(1.22);opacity:0}}
+    @media(prefers-reduced-motion:reduce){.verification-help-icon::after{animation:none;}}
     .verification-help-wrap {
       display: flex;
       align-items: center;
@@ -594,7 +559,7 @@ function initResultPage() {
         <div class="verification-help-wrap">
           <a
             class="verification-help-icon"
-            href="https://wa.me/917839686310?text=${encodeURIComponent("Hello SoftGrowTech, I need help with internship record verification.")}"
+            href="https://wa.me/917839686310?text=${encodeURIComponent("Hi")}"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Need Help with verification"
@@ -668,6 +633,16 @@ function initResultPage() {
   `;
   document.head.appendChild(certificateActionStyle);
 
+function maskPublicEmail(email) {
+  if (!email || typeof email !== "string") return email;
+  const at=email.indexOf("@");
+  if(at<=0) return email;
+  const local=email.slice(0,at);
+  const domain=email.slice(at);
+  if(local.length<=2) return local+"***"+domain;
+  return local.slice(0,2)+"***"+local.slice(-1)+domain;
+}
+
 function renderVerified(student) {
   ensureRecordFooterStyles();
   ensureDownloadAndBadgeStyles();
@@ -738,7 +713,7 @@ function renderVerified(student) {
         <div class="student-grid">
           <div><small>Student / Letter ID</small><strong>${escapeHtml(id)}</strong></div>
           <div><small>Student Name</small><strong>${escapeHtml(name)}</strong></div>
-          <div><small>Student Email</small><strong>${escapeHtml(email)}</strong></div>
+          <div><small>Student Email</small><strong>${escapeHtml(maskPublicEmail(email))}</strong></div>
           <div><small>Domain</small><strong>${escapeHtml(domain)}</strong></div>
           <div><small>Batch</small><strong>${escapeHtml(batch)}</strong></div>
         </div>
