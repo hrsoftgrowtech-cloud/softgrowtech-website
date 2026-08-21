@@ -234,10 +234,9 @@ function ensureMobileLast4Field(form) {
         id="verifyMobileVisibility"
         aria-label="Show mobile digits"
         aria-pressed="false"
-        title="Show digits"
+        title="Show mobile digits"
       >
-        <span class="verify-eye-icon" aria-hidden="true">◉</span>
-        <span class="verify-visibility-text">Show</span>
+        <span class="verify-eye-icon" aria-hidden="true">👁️</span>
       </button>
     </div>
 
@@ -252,8 +251,7 @@ function ensureMobileLast4Field(form) {
 
   const mobileInput = wrap.querySelector("#verifyMobileLast4");
   const visibilityBtn = wrap.querySelector("#verifyMobileVisibility");
-  const visibilityText = wrap.querySelector(".verify-visibility-text");
-  const eye = wrap.querySelector(".verify-eye-icon");
+const eye = wrap.querySelector(".verify-eye-icon");
 
   mobileInput.addEventListener("input", () => {
     mobileInput.value = mobileInput.value.replace(/\D/g, "").slice(0, 4);
@@ -265,8 +263,7 @@ function ensureMobileLast4Field(form) {
     visibilityBtn.setAttribute("aria-pressed", String(isHidden));
     visibilityBtn.setAttribute("aria-label", isHidden ? "Hide mobile digits" : "Show mobile digits");
     visibilityBtn.setAttribute("title", isHidden ? "Hide digits" : "Show digits");
-    visibilityText.textContent = isHidden ? "Hide" : "Show";
-    eye.textContent = isHidden ? "◉" : "◌";
+    eye.textContent = isHidden ? "👁️" : "👁️";
     mobileInput.focus();
   });
 
@@ -392,15 +389,10 @@ async function handleVerification(form) {
     if (!Array.isArray(data) || data.length === 0) {
       sessionStorage.removeItem("softgrowVerificationResult");
 
-      if (inlineError) {
-        inlineError.textContent =
-          "Verification Failed. Please check your official ID and registered mobile number's last 4 digits.";
-        inlineError.hidden = false;
-        inlineError.classList.add("show");
-      }
-
-      result.style.display = "none";
-      input.focus();
+      // Do not reveal whether the ID or mobile digits were the incorrect part.
+      // Continue to the same verification-result page with an invalid state.
+      window.location.href =
+        `verification-result.html?id=${encodeURIComponent(id)}&invalid=1`;
       return;
     }
 
@@ -592,8 +584,12 @@ function initResultPage() {
     <div class="invalid-only-page">
       <div class="invalid-result verification-incomplete">
         <div class="invalid-icon">!</div>
-        <h1>Verification Incomplete</h1>
-        <p>Your record could not be found in our verification database. Please check your official Student / Letter ID and try again.</p>
+        <h1>Verification Failed</h1>
+        <p>Please check your official ID and registered mobile number's last 4 digits.</p>
+
+        <div class="record-not-found-message">
+          <strong>Your record was not found.</strong>
+        </div>
 
         <div class="verification-help-wrap">
           <a
@@ -606,7 +602,7 @@ function initResultPage() {
           >
             <span aria-hidden="true">?</span>
           </a>
-          <span class="verification-help-label">Need Help?</span>
+          <span class="verification-help-label">Need Help</span>
         </div>
 
         <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
