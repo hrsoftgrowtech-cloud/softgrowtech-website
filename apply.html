@@ -61,10 +61,12 @@
 <div class="copyright">© 2026 SoftGrowTech. All rights reserved.</div></div></footer><script src="script.js"></script><script>
 (function(){
 const choices=[...document.querySelectorAll('.domain-choice')];
+const box=document.getElementById('selectedDomainBox');
 const title=document.getElementById('selectedDomainTitle');
 const text=document.getElementById('selectedDomainText');
 const btn=document.getElementById('continueApply');
-choices.forEach(card=>card.addEventListener('click',()=>{
+const headerOffset=88;
+function selectDomain(card, shouldScroll){
  choices.forEach(c=>c.classList.remove('selected'));
  card.classList.add('selected');
  const domain=card.dataset.domain;
@@ -74,8 +76,15 @@ choices.forEach(card=>card.addEventListener('click',()=>{
  btn.removeAttribute('aria-disabled');
  btn.href='domain-details.html?domain='+encodeURIComponent(domain);
  sessionStorage.setItem('softgrow_selected_domain',domain);
-}));
+ if(shouldScroll){
+   requestAnimationFrame(()=>setTimeout(()=>{
+     const top=box.getBoundingClientRect().top + window.scrollY - headerOffset;
+     window.scrollTo({top:Math.max(0,top),behavior:'smooth'});
+   },120));
+ }
+}
+choices.forEach(card=>card.addEventListener('click',()=>selectDomain(card,true)));
 const saved=new URLSearchParams(location.search).get('domain')||sessionStorage.getItem('softgrow_selected_domain');
-if(saved){const c=choices.find(x=>x.dataset.domain===saved);if(c)c.click();}
+if(saved){const c=choices.find(x=>x.dataset.domain===saved);if(c)selectDomain(c,false);}
 })();
 </script></body></html>
