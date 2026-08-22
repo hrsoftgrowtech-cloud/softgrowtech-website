@@ -420,3 +420,5 @@ footer{background:#060c16;color:#fff;padding:60px 0 25px}
 @media(max-width:760px){
   .footer-policies a{white-space:normal}
 }
+
+.fee-badge .fee-notice-svg{width:34px;height:34px;display:block;overflow:visible}
