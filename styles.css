@@ -411,3 +411,6 @@ footer{background:#060c16;color:#fff;padding:60px 0 25px}
 .review-popup-secondary .review-popup-name{margin-top:9px;font-size:.72rem;color:#0f172a}
 .review-popup-secondary .review-popup-close{top:8px;right:8px}
 @media(max-width:600px){.review-popup-secondary{width:calc(100vw - 24px)!important;max-width:350px!important;right:12px!important;bottom:12px!important;padding:15px 16px 14px 18px}.review-popup-secondary .review-popup-text{font-size:.8rem;line-height:1.48}.review-popup-secondary .review-popup-name{font-size:.7rem}}
+
+/* Official fee policy link */
+.fee-info-link{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:7px 10px;border-radius:8px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8!important;text-decoration:none;font-weight:850;font-size:.75rem;white-space:nowrap}.fee-info-link:hover{background:#dbeafe;transform:translateY(-1px)}
