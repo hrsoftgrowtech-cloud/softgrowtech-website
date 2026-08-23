@@ -1038,275 +1038,193 @@ document.addEventListener("DOMContentLoaded", () => {
   initVerificationPage();
   initResultPage();
 });
-/* SOFTGROWTECH NEW AUTOMATIC INTERNSHIP WORKFLOW */
 
-/* SOFTGROWTECH NEW AUTOMATIC INTERNSHIP WORKFLOW */
+/* SOFTGROWTECH NEW SETUP — PRESERVE EXISTING FINAL DESIGN */
 (function () {
-  const SGT_CONFIRMATIONS_TABLE = 'Confirmations';
+  const CONFIRMATIONS_TABLE = 'Confirmations';
 
-  function sgtNormId(v) {
+  function normId(v) {
     return String(v ?? '').trim().toUpperCase().replace(/[\s_]+/g, '-');
   }
 
-  function sgtDate(value) {
-    if (!value) return null;
-    const d = new Date(value);
+  function parseDate(v) {
+    if (!v) return null;
+    const d = new Date(v);
     return Number.isNaN(d.getTime()) ? null : d;
   }
 
-  function sgtOneMonthLater(value) {
-    const d = sgtDate(value);
+  function endDateFromBatchStart(v) {
+    const d = parseDate(v);
     if (!d) return null;
     const x = new Date(d);
-    const originalDay = x.getDate();
+    const day = x.getDate();
     x.setMonth(x.getMonth() + 1);
-    // JS rolls 31st into the following month; clamp to last day instead.
-    if (x.getDate() !== originalDay) {
-      x.setDate(0);
-    }
+    if (x.getDate() !== day) x.setDate(0);
     return x;
   }
 
-  function sgtIsCompleteByDate(batchStart) {
-    const end = sgtOneMonthLater(batchStart);
-    return !!end && new Date() >= end;
-  }
-
-  async function sgtHasConfirmation(studentId) {
+  async function hasConfirmation(studentId) {
     try {
-      const id = encodeURIComponent(sgtNormId(studentId));
-      const url = `${SUPABASE_URL}/rest/v1/${SGT_CONFIRMATIONS_TABLE}?select="Student%20Id"&Student%20Id=eq.${id}&limit=1`;
-      const r = await fetch(url, {
+      const encoded = encodeURIComponent(normId(studentId));
+      const url = `${SUPABASE_URL}/rest/v1/${CONFIRMATIONS_TABLE}?select="Student%20Id"&Student%20Id=eq.${encoded}&limit=1`;
+      const response = await fetch(url, {
         headers: {
           apikey: SUPABASE_PUBLISHABLE_KEY,
           Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
         }
       });
-      if (!r.ok) return false;
-      const rows = await r.json();
-      return Array.isArray(rows) && rows.length > 0;
-    } catch (_) {
+      if (!response.ok) return false;
+      const rows = await response.json();
+      return Array.isArray(rows) && rows.some(r => normId(r['Student Id']) === normId(studentId));
+    } catch (e) {
       return false;
     }
   }
 
-  function sgtWorkflow(record, confirmed) {
-    const legacy = String(record.workflowVersion || record.workflow_version || '').toLowerCase() === 'legacy';
-    if (legacy) {
-      return { legacy: true };
-    }
-
-    const batchStart = record.batchStart || record.batch_start || record["Batch Start"];
-    const complete = sgtIsCompleteByDate(batchStart);
-
-    if (!complete) {
-      if (confirmed) {
-        return {
-          legacy: false,
-          phase: 'running-verified',
-          overall: 'RUNNING',
-          verification: 'VERIFIED',
-          certificate: 'COMING SOON',
-          theme: 'blue',
-          confirmationPending: false
-        };
-      }
-      return {
-        legacy: false,
-        phase: 'running-pending',
-        overall: 'RUNNING',
-        verification: 'NOT VERIFIED',
-        certificate: 'COMING SOON',
-        theme: 'red',
-        confirmationPending: true
-      };
-    }
-
-    if (confirmed) {
-      return {
-        legacy: false,
-        phase: 'complete-verified',
-        overall: 'COMPLETE',
-        verification: 'VERIFIED',
-        certificate: 'RECEIVED / VERIFIED',
-        theme: 'blue',
-        confirmationPending: false
-      };
-    }
-
-    return {
-      legacy: false,
-      phase: 'complete-pending',
-      overall: 'COMPLETE',
-      verification: 'NOT VERIFIED',
-      certificate: 'NOT ISSUED',
-      theme: 'red',
-      confirmationPending: true
-    };
+  function getBatchStart(record) {
+    return record?.batchStart || record?.batch_start || record?.['Batch Start'] || '';
   }
 
-  function sgtStatusStyles(theme) {
-    if (theme === 'blue') {
-      return {
-        bg: '#eff6ff',
-        border: '#bfdbfe',
-        main: '#2563eb',
-        text: '#1e3a8a'
-      };
+  function getStudentId(record) {
+    return record?.studentId || record?.['Student Id'] || record?.id || '';
+  }
+
+  function isNewSetupRecord(record) {
+    // New records are identified by having a Batch Start value.
+    // Existing/legacy records in the original final site have no Batch Start
+    // in the verification payload and are left completely untouched.
+    return !!getBatchStart(record);
+  }
+
+  function workflowState(record, confirmed) {
+    const start = getBatchStart(record);
+    const end = endDateFromBatchStart(start);
+    const ended = !!end && new Date() >= end;
+
+    if (!ended && !confirmed) {
+      return { phase: 'running-pending', overall: 'RUNNING', verify: 'CONFIRMATION PENDING', cert: 'COMING SOON', color: 'red' };
     }
-    return {
-      bg: '#fff7f7',
-      border: '#fecaca',
-      main: '#dc2626',
-      text: '#991b1b'
-    };
-  }
-
-  function sgtConfirmationMessage(wf) {
-    if (!wf.confirmationPending) {
-      return `
-        <div class="sgt-congrats">
-          <div class="sgt-congrats-icon">✓</div>
-          <div>
-            <strong>Congratulations! Your confirmation has been verified.</strong>
-            <p>Keep going—your internship record is officially updated with SoftGrowTech.</p>
-          </div>
-        </div>`;
+    if (!ended && confirmed) {
+      return { phase: 'running-confirmed', overall: 'RUNNING', verify: 'VERIFIED', cert: 'COMING SOON', color: 'blue' };
     }
-    return `
-      <a class="sgt-confirm-link" href="confirmation.html">
-        <span>Complete Your Confirmation</span><b>→</b>
-      </a>`;
+    if (ended && confirmed) {
+      return { phase: 'completed-confirmed', overall: 'COMPLETE', verify: 'VERIFIED', cert: 'RECEIVED / VERIFIED', color: 'blue' };
+    }
+    return { phase: 'completed-pending', overall: 'COMPLETE', verify: 'NOT VERIFIED', cert: 'NOT ISSUED', color: 'red' };
   }
 
-  function sgtWorkflowSection(wf) {
-    const c = sgtStatusStyles(wf.theme);
-    const certComing = wf.certificate === 'COMING SOON';
-    const certReceived = wf.certificate === 'RECEIVED / VERIFIED';
-    const certNot = wf.certificate === 'NOT ISSUED';
-
-    const certBadgeClass = certReceived ? 'ok' : (certNot ? 'bad' : 'soon');
-    const verifyBadgeClass = wf.verification === 'VERIFIED' ? 'ok' : 'bad';
-
-    return `
-      <section class="sgt-workflow-card" style="--sgt-bg:${c.bg};--sgt-border:${c.border};--sgt-main:${c.main};--sgt-text:${c.text}">
-        <div class="sgt-workflow-title">
-          <span>${wf.overall === 'COMPLETE' ? 'INTERNSHIP COMPLETED' : 'INTERNSHIP IN PROGRESS'}</span>
-          <strong>${wf.overall}</strong>
-        </div>
-
-        <div class="sgt-workflow-grid">
-          <div class="sgt-overall">
-            <div class="sgt-overall-icon">${wf.overall === 'COMPLETE' ? '✓' : (wf.confirmationPending ? '!' : '✓')}</div>
-            <small>Overall Status</small>
-            <strong>${wf.overall}</strong>
-            <p>${wf.confirmationPending
-              ? (wf.overall === 'COMPLETE'
-                  ? 'Your internship has ended. Confirmation is still required.'
-                  : 'Your internship is currently running. Confirmation is still pending.')
-              : (wf.overall === 'COMPLETE'
-                  ? 'Your internship is complete and your confirmation is verified.'
-                  : 'Your internship is currently in progress and your confirmation is verified.')
-            }</p>
-          </div>
-
-          <div class="sgt-documents">
-            <h2>Document Status</h2>
-
-            <div class="sgt-doc-row">
-              <div>
-                <strong>Offer Letter</strong>
-                <span>Offer letter has been issued.</span>
-              </div>
-              <span class="sgt-badge ok">✓ Received / Verified</span>
-            </div>
-
-            <div class="sgt-doc-row">
-              <div>
-                <strong>Verification Status</strong>
-                <span>${wf.confirmationPending ? 'Confirmation has not been received yet.' : 'Confirmation received successfully.'}</span>
-              </div>
-              <span class="sgt-badge ${verifyBadgeClass}">${wf.verification}</span>
-            </div>
-
-            <div class="sgt-doc-row">
-              <div>
-                <strong>Certificate</strong>
-                <span>${certComing ? 'Certificate will be available after successful completion.' :
-                  certReceived ? 'Your internship certificate has been verified.' :
-                  'Certificate cannot be issued until confirmation is completed.'}</span>
-              </div>
-              <span class="sgt-badge ${certBadgeClass}">
-                ${certComing ? '⌛ Coming Soon' : certReceived ? '✓ Received / Verified' : 'Not Issued'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        ${sgtConfirmationMessage(wf)}
-      </section>`;
-  }
-
-  function sgtAddStyles() {
-    if (document.getElementById('sgt-new-workflow-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'sgt-new-workflow-styles';
-    style.textContent = `
-      .sgt-workflow-card{margin:20px 0;padding:20px;border:1px solid var(--sgt-border);background:var(--sgt-bg);border-radius:14px}
-      .sgt-workflow-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:18px;color:var(--sgt-text);font-size:12px;font-weight:800}
-      .sgt-workflow-title strong{background:var(--sgt-main);color:#fff;border-radius:7px;padding:8px 11px;font-size:11px}
-      .sgt-workflow-grid{display:grid;grid-template-columns:190px 1fr;gap:20px;align-items:center}
-      .sgt-overall{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px;text-align:center}
-      .sgt-overall-icon{width:46px;height:46px;margin:0 auto 8px;border-radius:50%;background:#eef2ff;color:var(--sgt-main);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900}
-      .sgt-overall small{display:block;color:#64748b;font-size:11px}.sgt-overall strong{display:block;margin-top:4px;color:var(--sgt-main);font-size:19px}.sgt-overall p{margin:7px auto 0;color:#64748b;font-size:10px;line-height:1.4}
-      .sgt-documents h2{margin:0 0 10px;font-size:18px}
-      .sgt-doc-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 13px;margin-top:8px}
-      .sgt-doc-row strong{display:block;font-size:13px}.sgt-doc-row span:not(.sgt-badge){display:block;color:#64748b;font-size:11px;margin-top:4px;line-height:1.35}
-      .sgt-badge{white-space:nowrap;border-radius:7px;padding:7px 9px;font-size:10px;font-weight:800}
-      .sgt-badge.ok{background:#dcfce7;color:#15803d}.sgt-badge.soon{background:#dbeafe;color:#1d4ed8}.sgt-badge.bad{background:#fee2e2;color:#b91c1c}
-      .sgt-confirm-link{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:15px;padding:13px 15px;border:1px solid #fca5a5;border-radius:10px;background:#fff;color:#b91c1c;text-decoration:none;font-size:13px;font-weight:900;animation:sgtPulse 1.8s ease-in-out infinite}
-      .sgt-confirm-link b{font-size:18px}.sgt-congrats{display:flex;gap:12px;align-items:center;margin-top:15px;padding:14px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff}
-      .sgt-congrats-icon{width:38px;height:38px;min-width:38px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900}
-      .sgt-congrats strong{display:block;color:#1d4ed8;font-size:13px}.sgt-congrats p{margin:4px 0 0;color:#475569;font-size:11px}
-      @keyframes sgtPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.12)}50%{box-shadow:0 0 0 5px rgba(220,38,38,.06)}}
-      @media(max-width:760px){.sgt-workflow-grid{grid-template-columns:1fr}.sgt-doc-row{flex-direction:column;align-items:flex-start}.sgt-badge{white-space:normal}}
+  function injectStyles() {
+    if (document.getElementById('sgt-new-setup-styles')) return;
+    const s = document.createElement('style');
+    s.id = 'sgt-new-setup-styles';
+    s.textContent = `
+      .sgt-new-setup{margin-top:20px;border-radius:14px;border:1px solid var(--sgt-border);background:var(--sgt-bg);overflow:hidden}
+      .sgt-new-setup .sgt-head{padding:10px 14px;background:var(--sgt-main);color:#fff;font-size:12px;font-weight:800;letter-spacing:.2px}
+      .sgt-new-setup .sgt-body{padding:18px}
+      .sgt-new-setup .sgt-grid{display:grid;grid-template-columns:180px 1fr;gap:20px;align-items:center}
+      .sgt-new-setup .sgt-overall{text-align:center;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px}
+      .sgt-new-setup .sgt-icon{width:54px;height:54px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;background:#eef2ff;color:var(--sgt-main);font-size:25px;font-weight:900}
+      .sgt-new-setup .sgt-overall small{display:block;color:#64748b;font-size:11px}
+      .sgt-new-setup .sgt-overall strong{display:block;color:var(--sgt-main);font-size:20px;margin-top:4px}
+      .sgt-new-setup .sgt-overall p{font-size:10px;color:#64748b;line-height:1.4;margin:7px auto 0;max-width:145px}
+      .sgt-new-setup h3{margin:0 0 10px;font-size:17px}
+      .sgt-new-setup .sgt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 13px;margin-top:8px}
+      .sgt-new-setup .sgt-row strong{display:block;font-size:13px}
+      .sgt-new-setup .sgt-row span.desc{display:block;color:#64748b;font-size:11px;margin-top:4px;line-height:1.35}
+      .sgt-new-setup .sgt-badge{white-space:nowrap;border-radius:7px;padding:7px 9px;font-size:10px;font-weight:800}
+      .sgt-new-setup .ok{background:#dcfce7;color:#15803d}
+      .sgt-new-setup .soon{background:#dbeafe;color:#1d4ed8}
+      .sgt-new-setup .bad{background:#fee2e2;color:#b91c1c}
+      .sgt-new-setup .pending{background:#fff1f2;color:#be123c}
+      .sgt-new-setup .sgt-action{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:13px 14px;border-radius:10px;text-decoration:none;font-size:12px;font-weight:800}
+      .sgt-new-setup .sgt-action.red{border:1px solid #fca5a5;background:#fff;color:#b91c1c;animation:sgtConfirmPulse 1.8s ease-in-out infinite}
+      .sgt-new-setup .sgt-congrats{margin-top:14px;padding:13px 14px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:10px;color:#1d4ed8;font-size:12px;font-weight:700}
+      @keyframes sgtConfirmPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.08)}50%{box-shadow:0 0 0 5px rgba(220,38,38,.04)}}
+      @media(max-width:760px){.sgt-new-setup .sgt-grid{grid-template-columns:1fr}.sgt-new-setup .sgt-row{flex-direction:column;align-items:flex-start}.sgt-new-setup .sgt-badge{white-space:normal}}
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(s);
   }
 
-  async function sgtEnhanceResult() {
+  function renderNewSetup(record, state) {
+    injectStyles();
     const mount = document.getElementById('verificationResultPage') || document.getElementById('verificationResult');
     if (!mount) return;
 
-    // Preserve the existing final verification page. Only enhance valid records.
-    let raw = sessionStorage.getItem('softgrowVerificationResult');
-    let record = null;
-    try { record = raw ? JSON.parse(raw) : null; } catch (_) {}
+    mount.querySelectorAll('.sgt-new-setup').forEach(e => e.remove());
 
-    if (!record || record.type !== 'valid') return;
+    const color = state.color === 'blue'
+      ? { main:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' }
+      : { main:'#dc2626', bg:'#fff7f7', border:'#fecaca' };
 
-    sgtAddStyles();
+    const verifyClass = state.verify === 'VERIFIED' ? 'ok' : 'pending';
+    const certClass = state.cert === 'RECEIVED / VERIFIED' ? 'ok' : state.cert === 'COMING SOON' ? 'soon' : 'bad';
 
-    const studentId = record.studentId || record.id || '';
-    const confirmed = await sgtHasConfirmation(studentId);
+    const action = state.verify !== 'VERIFIED'
+      ? `<a class="sgt-action red" href="confirmation.html"><span>Complete Your Confirmation</span><b>→</b></a>`
+      : state.phase === 'running-confirmed'
+        ? `<div class="sgt-congrats">🎉 Congratulations! Your confirmation has been received successfully. Keep up the great work!</div>`
+        : `<div class="sgt-congrats">🎉 Congratulations! Your internship is complete and your confirmation has been verified.</div>`;
 
-    const wf = sgtWorkflow(record, confirmed);
-    if (wf.legacy) return;
-
-    // Remove an older injected workflow section, if any.
-    mount.querySelectorAll('.sgt-workflow-card').forEach(el => el.remove());
-
-    const html = sgtWorkflowSection(wf);
-    const anchor = mount.querySelector('.result-status-card, .status-section, .result-main');
-    if (anchor && anchor.parentNode) {
-      anchor.insertAdjacentHTML('afterend', html);
-    } else {
-      mount.insertAdjacentHTML('beforeend', html);
-    }
+    const card = document.createElement('section');
+    card.className = 'sgt-new-setup';
+    card.style.setProperty('--sgt-main', color.main);
+    card.style.setProperty('--sgt-bg', color.bg);
+    card.style.setProperty('--sgt-border', color.border);
+    card.innerHTML = `
+      <div class="sgt-head">
+        ${state.phase === 'running-pending' ? 'RUNNING — CONFIRMATION PENDING' :
+          state.phase === 'running-confirmed' ? 'RUNNING — CONFIRMATION RECEIVED' :
+          state.phase === 'completed-confirmed' ? 'COMPLETED — CONFIRMATION RECEIVED' :
+          'COMPLETED — CONFIRMATION NOT RECEIVED'}
+      </div>
+      <div class="sgt-body">
+        <div class="sgt-grid">
+          <div class="sgt-overall">
+            <div class="sgt-icon">${state.overall === 'COMPLETE' ? '✓' : '◷'}</div>
+            <small>Overall Status</small>
+            <strong>${state.overall}</strong>
+            <p>${state.overall === 'RUNNING' ? 'Your internship is currently in progress.' : 'Your internship has successfully completed.'}</p>
+          </div>
+          <div>
+            <h3>Document Status</h3>
+            <div class="sgt-row">
+              <div><strong>Offer Letter</strong><span class="desc">Offer letter has been issued.</span></div>
+              <span class="sgt-badge ok">✓ Received &amp; Verified</span>
+            </div>
+            <div class="sgt-row">
+              <div><strong>Verification Status</strong><span class="desc">${state.verify === 'VERIFIED' ? 'Confirmation received successfully.' : 'Confirmation has not been received yet.'}</span></div>
+              <span class="sgt-badge ${verifyClass}">${state.verify}</span>
+            </div>
+            <div class="sgt-row">
+              <div><strong>Certificate</strong><span class="desc">${state.cert === 'COMING SOON' ? 'Certificate will be issued after successful completion.' : state.cert === 'RECEIVED / VERIFIED' ? 'Certificate has been issued and verified.' : 'Certificate has not been issued.'}</span></div>
+              <span class="sgt-badge ${certClass}">${state.cert}</span>
+            </div>
+          </div>
+        </div>
+        ${action}
+      </div>`;
+    mount.appendChild(card);
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    setTimeout(sgtEnhanceResult, 250);
-  });
+  async function runNewSetup() {
+    const raw = sessionStorage.getItem('softgrowVerificationResult');
+    if (!raw) return;
+
+    let record;
+    try { record = JSON.parse(raw); } catch (_) { return; }
+    if (!record || record.type !== 'valid') return;
+
+    // Critical: old records are untouched. New setup only applies when
+    // Batch Start is present in the verification record.
+    if (!isNewSetupRecord(record)) return;
+
+    const studentId = getStudentId(record);
+    if (!studentId) return;
+
+    const confirmed = await hasConfirmation(studentId);
+    renderNewSetup(record, workflowState(record, confirmed));
+  }
+
+  document.addEventListener('DOMContentLoaded', () => setTimeout(runNewSetup, 300));
 })();
 
