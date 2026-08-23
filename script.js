@@ -352,12 +352,14 @@ async function handleVerification(form) {
     }
 
     // The verification RPC authenticates the ID + mobile digits.
-    // After authentication, read the public status view so duplicate Student IDs
-    // can be resolved into the correct current display state.
-    let displayStudent = data[0];
+    // The public result is then calculated from the batch start date and the
+    // separate Confirmations table. This lets the same Student ID exist more
+    // than once without creating a confusing "double record" on the website.
+    let displayStudent = chooseBestVerificationRecord(data, data[0]);
+
     try {
-      const viewUrl = `${SUPABASE_URL}/rest/v1/Student%20Record%20Status?select=*&Student%20Id=eq.${encodeURIComponent(id)}`;
-      const viewResponse = await fetch(viewUrl, {
+      const confirmationUrl = `${SUPABASE_URL}/rest/v1/Confirmations?select="Student%20Id",confirmed_at&Student%20Id=eq.${encodeURIComponent(id)}&order=confirmed_at.desc&limit=1`;
+      const confirmationResponse = await fetch(confirmationUrl, {
         method: "GET",
         headers: {
           "apikey": SUPABASE_PUBLISHABLE_KEY,
@@ -365,20 +367,15 @@ async function handleVerification(form) {
         }
       });
 
-      if (viewResponse.ok) {
-        const viewRows = await viewResponse.json();
-        if (Array.isArray(viewRows) && viewRows.length) {
-          displayStudent = chooseBestVerificationRecord(viewRows, data[0]);
-        }
+      if (confirmationResponse.ok) {
+        const confirmationRows = await confirmationResponse.json();
+        displayStudent = applyAutomaticVerificationState(displayStudent, confirmationRows);
+      } else {
+        console.warn("Confirmation lookup failed; using stored record status.");
       }
-    } catch (viewError) {
-      console.warn("Status view lookup failed; using authenticated record.", viewError);
+    } catch (confirmationError) {
+      console.warn("Confirmation lookup failed; using stored record status.", confirmationError);
     }
-
-    sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
-      type: "valid",
-      student: displayStudent
-    }));
 
     // Do not put the mobile digits in the URL.
     window.location.href = `verification-result.html?id=${encodeURIComponent(id)}`;
@@ -396,26 +393,95 @@ async function handleVerification(form) {
   }
 }
 
+
+function normalizeStudentId(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
+function parseBatchStart(value) {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function addOneMonth(date) {
+  const result = new Date(date.getTime());
+  const originalDay = result.getDate();
+  result.setDate(1);
+  result.setMonth(result.getMonth() + 1);
+  const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(originalDay, lastDay));
+  return result;
+}
+
+function applyAutomaticVerificationState(student, confirmationRows) {
+  const row = { ...student };
+  const batchStart = parseBatchStart(row["Batch Start"] || row["Batch date"]);
+  const now = new Date();
+
+  // Existing completed records remain valid even if the new Confirmations table
+  // has not yet been back-filled. New batches use the confirmation table.
+  const storedStatus = String(row["Status"] || "").trim().toUpperCase();
+  const storedCertificate = String(row["Certificate"] || "").trim().toUpperCase();
+  const legacyCompleted = /COMPLETE|COMPLETED/.test(storedStatus);
+  const legacyVerified = /RECEIVED|VERIFIED|ISSUED/.test(storedCertificate) &&
+                         /COMPLETE|COMPLETED/.test(storedStatus);
+
+  const confirmed = Array.isArray(confirmationRows) && confirmationRows.some(r => {
+    return normalizeStudentId(r["Student Id"]) === normalizeStudentId(row["Student Id"] || "");
+  });
+
+  // If there is no usable batch start date, preserve the stored values.
+  if (!batchStart) {
+    row["Display Status"] = storedStatus || "RUNNING";
+    row["Verification Status"] = legacyVerified ? "VERIFIED" : (confirmed ? "VERIFIED" : "NOT VERIFIED");
+    row["Display Certificate"] = storedCertificate || (confirmed ? "COMING SOON" : "NOT ISSUED");
+    return row;
+  }
+
+  const endDate = addOneMonth(batchStart);
+  const completed = now >= endDate;
+
+  row["Batch End"] = endDate.toISOString();
+  row["Confirmation Received"] = confirmed;
+
+  if (!completed) {
+    row["Display Status"] = "RUNNING";
+    row["Verification Status"] = confirmed ? "VERIFIED" : "NOT VERIFIED";
+    row["Display Certificate"] = confirmed ? "COMING SOON" : "COMING SOON";
+    return row;
+  }
+
+  row["Display Status"] = "COMPLETE";
+  row["Verification Status"] = (confirmed || legacyVerified) ? "VERIFIED" : "NOT VERIFIED";
+  row["Display Certificate"] = (confirmed || legacyVerified) ? "RECEIVED / VERIFIED" : "NOT ISSUED";
+  return row;
+}
+
 function chooseBestVerificationRecord(rows, fallback) {
+  if (!Array.isArray(rows) || !rows.length) return fallback;
+
   const priority = (row) => {
     const status = String(row["Display Status"] || row["Status"] || "").toUpperCase();
-    const verification = String(row["Verification Status"] || "").toUpperCase();
-
-    if (status === "COMPLETE" && verification === "VERIFIED") return 4;
-    if (status === "COMPLETE" && verification === "NOT VERIFIED") return 3;
-    if (status === "RUNNING" && verification === "VERIFIED") return 2;
-    if (status === "RUNNING" && verification === "NOT VERIFIED") return 1;
+    const certificate = String(row["Display Certificate"] || row["Certificate"] || "").toUpperCase();
+    if (/COMPLETE|COMPLETED/.test(status) && /RECEIVED|VERIFIED|ISSUED/.test(certificate)) return 4;
+    if (/COMPLETE|COMPLETED/.test(status)) return 3;
+    if (/RUNNING|ONGOING|ACTIVE/.test(status) && /VERIFIED|RECEIVED/.test(certificate)) return 2;
+    if (/RUNNING|ONGOING|ACTIVE/.test(status)) return 1;
     return 0;
   };
 
   return rows
     .slice()
     .sort((a, b) => {
-      const p = priority(b) - priority(a);
-      if (p !== 0) return p;
-      const ad = new Date(a["Batch Start"] || 0).getTime();
-      const bd = new Date(b["Batch Start"] || 0).getTime();
-      return bd - ad;
+      const ad = parseBatchStart(a["Batch Start"] || a["Batch date"]);
+      const bd = parseBatchStart(b["Batch Start"] || b["Batch date"]);
+      const at = ad ? ad.getTime() : 0;
+      const bt = bd ? bd.getTime() : 0;
+      if (bt !== at) return bt - at;
+      return priority(b) - priority(a);
     })[0] || fallback;
 }
 
@@ -693,157 +759,227 @@ function maskPublicEmail(email) {
 function renderVerified(student) {
   ensureRecordFooterStyles();
   ensureDownloadAndBadgeStyles();
+
   const root = document.getElementById("verificationResult");
   const backUrl = "documents-verification.html";
   const id = student["Student Id"] || "Not Available";
   const name = student["Name"] || "Not Available";
   const email = student["Student Email"] || student["Email"] || student["email"] || student["Email Address"] || student["Email address"] || "Not Available";
   const domain = student["Domain"] || "Not Available";
-  const batch = formatDate(student["Batch Start"] || student["Batch date"]);
-  const offer = String(student["Offer Letter"] || student["Stored Offer Letter"] || "Not Available");
+  const batchStartValue = student["Batch Start"] || student["Batch date"];
+  const batch = formatDate(batchStartValue);
+  const offer = String(student["Offer Letter"] || student["Stored Offer Letter"] || "Received / Verified");
 
-  // New workflow fields come from the Student Record Status view.
-  // Legacy records continue to use their stored Status/Certificate values.
-  const displayStatus = String(student["Display Status"] || student["Status"] || "Not Available").toUpperCase();
-  const verificationStatus = String(student["Verification Status"] || "").toUpperCase();
-  const displayCertificate = String(student["Display Certificate"] || student["Certificate"] || "Not Available");
-
-  const isLegacy = !student["Display Status"] && !student["Verification Status"] && !student["Display Certificate"];
+  const displayStatus = String(student["Display Status"] || student["Status"] || "RUNNING").toUpperCase();
+  const verificationStatus = String(student["Verification Status"] || "NOT VERIFIED").toUpperCase();
+  const displayCertificate = String(student["Display Certificate"] || student["Certificate"] || "COMING SOON").toUpperCase();
+  const confirmationReceived = /VERIFIED/.test(verificationStatus);
   const completed = /COMPLETE|COMPLETED/.test(displayStatus);
-  const running = /RUNNING|ONGOING|ACTIVE/.test(displayStatus);
-  const isVerified = /VERIFIED/.test(verificationStatus) || (!verificationStatus && /VERIFIED|RECEIVED/.test(String(student["Certificate"] || "").toUpperCase()));
-  const isNotVerified = /NOT\s*VERIFIED/.test(verificationStatus);
 
-  // Legacy presentation remains as close as possible to the existing site.
-  // New v2 records use the automatic four-state workflow.
   let mode = "running-pending";
-  if (isLegacy) {
-    const legacyCertificate = String(student["Certificate"] || "");
-    const legacyStatus = String(student["Status"] || "").toUpperCase();
-    const legacyCompleted = /COMPLETE|COMPLETED/.test(legacyStatus);
-    const legacyCertVerified = /RECEIVED|VERIFIED|ISSUED/.test(legacyCertificate.toUpperCase());
-    if (legacyCompleted && legacyCertVerified) mode = "completed";
-    else if (legacyCompleted) mode = "certificate-missing";
-    else mode = "running";
-  } else if (completed && isVerified) {
-    mode = "completed";
-  } else if (completed && isNotVerified) {
-    mode = "certificate-missing";
-  } else if (running && isVerified) {
-    mode = "running-verified";
-  } else {
-    mode = "running-pending";
-  }
+  if (completed && confirmationReceived) mode = "completed";
+  else if (completed) mode = "certificate-missing";
+  else if (!completed && confirmationReceived) mode = "running-verified";
 
   const whatsapp = "https://wa.me/917839686310";
   const confirmationAction = `<a class="mini-action confirmation-action" href="${whatsapp}" target="_blank" rel="noopener noreferrer">Complete Your Confirmation <span class="click-indicator" aria-hidden="true">→</span></a>`;
-  const certificateAction = `<a class="mini-action certificate-action" href="${whatsapp}" target="_blank" rel="noopener noreferrer">Get Your Certificate <span class="click-indicator certificate-icon" aria-hidden="true">▣</span></a>`;
-  const helpAction = `<span class="help-inline">Need Help? Contact Us <a class="whatsapp-icon" href="${whatsapp}" target="_blank" rel="noopener noreferrer" aria-label="Contact SoftGrowTech on WhatsApp" title="WhatsApp">${waIcon()}</a></span>`;
+  const helpAction = `<span class="help-inline">Need Help? <a class="whatsapp-icon" href="${whatsapp}" target="_blank" rel="noopener noreferrer" aria-label="Contact SoftGrowTech on WhatsApp" title="WhatsApp">${waIcon()}</a></span>`;
 
-  let statusTitle = "INTERNSHIP RUNNING";
-  let statusColor = "#dc2626";
-  let statusBg = "#fff1f2";
-  let overall = "RUNNING";
-  let overallText = "Your internship is currently in progress. Complete your confirmation to keep your record verification up to date.";
-  let verifiedHeading = "Internship Record Found";
-  let verifiedSub = "Your official SoftGrowTech internship record is available.";
+  let theme = {
+    statusTitle: "RUNNING · CONFIRMATION PENDING",
+    statusColor: "#dc2626",
+    statusBg: "#fff7f8",
+    border: "#fecdd3",
+    overall: "RUNNING",
+    overallText: "Your internship is currently in progress.",
+    heading: "Document Record Verified",
+    sub: "Your official internship record is available. Confirmation is pending.",
+    icon: "!"
+  };
 
   if (mode === "running-verified") {
-    statusColor = "#2563eb";
-    statusBg = "#eff6ff";
-    overall = "RUNNING · VERIFIED";
-    overallText = "Your internship is currently in progress and your confirmation has been received.";
-    verifiedHeading = "Document Record Verified";
-    verifiedSub = "Your confirmation has been received and your official record is verified.";
+    theme = {
+      statusTitle: "RUNNING · CONFIRMATION RECEIVED",
+      statusColor: "#2563eb",
+      statusBg: "#f5f9ff",
+      border: "#bfdbfe",
+      overall: "RUNNING",
+      overallText: "Your internship is currently in progress.",
+      heading: "Document Record Verified",
+      sub: "Your confirmation has been received successfully.",
+      icon: "✓"
+    };
   } else if (mode === "completed") {
-    statusTitle = "INTERNSHIP COMPLETED";
-    statusColor = "#2563eb";
-    statusBg = "#eff6ff";
-    overall = "COMPLETE · VERIFIED";
-    overallText = "Your internship has been successfully completed and your required documents have been verified.";
-    verifiedHeading = "Document Record Verified";
-    verifiedSub = "The record associated with this Student / Letter ID is valid.";
+    theme = {
+      statusTitle: "COMPLETED · CONFIRMATION RECEIVED",
+      statusColor: "#15803d",
+      statusBg: "#f4fbf6",
+      border: "#bbf7d0",
+      overall: "COMPLETE",
+      overallText: "Your internship has been successfully completed.",
+      heading: "Document Record Verified",
+      sub: "Your internship and required confirmation have been completed successfully.",
+      icon: "✓"
+    };
   } else if (mode === "certificate-missing") {
-    statusTitle = "INTERNSHIP COMPLETED";
-    statusColor = "#dc2626";
-    statusBg = "#fff1f2";
-    overall = "COMPLETE · NOT VERIFIED";
-    overallText = "Your internship period is complete, but your confirmation was not received.";
-    verifiedHeading = "Internship Record Found";
-    verifiedSub = "Your official internship record is available; confirmation is still pending.";
+    theme = {
+      statusTitle: "COMPLETED · CONFIRMATION NOT RECEIVED",
+      statusColor: "#dc2626",
+      statusBg: "#fff7f7",
+      border: "#fecaca",
+      overall: "COMPLETE",
+      overallText: "Your internship period has ended, but confirmation was not received.",
+      heading: "Internship Record Found",
+      sub: "Your internship record is valid, but certificate issuance is pending confirmation.",
+      icon: "!"
+    };
   }
 
-  let documentRows = `
-    <div class="doc-row"><div><strong>Offer Letter</strong><small>${escapeHtml(/RECEIVED|VERIFIED|ISSUED/.test(offer.toUpperCase()) ? "Offer letter has been issued and verified." : offer)}</small></div><span class="badge green">✓ Received &amp; Verified</span></div>`;
+  const offerRow = `
+    <div class="doc-row">
+      <div class="doc-info-wrap">
+        <div class="doc-icon doc-icon-green">▤</div>
+        <div><strong>Offer Letter</strong><small>${escapeHtml(/RECEIVED|VERIFIED|ISSUED/.test(offer.toUpperCase()) ? "Offer letter has been issued and verified." : offer)}</small></div>
+      </div>
+      <span class="badge green">✓ Received &amp; Verified</span>
+    </div>`;
 
+  let certificateRow = "";
   if (mode === "running-pending") {
-    documentRows += `<div class="doc-row"><div><strong>Verification Status</strong><small>Your confirmation is pending. Complete your confirmation to update this record.</small></div><span class="badge red">! Not Verified</span></div>`;
-    documentRows += `<div class="doc-row"><div><strong>Certificate</strong><small>Certificate processing will begin after successful completion and confirmation.</small></div><span class="badge yellow">⌛ Coming Soon</span></div>`;
+    certificateRow = `
+      <div class="doc-row doc-row-action">
+        <div class="doc-info-wrap">
+          <div class="doc-icon doc-icon-red">▧</div>
+          <div><strong>Certificate</strong><small>Please complete your confirmation to receive your certificate.</small></div>
+        </div>
+        <div class="doc-action-wrap"><span class="badge yellow">⌛ Coming Soon</span>${confirmationAction}</div>
+      </div>`;
   } else if (mode === "running-verified") {
-    documentRows += `<div class="doc-row"><div><strong>Verification Status</strong><small>Your confirmation has been successfully received.</small></div><span class="badge blue">✓ Verified</span></div>`;
-    documentRows += `<div class="doc-row"><div><strong>Certificate</strong><small>Your certificate will be available after successful completion of the internship.</small></div><span class="badge yellow">⌛ Coming Soon</span></div>`;
+    certificateRow = `
+      <div class="doc-row">
+        <div class="doc-info-wrap">
+          <div class="doc-icon doc-icon-blue">▧</div>
+          <div><strong>Certificate</strong><small>Your certificate will be issued after successful completion.</small></div>
+        </div>
+        <span class="badge yellow">⌛ Coming Soon</span>
+      </div>`;
   } else if (mode === "completed") {
-    documentRows += `<div class="doc-row"><div><strong>Verification Status</strong><small>Your confirmation has been received and verified.</small></div><span class="badge blue">✓ Verified</span></div>`;
-    documentRows += `<div class="doc-row"><div><strong>Certificate</strong><small>Your certificate has been received and verified.</small></div><span class="badge green">✓ Received &amp; Verified</span></div>`;
+    certificateRow = `
+      <div class="doc-row">
+        <div class="doc-info-wrap">
+          <div class="doc-icon doc-icon-green">▧</div>
+          <div><strong>Certificate</strong><small>Your certificate has been received and verified.</small></div>
+        </div>
+        <span class="badge green">✓ Received / Verified</span>
+      </div>`;
   } else {
-    documentRows += `<div class="doc-row"><div><strong>Verification Status</strong><small>Your internship period is complete, but confirmation was not received.</small></div><span class="badge red">! Not Verified</span></div>`;
-    documentRows += `<div class="doc-row"><div><strong>Certificate</strong><small>Your certificate has not been issued because confirmation was not received.</small></div><span class="badge red">✕ Not Issued</span></div>`;
+    certificateRow = `
+      <div class="doc-row doc-row-action">
+        <div class="doc-info-wrap">
+          <div class="doc-icon doc-icon-red">▧</div>
+          <div><strong>Certificate</strong><small>Your certificate has not been issued because confirmation was not received.</small></div>
+        </div>
+        <div class="doc-action-wrap"><span class="badge red">✕ Not Issued</span>${confirmationAction}</div>
+      </div>`;
   }
 
-  let bottomMessage = "";
-  if (mode === "completed") {
-    bottomMessage = `<div class="congratulations"><div class="congrats-icon">✓</div><div><strong>Congratulations!</strong><p>Your internship has been successfully completed. Thank you for completing your confirmation process and being part of the learning journey.</p></div></div>`;
-  } else if (mode === "certificate-missing") {
-    bottomMessage = `<div class="confirmation-pending-box">${confirmationAction}<span class="confirmation-arrow-text">Complete your confirmation to proceed with certificate processing.</span>${helpAction}</div>`;
-  } else if (mode === "running-pending") {
-    bottomMessage = `<div class="confirmation-pending-box">${confirmationAction}<span class="confirmation-arrow-text">Your internship is running. Complete your confirmation to keep your record verification updated.</span>${helpAction}</div>`;
+  let message = "";
+  if (mode === "running-pending") {
+    message = `
+      <div class="state-message state-message-red">
+        <div class="message-icon">i</div>
+        <div><strong>Why is confirmation required?</strong><p>Your confirmation helps us verify your details and prepare your certificate.</p></div>
+      </div>
+      <div class="state-bottom-line state-bottom-red">◉ Complete your confirmation to move forward.</div>`;
+  } else if (mode === "running-verified") {
+    message = `
+      <div class="state-message state-message-blue">
+        <div class="message-icon">✦</div>
+        <div><strong>Congratulations! 🎉</strong><p>Great job! Your confirmation has been received successfully. You are one step closer to earning your certificate.</p></div>
+      </div>
+      <div class="state-bottom-line state-bottom-blue">▣ Once the internship is completed, your certificate will be issued and verified.</div>`;
+  } else if (mode === "completed") {
+    message = `
+      <div class="state-message state-message-green">
+        <div class="message-icon">✦</div>
+        <div><strong>Congratulations! 🎉</strong><p>You have successfully completed the internship and your confirmation has been verified. Keep growing!</p></div>
+      </div>
+      <div class="state-bottom-line state-bottom-green">✓ Your certificate is now available and verified.</div>`;
   } else {
-    bottomMessage = `<div class="congratulations running-verified-message"><div class="congrats-icon">✓</div><div><strong>Congratulations!</strong><p>Your confirmation has been successfully received. Keep learning, complete your internship journey, and your certificate will be available after completion.</p></div></div>`;
+    message = `
+      <div class="state-message state-message-red">
+        <div class="message-icon">!</div>
+        <div><strong>Your confirmation was not received.</strong><p>Please complete the confirmation process to proceed with certificate issuance.</p></div>
+      </div>
+      <div class="state-bottom-line state-bottom-red">▣ Complete your confirmation to get your certificate.</div>`;
   }
+
+  const statusNote = completed
+    ? `Internship period: <strong>Completed</strong>`
+    : `Internship period: <strong>Running</strong>`;
 
   root.innerHTML = `
-    <div class="result-shell softgrow-result-animate">
+    <div class="result-shell softgrow-result-animate result-state-${mode}" style="--state:${theme.statusColor};--state-bg:${theme.statusBg};--state-border:${theme.border}">
       <div class="result-header">
         <div class="result-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div></div>
         <div class="result-official"><span class="verified-shield" aria-hidden="true"><span>✓</span></span><div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div></div>
       </div>
+
       <div class="result-main">
-        <div class="verified-title"><div class="verified-icon ${mode === "running-pending" || mode === "certificate-missing" ? "result-state-red" : ""}">${mode === "completed" || mode === "running-verified" ? "✓" : "i"}</div><div><h1>${escapeHtml(verifiedHeading)}</h1><p>${escapeHtml(verifiedSub)}</p></div></div>
-        <div class="mobile-last4-privacy-note" style="margin:0 0 16px;padding:10px 14px;border:1px solid #dbeafe;background:#eff6ff;border-radius:10px;color:#1e3a8a;font-size:12px">
-          Verification completed using the Student / Letter ID and the last 4 digits of the registered mobile number. Personal contact details are hidden on this public page.
+        <div class="verified-title">
+          <div class="verified-icon result-state-icon">${theme.icon}</div>
+          <div><h1>${escapeHtml(theme.heading)}</h1><p>${escapeHtml(theme.sub)}</p></div>
         </div>
+
         <div class="student-grid">
           <div><small>Student / Letter ID</small><strong>${escapeHtml(id)}</strong></div>
           <div><small>Student Name</small><strong>${escapeHtml(name)}</strong></div>
           <div><small>Student Email</small><strong>${escapeHtml(maskPublicEmail(email))}</strong></div>
           <div><small>Domain</small><strong>${escapeHtml(domain)}</strong></div>
-          <div><small>Batch</small><strong>${escapeHtml(batch)}</strong></div>
+          <div><small>Batch Start</small><strong>${escapeHtml(batch)}</strong></div>
         </div>
-        <section class="status-section" style="--status:${statusColor};--status-bg:${statusBg}">
-          <div class="status-label">1. ${escapeHtml(statusTitle)}</div>
+
+        <section class="status-section professional-state-section">
+          <div class="status-label">${escapeHtml(theme.statusTitle)}</div>
           <div class="status-content">
-            <div class="overall-circle"><div class="overall-check">${mode === "completed" || mode === "running-verified" ? "✓" : "!"}</div><small>Overall Status</small><strong>${escapeHtml(overall)}</strong><p>${escapeHtml(overallText)}</p></div>
-            <div class="document-status"><h2>Document Status</h2>${documentRows}</div>
+            <div class="overall-circle">
+              <div class="overall-check">${theme.icon}</div>
+              <small>Overall Status</small>
+              <strong>${escapeHtml(theme.overall)}</strong>
+              <p>${escapeHtml(theme.overallText)}</p>
+              <div class="period-note">${statusNote}</div>
+            </div>
+            <div class="document-status">
+              <h2>Document Status</h2>
+              ${offerRow}
+              ${certificateRow}
+            </div>
           </div>
         </section>
-        ${bottomMessage}
+
+        ${message}
+
+        <div class="privacy-note">
+          <span>✓</span> Verification is completed using your Student / Letter ID and registered mobile number. Personal contact details remain protected.
+        </div>
 
         <footer class="record-footer" aria-label="Verification record footer">
           <section class="verification-trust-strip" aria-label="Verification assurance">
             <div class="trust-item"><div class="trust-icon">✓</div><div><strong>100% Authentic</strong><span>All documents are verified and genuine.</span></div></div>
             <div class="trust-item"><div class="trust-icon">♙</div><div><strong>Secure Verification</strong><span>Your privacy and data are fully protected.</span></div></div>
             <div class="trust-item"><div class="trust-icon">✦</div><div><strong>Trusted by Thousands</strong><span>Thousands of students trust SoftGrowTech.</span></div></div>
-            <div class="trust-item"><div class="trust-icon">◉</div><div><strong>Need Support?</strong><span>We're here to help you whenever you need.</span></div></div>
+            <div class="trust-item"><div><strong>Need Support?</strong><span>We're here to help whenever you need.</span></div>${helpAction}</div>
           </section>
           <div class="record-footer-actions">
             <button class="result-button download-record" type="button" data-download-record>Download Verification Record <span>⇩</span></button>
             <a class="result-button verify-another" href="${backUrl}">Verify Another Letter ID <span>→</span></a>
           </div>
-          <p class="result-bottom-line">Verify another ID or need to apply for a new internship application.</p>
+          <p class="result-bottom-line">Verify another ID or return to the official verification page.</p>
           <div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div>
         </footer>
       </div>
     </div>`;
+
   bindVerificationResultActions();
 }
 
@@ -965,6 +1101,50 @@ function ensureRecordFooterStyles() {
       .record-footer .verification-trust-strip{grid-template-columns:1fr 1fr;padding:14px}
       .record-footer-actions{flex-direction:column}
       .record-footer-actions .result-button{width:100%;max-width:360px;min-width:0}
+    }
+    .result-state-running-pending .result-main,
+    .result-state-certificate-missing .result-main,
+    .result-state-running-verified .result-main,
+    .result-state-completed .result-main{background:linear-gradient(180deg,var(--state-bg) 0%,#fff 34%);}
+    .professional-state-section{background:var(--state-bg) !important;border:1px solid var(--state-border) !important;box-shadow:0 10px 30px rgba(15,23,42,.045);}
+    .professional-state-section .status-label{background:var(--state);box-shadow:0 4px 10px rgba(37,99,235,.08);}
+    .result-state-icon{background:#eff6ff !important;color:var(--state) !important;border:1px solid #dbeafe;}
+    .result-state-running-pending .overall-check,.result-state-certificate-missing .overall-check{background:#fee2e2;color:#dc2626;}
+    .result-state-running-verified .overall-check{background:#dbeafe;color:#2563eb;}
+    .result-state-completed .overall-check{background:#dcfce7;color:#15803d;}
+    .period-note{margin-top:8px;padding:5px 8px;border-radius:7px;background:#f8fafc;color:#64748b;font-size:9px;line-height:1.25;}
+    .doc-info-wrap{display:flex;align-items:center;gap:12px;min-width:0;flex:1;}
+    .doc-icon{width:42px;height:42px;min-width:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;}
+    .doc-icon-green{background:#dcfce7;color:#15803d;}
+    .doc-icon-blue{background:#dbeafe;color:#2563eb;}
+    .doc-icon-red{background:#fee2e2;color:#dc2626;}
+    .doc-action-wrap{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;}
+    .doc-row-action{align-items:center;}
+    .confirmation-action{display:inline-flex !important;align-items:center;justify-content:center;gap:6px;padding:9px 12px;border:1px solid #fca5a5;border-radius:8px;background:#fff;color:#b91c1c !important;font-size:11px !important;font-weight:900;white-space:nowrap;box-shadow:0 3px 10px rgba(220,38,38,.08);}
+    .confirmation-action:hover{background:#fff1f2;transform:translateY(-1px);}
+    .confirmation-action .click-indicator{animation:confirmationArrow 1s ease-in-out infinite;}
+    .state-message{display:flex;align-items:center;gap:13px;padding:15px 16px;border-radius:11px;margin:0 0 10px;border:1px solid;}
+    .state-message strong{display:block;font-size:14px;}
+    .state-message p{margin:4px 0 0;font-size:12px;color:#475569;line-height:1.45;}
+    .message-icon{width:40px;height:40px;min-width:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;}
+    .state-message-red{background:#fff1f2;border-color:#fecdd3;color:#b91c1c;}
+    .state-message-red .message-icon{background:#fee2e2;color:#dc2626;}
+    .state-message-blue{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;}
+    .state-message-blue .message-icon{background:#dbeafe;color:#2563eb;}
+    .state-message-green{background:#f0fdf4;border-color:#bbf7d0;color:#15803d;}
+    .state-message-green .message-icon{background:#dcfce7;color:#15803d;}
+    .state-bottom-line{padding:10px 14px;border:1px solid;border-radius:8px;text-align:center;font-size:11px;font-weight:800;margin-bottom:18px;}
+    .state-bottom-red{background:#fff1f2;border-color:#fecdd3;color:#dc2626;}
+    .state-bottom-blue{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;}
+    .state-bottom-green{background:#f0fdf4;border-color:#bbf7d0;color:#15803d;}
+    .privacy-note{display:flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid #dbeafe;background:#f8fbff;border-radius:9px;color:#64748b;font-size:10px;line-height:1.4;margin-bottom:2px;}
+    .privacy-note span{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#dbeafe;color:#2563eb;font-weight:900;min-width:22px;}
+    @media(max-width:760px){
+      .doc-row-action{flex-direction:column;align-items:flex-start;}
+      .doc-action-wrap{width:100%;justify-content:flex-start;}
+      .confirmation-action{width:100%;}
+      .state-message{align-items:flex-start;}
+      .period-note{font-size:9px;}
     }
     .badge.blue{background:#dbeafe;color:#1d4ed8}
     .confirmation-pending-box{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:15px 16px;margin-bottom:20px;border:1px solid #fecaca;background:#fff1f2;border-radius:12px;box-shadow:0 8px 22px rgba(220,38,38,.07)}
