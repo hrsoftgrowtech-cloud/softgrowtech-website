@@ -841,6 +841,10 @@ function ensureNewStudentLegacyVisualStyles() {
     .new-flow-message.blue strong{color:#1d4ed8}
     .new-flow-message.green strong{color:#15803d}
     .new-flow-message p{margin:4px 0 0;color:#475569;font-size:11px;line-height:1.4}
+    .new-flow-result .badge .record-svg{width:14px;height:14px;display:inline-block;vertical-align:-3px;margin-right:3px}
+    .new-flow-result .congrats-inline-icon{display:inline-flex;vertical-align:-5px;margin-left:3px;color:#1d4ed8}
+    .new-flow-result .congrats-inline-icon .record-svg{width:18px;height:18px}
+    .new-flow-result .new-flow-privacy > .record-svg{width:18px;height:18px;min-width:18px;color:#2563eb;margin-top:0}
     .new-flow-result .new-flow-note-red{
       background:#fff1f2;color:#be123c;border:1px solid #fecdd3;
       display:flex;align-items:center;justify-content:center;gap:7px;
@@ -856,7 +860,32 @@ function ensureNewStudentLegacyVisualStyles() {
     .new-flow-result .new-flow-note-red .record-svg,
     .new-flow-result .new-flow-note-blue .record-svg,
     .new-flow-result .new-flow-note-green .record-svg{width:16px;height:16px}
-    .new-flow-result .new-flow-privacy{margin:0 0 16px!important}
+    .new-flow-result .new-flow-privacy{
+      margin:0 0 16px!important;padding:12px 15px!important;border:1px solid #dbe7f5!important;
+      background:#f8fbff!important;border-radius:10px!important;color:#475569!important;
+      font-size:12px!important;line-height:1.5!important;
+      display:flex;align-items:flex-start;gap:9px;
+    }
+    .new-flow-result .new-flow-student-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+    .new-flow-result .new-flow-student-grid>div{min-width:0}
+    .new-flow-result .new-flow-student-grid strong{
+      display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;word-break:normal;
+    }
+    .new-flow-result .new-flow-verified-icon{display:flex;align-items:center;justify-content:center;font-size:0}
+    .new-flow-result .new-flow-verified-icon .record-svg{width:27px;height:27px}
+    .new-flow-result .new-flow-header-shield{display:flex;align-items:center;justify-content:center;font-size:0}
+    .new-flow-result .new-flow-header-shield .record-svg{width:24px;height:24px}
+    .new-flow-result .new-flow-stage-title span{white-space:nowrap}
+    .new-flow-result .new-flow-message strong .record-svg{width:18px;height:18px;display:inline-block;vertical-align:-4px;margin-left:4px}
+    .new-flow-result .new-flow-trust-icon{
+      width:38px;height:38px;min-width:38px;border-radius:50%;background:#eaf2ff;color:#2563eb;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .new-flow-result .new-flow-trust-icon .record-svg{width:20px;height:20px}
+    .new-flow-result .new-flow-confirm-button{
+      cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease;
+    }
+    .new-flow-result .new-flow-confirm-button:hover{background:#fff0f0;box-shadow:0 8px 20px rgba(220,38,38,.14);transform:translateY(-2px)}
     @media(max-width:900px){
       .new-flow-result .new-flow-student-grid{grid-template-columns:repeat(3,1fr)}
       .new-flow-result .new-flow-student-grid>div:nth-child(3n){border-right:0}
@@ -915,9 +944,13 @@ function renderNewStudentRecord(student) {
     offer: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M6 3.5h9l3 3V20.5H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.5 3.5v3h3M8.5 11h7M8.5 14.5h7M8.5 8h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
     certificate: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M6 3.5h12v12H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m9 15.5-1 5 4-2 4 2-1-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 7.5h6M9 10.5h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
     info: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10.5v5M12 7.5h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`,
-    check: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="m5 12 4.2 4L19 6.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    check: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7.5 12 3 3L17 8.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     warning: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M12 3 22 20H2L12 3Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
-    celebration: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M5 19 8 9l7 7-10 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8 9 7-4M12 13l7-3M16 4l1-2M20 8l2-1M5 5 3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`
+    celebration: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M5 19 8 9l7 7-10 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8 9 7-4M12 13l7-3M16 4l1-2M20 8l2-1M5 5 3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+    shield: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M12 3 20 6v5.5c0 4.6-3.1 7.9-8 9.5-4.9-1.6-8-4.9-8-9.5V6l8-3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8.5 12 2.2 2.2 4.8-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    lock: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><rect x="5" y="10" width="14" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10M12 14v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    support: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M4 13a8 8 0 0 1 16 0v3.5a2.5 2.5 0 0 1-2.5 2.5H16v-5h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16h4v3H6.5A2.5 2.5 0 0 1 4 16Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
+    trust: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.8-3.4 3-5 7-5s6.2 1.6 7 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`
   };
 
   const cfg = {
@@ -933,7 +966,7 @@ function renderNewStudentRecord(student) {
       color:"#2563eb", bg:"#f8fbff", border:"#bfdbfe", iconBg:"#dbeafe",
       title:"INTERNSHIP RUNNING", overall:"RUNNING",
       overallText:"Your internship is currently in progress.",
-      certBadge:"⌛ Coming Soon", certClass:"yellow",
+      certBadge:`${icons.clock} Coming Soon`, certClass:"yellow",
       certText:"Certificate will be issued after successful completion.",
       note:"Once the internship is completed, your certificate will be issued and verified."
     },
@@ -949,20 +982,21 @@ function renderNewStudentRecord(student) {
       color:"#dc2626", bg:"#fffafa", border:"#fecaca", iconBg:"#fee2e2",
       title:"INTERNSHIP COMPLETED", overall:"COMPLETE",
       overallText:"Your internship has been successfully completed.",
-      certBadge:"✕ Not Issued", certClass:"red",
+      certBadge:`${icons.warning} Not Issued`, certClass:"red",
       certText:"Certificate has not been issued.",
       note:"Complete your confirmation to get your certificate."
     }
   }[mode];
 
-  const whatsapp = "https://wa.me/917839686310";
-  const confirmationButton = `<a class="new-flow-confirm-button" href="#confirmation" onclick="return false;">Complete Your Confirmation <span>→</span></a>`;
+  const whatsappMessage = "Hii, I need confirmation information";
+  const whatsapp = `https://wa.me/917839686310?text=${encodeURIComponent(whatsappMessage)}`;
+  const confirmationButton = `<a class="new-flow-confirm-button" href="${whatsapp}" target="_blank" rel="noopener noreferrer" aria-label="Complete your confirmation on WhatsApp">Complete Your Confirmation <span>→</span></a>`;
 
   let certificateBadge = "";
   if (mode === "running-pending") {
     certificateBadge = confirmationButton;
   } else if (mode === "completed-pending") {
-    certificateBadge = `<span class="badge red">✕ Not Issued</span>`;
+    certificateBadge = `<span class="badge red">${icons.warning} Not Issued</span><a class="new-flow-confirm-button" href="${whatsapp}" target="_blank" rel="noopener noreferrer" aria-label="Complete your confirmation on WhatsApp">Complete Your Confirmation <span>→</span></a>`;
   } else {
     certificateBadge = `<span class="badge ${cfg.certClass}">${cfg.certBadge}</span>`;
   }
@@ -974,19 +1008,19 @@ function renderNewStudentRecord(student) {
         <div class="new-flow-message-icon">${icons.info}</div>
         <div><strong>Why is confirmation required?</strong><p>Your confirmation helps us verify your details and prepare your certificate.</p></div>
       </div>
-      <div class="running-note new-flow-note-red"><strong>✓</strong> Complete your confirmation to move forward.</div>`;
+      <div class="running-note new-flow-note-red">${icons.info} Complete your confirmation to move forward.</div>`;
   } else if (mode === "running-confirmed") {
     bottomMessage = `
       <div class="new-flow-message blue">
         <div class="new-flow-message-icon">${icons.celebration}</div>
-        <div><strong>Congratulations! 🎉</strong><p>Great job! Your confirmation has been received successfully. You're one step closer to earning your certificate. Keep up the good work!</p></div>
+        <div><strong>Congratulations! <span class="congrats-inline-icon">${icons.celebration}</span></strong><p>Great job! Your confirmation has been received successfully. You're one step closer to earning your certificate. Keep up the good work!</p></div>
       </div>
       <div class="running-note new-flow-note-blue">${icons.check} Once the internship is completed, your certificate will be issued and verified.</div>`;
   } else if (mode === "completed-confirmed") {
     bottomMessage = `
       <div class="new-flow-message green">
         <div class="new-flow-message-icon">${icons.celebration}</div>
-        <div><strong>Congratulations! 🎉</strong><p>Your internship has been successfully completed and your confirmation has been verified. Keep growing!</p></div>
+        <div><strong>Congratulations! <span class="congrats-inline-icon">${icons.celebration}</span></strong><p>Your internship has been successfully completed and your confirmation has been verified. Keep growing!</p></div>
       </div>
       <div class="running-note new-flow-note-green">${icons.check} Your certificate is now available and verified.</div>`;
   } else {
@@ -1006,19 +1040,20 @@ function renderNewStudentRecord(student) {
           <div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div>
         </div>
         <div class="result-official">
-          <span class="verified-shield" aria-hidden="true"><span>✓</span></span>
+          <span class="verified-shield new-flow-header-shield" aria-hidden="true">${icons.shield}</span>
           <div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div>
         </div>
       </div>
 
       <div class="result-main">
         <div class="verified-title">
-          <div class="verified-icon">✓</div>
+          <div class="verified-icon new-flow-verified-icon">${icons.verified}</div>
           <div><h1>Document Record Verified</h1><p>The record associated with this Student / Letter ID is valid.</p></div>
         </div>
 
         <div class="mobile-last4-privacy-note new-flow-privacy">
-          Verification completed using the Student / Letter ID and the last 4 digits of the registered mobile number. Personal contact details are hidden on this public page.
+          ${icons.shield}
+          <span>Verification completed using the Student / Letter ID and the last 4 digits of the registered mobile number. Personal contact details are hidden on this public page.</span>
         </div>
 
         <div class="student-grid new-flow-student-grid">
@@ -1030,7 +1065,7 @@ function renderNewStudentRecord(student) {
           <div><small>Batch End</small><strong>${escapeHtml(batchEndText)}</strong></div>
         </div>
 
-        <div class="new-flow-stage-title"><span>${completed ? "AFTER INTERNSHIP COMPLETION (AFTER BATCH END DATE)" : "DURING INTERNSHIP (BEFORE BATCH END DATE)"}</span></div>
+        <div class="new-flow-stage-title"><span>${completed ? "INTERNSHIP COMPLETION" : "DURING INTERNSHIP"}</span></div>
 
         <section class="status-section new-flow-status-section" style="--status:${cfg.color};--status-bg:${cfg.bg}">
           <div class="status-label">${escapeHtml(mode === "running-pending" ? "RUNNING - CONFIRMATION PENDING" :
@@ -1041,7 +1076,7 @@ function renderNewStudentRecord(student) {
           <div class="status-content">
             <div class="overall-circle">
               <div class="overall-check new-flow-overall-icon">
-                ${mode === "completed-confirmed" ? icons.check : mode === "completed-pending" ? icons.warning : icons.clock}
+                ${mode === "completed-confirmed" ? icons.verified : mode === "completed-pending" ? icons.warning : icons.clock}
               </div>
               <small>Overall Status</small>
               <strong>${escapeHtml(cfg.overall)}</strong>
@@ -1056,7 +1091,7 @@ function renderNewStudentRecord(student) {
                   <div class="new-flow-doc-icon offer">${icons.offer}</div>
                   <div><strong>Offer Letter</strong><small>Offer letter has been issued.</small></div>
                 </div>
-                <span class="badge green">✓ Received &amp; Verified</span>
+                <span class="badge green">${icons.check} Received &amp; Verified</span>
               </div>
 
               <div class="doc-row">
@@ -1074,10 +1109,10 @@ function renderNewStudentRecord(student) {
 
         <footer class="record-footer" aria-label="Verification record footer">
           <section class="verification-trust-strip" aria-label="Verification assurance">
-            <div class="trust-item"><div class="trust-icon">✓</div><div><strong>100% Authentic</strong><span>All documents are verified and genuine.</span></div></div>
-            <div class="trust-item"><div class="trust-icon">♙</div><div><strong>Secure Verification</strong><span>Your privacy and data are fully protected.</span></div></div>
-            <div class="trust-item"><div class="trust-icon">✦</div><div><strong>Trusted by Thousands</strong><span>Thousands of students trust SoftGrowTech.</span></div></div>
-            <div class="trust-item"><div class="trust-icon">◉</div><div><strong>Need Support?</strong><span>We're here to help you whenever you need.</span></div></div>
+            <div class="trust-item"><div class="new-flow-trust-icon">${icons.shield}</div><div><strong>100% Authentic</strong><span>All documents are verified and genuine.</span></div></div>
+            <div class="trust-item"><div class="new-flow-trust-icon">${icons.lock}</div><div><strong>Secure Verification</strong><span>Your privacy and data are fully protected.</span></div></div>
+            <div class="trust-item"><div class="new-flow-trust-icon">${icons.trust}</div><div><strong>Trusted by Thousands</strong><span>Thousands of students trust SoftGrowTech.</span></div></div>
+            <div class="trust-item"><div class="new-flow-trust-icon">${icons.support}</div><div><strong>Need Support?</strong><span>We're here to help you whenever you need.</span></div></div>
           </section>
 
           <div class="record-footer-actions">
