@@ -50,6 +50,30 @@ function playPremiumClick() {
     osc.stop(now + .07);
   } catch (_) {}
 }
+/*
+ * NEW BATCH VERIFICATION
+ * This path is completely separate from the legacy Students/verify_student flow.
+ * New records are authenticated through the verify_new_student RPC.
+ */
+async function verifyNewStudent(id, mobileLast4) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_new_student`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_PUBLISHABLE_KEY,
+      "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      p_student_id: id,
+      p_mobile_last4: mobileLast4
+    })
+  });
+
+  if (!response.ok) throw new Error("New student verification request failed");
+  const data = await response.json();
+  return Array.isArray(data) && data.length ? data[0] : null;
+}
+
 
 
 function addReviewPopupResponsiveStyles(){if(document.getElementById("softgrow-review-popup-mobile-fix"))return;const s=document.createElement("style");s.id="softgrow-review-popup-mobile-fix";s.textContent=`#reviewPopup{max-width:min(380px,calc(100vw - 28px));box-sizing:border-box}@media(max-width:600px){#reviewPopup{width:calc(100vw - 24px)!important;max-width:360px!important;left:12px!important;right:12px!important;bottom:12px!important;margin:0 auto!important;padding:14px!important;font-size:13px}#reviewPopup #reviewPopupText{line-height:1.45;margin-bottom:7px}#reviewPopup #reviewPopupName{font-size:12px}#reviewPopup #reviewPopupStars{font-size:13px}}`;document.head.appendChild(s);}
@@ -324,6 +348,25 @@ async function handleVerification(form) {
   await new Promise(resolve => setTimeout(resolve, 3000));
 
   try {
+    // NEW STUDENTS FIRST:
+    // If this ID belongs to the new-batch table, use the new automatic
+    // batch/confirmation logic. The legacy Students table is untouched.
+    const newStudent = await verifyNewStudent(id, mobileLast4);
+
+    if (newStudent) {
+      sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
+        type: "new",
+        student: newStudent
+      }));
+
+      // Do not put the mobile digits in the URL.
+      window.location.href = `verification-result.html?id=${encodeURIComponent(id)}`;
+      return;
+    }
+
+    // LEGACY STUDENTS:
+    // Existing records continue through the original verification RPC exactly
+    // as before.
     const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_student`, {
       method: "POST",
       headers: {
@@ -590,9 +633,15 @@ function initResultPage() {
     savedRecord = null;
   }
 
-  if (savedRecord && savedRecord.type === "valid" && savedRecord.student) {
-    renderVerified(savedRecord.student);
-    return;
+  if (savedRecord && savedRecord.student) {
+    if (savedRecord.type === "new") {
+      renderNewStudentRecord(savedRecord.student);
+      return;
+    }
+    if (savedRecord.type === "valid") {
+      renderVerified(savedRecord.student);
+      return;
+    }
   }
 
   if (!id) {
@@ -642,6 +691,255 @@ function maskPublicEmail(email) {
   if(local.length<=2) return local+"***"+domain;
   return local.slice(0,2)+"***"+local.slice(-1)+domain;
 }
+
+
+function addOneCalendarMonth(dateValue) {
+  const d = new Date(dateValue);
+  if (Number.isNaN(d.getTime())) return null;
+  const out = new Date(d.getTime());
+  const originalDay = out.getDate();
+  out.setMonth(out.getMonth() + 1);
+  // If the target month has fewer days, JS rolls into the following month.
+  // Clamp to the last day of the intended month so the duration remains one
+  // calendar month (e.g. Jan 31 -> Feb 28/29).
+  if (out.getDate() !== originalDay) {
+    out.setDate(0);
+  }
+  return out;
+}
+
+function ensureNewStudentRecordStyles() {
+  if (document.getElementById("softgrow-new-student-record-styles")) return;
+  const style = document.createElement("style");
+  style.id = "softgrow-new-student-record-styles";
+  style.textContent = `
+    .new-record-page{width:min(1180px,100%);margin:0 auto}
+    .new-record-hero{background:#061a33;color:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+    .new-record-brand{display:flex;align-items:center;gap:12px}
+    .new-record-brand img{width:48px;height:48px;object-fit:contain;border-radius:10px;background:#fff}
+    .new-record-brand strong{display:block;font-size:21px}.new-record-brand span{display:block;font-size:12px;opacity:.82;margin-top:2px}
+    .new-record-official{display:flex;align-items:center;gap:10px}.new-record-official strong{display:block;font-size:14px}.new-record-official small{display:block;font-size:11px;opacity:.8;margin-top:3px}
+    .new-record-shield{width:42px;height:42px;display:flex;align-items:center;justify-content:center;border:2px solid #2563eb;border-radius:12px;color:#60a5fa;font-weight:900;font-size:21px}
+    .new-record-body{padding:28px;background:#fff}
+    .new-record-heading{text-align:center;margin-bottom:22px}.new-record-heading h1{margin:0;font-size:28px;letter-spacing:.3px}.new-record-heading p{margin:7px 0 0;color:#64748b;font-size:13px}
+    .new-record-student-grid{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid #e2e8f0;border-radius:13px;overflow:hidden;margin-bottom:22px}
+    .new-record-student-grid>div{padding:15px 17px;border-right:1px solid #e2e8f0}.new-record-student-grid>div:last-child{border-right:0}
+    .new-record-student-grid small{display:block;color:#64748b;font-size:11px;margin-bottom:6px}.new-record-student-grid strong{font-size:14px;word-break:break-word}
+    .new-stage-title{display:flex;align-items:center;gap:14px;margin:18px 0 14px;color:#0f172a;font-weight:900;font-size:15px}
+    .new-stage-title:before,.new-stage-title:after{content:"";height:2px;background:#dbe7f5;flex:1}.new-stage-title span{padding:8px 16px;border-radius:999px;background:#1d4ed8;color:#fff;box-shadow:0 4px 12px rgba(29,78,216,.18)}
+    .new-current-card{border:1px solid var(--new-border);background:var(--new-bg);border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 8px 25px rgba(15,23,42,.05)}
+    .new-current-label{display:inline-flex;background:var(--new-accent);color:#fff;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:900;letter-spacing:.1px;margin-bottom:17px}
+    .new-current-grid{display:grid;grid-template-columns:210px 1fr;gap:24px;align-items:center}
+    .new-overall{width:184px;height:184px;margin:auto;border-radius:50%;background:#fff;border:1px dashed color-mix(in srgb,var(--new-accent) 35%,#fff);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px;box-shadow:0 4px 18px rgba(15,23,42,.05)}
+    .new-overall-icon{width:52px;height:52px;border-radius:50%;background:var(--new-icon-bg);color:var(--new-accent);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;margin-bottom:7px}
+    .new-overall small{font-size:11px;color:#475569}.new-overall strong{font-size:18px;color:var(--new-accent);margin-top:4px}.new-overall p{margin:7px 0 0;color:#64748b;font-size:10px;line-height:1.4;max-width:140px}
+    .new-doc-title{font-size:17px;font-weight:900;margin:0 0 10px}.new-doc-row{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1px solid #dfe7f0;border-radius:10px;padding:13px 14px;margin-top:9px}
+    .new-doc-left{display:flex;align-items:center;gap:12px;min-width:0}.new-doc-icon{width:42px;height:42px;min-width:42px;border-radius:9px;background:#eaf2ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}
+    .new-doc-icon.offer{background:#e2f7e8;color:#15803d}.new-doc-icon.cert{background:var(--new-icon-bg);color:var(--new-accent)}
+    .new-doc-left strong{display:block;font-size:14px}.new-doc-left small{display:block;color:#64748b;font-size:11px;margin-top:4px;line-height:1.4}
+    .new-badge{white-space:nowrap;border-radius:7px;padding:8px 10px;font-size:11px;font-weight:900}.new-badge.green{background:#dcfce7;color:#15803d}.new-badge.blue{background:#dbeafe;color:#1d4ed8}.new-badge.yellow{background:#fef3c7;color:#b45309}.new-badge.red{background:#fee2e2;color:#b91c1c}
+    .new-confirm-box{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:12px;padding:14px 15px;border-radius:10px;background:#fff;border:1px solid var(--new-border)}
+    .new-confirm-box strong{display:block;font-size:13px;color:var(--new-accent)}.new-confirm-box p{margin:4px 0 0;color:#475569;font-size:11px;line-height:1.4}
+    .new-confirm-action{display:inline-flex;align-items:center;gap:7px;flex:0 0 auto;padding:10px 14px;border:1px dashed currentColor;border-radius:8px;color:#dc2626;text-decoration:none;font-size:12px;font-weight:900;animation:newConfirmPulse 1.8s ease-in-out infinite}
+    .new-confirm-action span{display:inline-block;animation:newConfirmArrow 1s ease-in-out infinite}
+    @keyframes newConfirmPulse{0%,100%{transform:translateY(0);box-shadow:0 0 0 rgba(220,38,38,0)}50%{transform:translateY(-2px);box-shadow:0 6px 18px rgba(220,38,38,.12)}} 
+    @keyframes newConfirmArrow{0%,100%{transform:translateX(0)}50%{transform:translateX(4px)}}
+    .new-congrats{display:flex;align-items:center;gap:12px;margin-top:12px;padding:14px 15px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px}
+    .new-congrats-icon{width:42px;height:42px;min-width:42px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900}
+    .new-congrats strong{font-size:13px;color:#1d4ed8}.new-congrats p{margin:4px 0 0;color:#475569;font-size:11px;line-height:1.4}
+    .new-bottom-note{text-align:center;padding:10px 14px;border-radius:8px;margin-top:12px;font-size:11px;font-weight:800}
+    .new-bottom-note.blue{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}.new-bottom-note.red{background:#fff1f2;color:#be123c;border:1px solid #fecdd3}.new-bottom-note.green{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
+    .new-record-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px;padding:16px;background:#f8fbff;border:1px solid #dbe7f5;border-radius:13px}
+    .new-trust-item{display:flex;align-items:center;gap:9px}.new-trust-icon{width:38px;height:38px;min-width:38px;border-radius:50%;background:#eaf2ff;color:#2563eb;display:flex;align-items:center;justify-content:center;font-weight:900}
+    .new-trust-item strong{display:block;font-size:11px}.new-trust-item span{display:block;color:#64748b;font-size:9px;line-height:1.3;margin-top:2px}
+    .new-record-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;padding-top:16px}.new-record-actions .result-button{margin:0;max-width:320px}
+    .new-record-copyright{margin-top:14px;background:#061a33;color:#fff;text-align:center;padding:14px;font-size:11px;border-radius:0 0 10px 10px}
+    @media(max-width:820px){.new-record-student-grid{grid-template-columns:1fr 1fr}.new-record-student-grid>div:nth-child(2n){border-right:0}.new-record-student-grid>div{border-bottom:1px solid #e2e8f0}.new-record-student-grid>div:last-child{border-bottom:0}.new-current-grid{grid-template-columns:1fr}.new-overall{width:170px;height:170px}.new-record-trust{grid-template-columns:1fr 1fr}}
+    @media(max-width:560px){.new-record-body{padding:16px}.new-record-hero{padding:15px 16px}.new-record-heading h1{font-size:22px}.new-record-student-grid{grid-template-columns:1fr}.new-record-student-grid>div{border-right:0}.new-current-card{padding:13px}.new-doc-row{flex-direction:column;align-items:flex-start}.new-badge{white-space:normal}.new-confirm-box{flex-direction:column;align-items:flex-start}.new-confirm-action{width:100%;justify-content:center}.new-record-trust{grid-template-columns:1fr}.new-record-actions{flex-direction:column}.new-record-actions .result-button{width:100%;max-width:none}}
+  `;
+  document.head.appendChild(style);
+}
+
+function renderNewStudentRecord(student) {
+  ensureNewStudentRecordStyles();
+  ensureRecordFooterStyles();
+  ensureDownloadAndBadgeStyles();
+
+  const root = document.getElementById("verificationResult");
+  const backUrl = "documents-verification.html";
+  const id = student["Student Id"] || "Not Available";
+  const name = student["Name"] || "Not Available";
+  const email = student["Student Email"] || "Not Available";
+  const domain = student["Domain"] || "Not Available";
+  const batchStart = student["Batch Start"] || "";
+  const confirmed = student.confirmed === true || String(student.confirmed).toLowerCase() === "true";
+  const startDate = batchStart ? new Date(batchStart) : null;
+  const endDate = addOneCalendarMonth(batchStart);
+  const now = new Date();
+  const validStart = startDate && !Number.isNaN(startDate.getTime());
+  const completed = !!(endDate && now >= endDate);
+  const running = !completed;
+
+  let mode;
+  if (running && confirmed) mode = "running-confirmed";
+  else if (running) mode = "running-pending";
+  else if (confirmed) mode = "completed-confirmed";
+  else mode = "completed-pending";
+
+  const cfg = {
+    "running-pending": {
+      accent:"#dc2626", bg:"#fffafa", border:"#fecaca", iconBg:"#fee2e2",
+      label:"RUNNING - CONFIRMATION PENDING", overall:"RUNNING", icon:"◷",
+      text:"Your internship is currently in progress.",
+      certBadge:"⌛ Coming Soon", certClass:"yellow",
+      certText:"Please complete your confirmation to receive your certificate.",
+      note:"Complete your confirmation to move forward.",
+      noteClass:"red"
+    },
+    "running-confirmed": {
+      accent:"#1d4ed8", bg:"#f8fbff", border:"#bfdbfe", iconBg:"#dbeafe",
+      label:"RUNNING - CONFIRMATION RECEIVED", overall:"RUNNING", icon:"◷",
+      text:"Your internship is currently in progress.",
+      certBadge:"⌛ Coming Soon", certClass:"blue",
+      certText:"Certificate will be issued after successful completion.",
+      note:"Once the internship is completed, your certificate will be issued and verified.",
+      noteClass:"blue"
+    },
+    "completed-confirmed": {
+      accent:"#15803d", bg:"#f7fff9", border:"#bbf7d0", iconBg:"#dcfce7",
+      label:"COMPLETED - CONFIRMATION RECEIVED", overall:"COMPLETE", icon:"✓",
+      text:"Your internship has been successfully completed.",
+      certBadge:"✓ Received / Verified", certClass:"green",
+      certText:"Certificate has been issued and verified.",
+      note:"Your certificate is now available and verified.",
+      noteClass:"green"
+    },
+    "completed-pending": {
+      accent:"#dc2626", bg:"#fffafa", border:"#fecaca", iconBg:"#fee2e2",
+      label:"COMPLETED - CONFIRMATION NOT RECEIVED", overall:"COMPLETE", icon:"×",
+      text:"Your internship has been successfully completed.",
+      certBadge:"✕ Not Issued", certClass:"red",
+      certText:"Certificate has not been issued.",
+      note:"Complete your confirmation to get your certificate.",
+      noteClass:"red"
+    }
+  }[mode];
+
+  const batchText = validStart ? formatDate(batchStart) : "Not Available";
+  const endText = endDate ? formatDate(endDate) : "Not Available";
+  const whatsapp = "https://wa.me/917839686310";
+
+  let extra = "";
+  if (mode === "running-pending") {
+    extra = `
+      <div class="new-confirm-box">
+        <div><strong>Why is confirmation required?</strong><p>Your confirmation helps us verify your details and prepare your certificate.</p></div>
+        <a class="new-confirm-action" href="#confirmation" onclick="return false;">Complete Your Confirmation <span>→</span></a>
+      </div>`;
+  } else if (mode === "running-confirmed") {
+    extra = `
+      <div class="new-congrats">
+        <div class="new-congrats-icon">✦</div>
+        <div><strong>Congratulations! 🎉</strong><p>Great job! Your confirmation has been received successfully. You're one step closer to earning your certificate. Keep up the good work!</p></div>
+      </div>`;
+  } else if (mode === "completed-confirmed") {
+    extra = `
+      <div class="new-congrats" style="background:#f0fdf4;border-color:#bbf7d0">
+        <div class="new-congrats-icon" style="background:#15803d">✓</div>
+        <div><strong style="color:#15803d">Congratulations! 🎉</strong><p>Your internship has been successfully completed and your confirmation has been verified. Keep growing!</p></div>
+      </div>`;
+  } else {
+    extra = `
+      <div class="new-confirm-box">
+        <div><strong>Your confirmation was not received.</strong><p>Please complete the confirmation process to proceed with certificate issuance.</p></div>
+        <a class="new-confirm-action" href="#confirmation" onclick="return false;">Complete Your Confirmation <span>›››</span></a>
+      </div>`;
+  }
+
+  const safeWhatsapp = escapeHtml(whatsapp);
+  root.innerHTML = `
+    <div class="new-record-page softgrow-result-animate">
+      <div class="new-record-hero">
+        <div class="new-record-brand">
+          <img src="assets/softgrowtech-logo.png" alt="SoftGrowTech">
+          <div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div>
+        </div>
+        <div class="new-record-official">
+          <span class="new-record-shield">✓</span>
+          <div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div>
+        </div>
+      </div>
+
+      <div class="new-record-body">
+        <div class="new-record-heading">
+          <h1>INTERNSHIP RECORD</h1>
+          <p>Track your internship confirmation and certificate status in real-time.</p>
+        </div>
+
+        <div class="new-record-student-grid">
+          <div><small>Student / Letter ID</small><strong>${escapeHtml(id)}</strong></div>
+          <div><small>Student Name</small><strong>${escapeHtml(name)}</strong></div>
+          <div><small>Domain</small><strong>${escapeHtml(domain)}</strong></div>
+          <div><small>Batch Start</small><strong>${escapeHtml(batchText)}</strong></div>
+          <div><small>Batch End</small><strong>${escapeHtml(endText)}</strong></div>
+        </div>
+
+        <div class="new-stage-title"><span>${completed ? "AFTER INTERNSHIP COMPLETION" : "DURING INTERNSHIP"}</span></div>
+
+        <section class="new-current-card" style="--new-accent:${cfg.accent};--new-bg:${cfg.bg};--new-border:${cfg.border};--new-icon-bg:${cfg.iconBg}">
+          <div class="new-current-label">${cfg.label}</div>
+          <div class="new-current-grid">
+            <div class="new-overall">
+              <div class="new-overall-icon">${cfg.icon}</div>
+              <small>Overall Status</small>
+              <strong>${cfg.overall}</strong>
+              <p>${cfg.text}</p>
+            </div>
+
+            <div>
+              <h2 class="new-doc-title">Document Status</h2>
+
+              <div class="new-doc-row">
+                <div class="new-doc-left">
+                  <div class="new-doc-icon offer">▤</div>
+                  <div><strong>Offer Letter</strong><small>Offer letter has been issued.</small></div>
+                </div>
+                <span class="new-badge green">✓ Received &amp; Verified</span>
+              </div>
+
+              <div class="new-doc-row">
+                <div class="new-doc-left">
+                  <div class="new-doc-icon cert">♧</div>
+                  <div><strong>Certificate</strong><small>${escapeHtml(cfg.certText)}</small></div>
+                </div>
+                <span class="new-badge ${cfg.certClass}">${cfg.certBadge}</span>
+              </div>
+
+              ${extra}
+
+              <div class="new-bottom-note ${cfg.noteClass}">${escapeHtml(cfg.note)}</div>
+            </div>
+          </div>
+        </section>
+
+        <div class="new-record-trust">
+          <div class="new-trust-item"><div class="new-trust-icon">✓</div><div><strong>100% Authentic</strong><span>All documents are verified and genuine.</span></div></div>
+          <div class="new-trust-item"><div class="new-trust-icon">♙</div><div><strong>Secure Verification</strong><span>Your privacy and data are fully protected.</span></div></div>
+          <div class="new-trust-item"><div class="new-trust-icon">✦</div><div><strong>Trusted by Thousands</strong><span>Thousands of students trust SoftGrowTech.</span></div></div>
+          <div class="new-trust-item"><div class="new-trust-icon">◉</div><div><strong>Need Support?</strong><span>We're here to help you whenever you need.</span></div></div>
+        </div>
+
+        <div class="new-record-actions">
+          <button class="result-button download-record" type="button" data-download-record>Download Verification Record <span>⇩</span></button>
+          <a class="result-button verify-another" href="${backUrl}">Verify Another Letter ID <span>→</span></a>
+        </div>
+        <p class="result-bottom-line">Verify another ID or return to the official verification page.</p>
+        <div class="new-record-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div>
+      </div>
+    </div>`;
+  bindVerificationResultActions();
+}
+
 
 function renderVerified(student) {
   ensureRecordFooterStyles();
@@ -898,7 +1196,7 @@ function renderVerificationTrust() {
 }
 
 function downloadVerificationRecord() {
-  const shell = document.querySelector("#verificationResult .result-shell");
+  const shell = document.querySelector("#verificationResult .result-shell, #verificationResult .new-record-page");
   if (!shell) return;
 
   const original = document.querySelector("[data-download-record]");
@@ -1038,413 +1336,3 @@ document.addEventListener("DOMContentLoaded", () => {
   initVerificationPage();
   initResultPage();
 });
-
-/* SOFTGROWTECH NEW SETUP — CONNECT TO CURRENT STUDENTS DATA */
-(function () {
-  const CONFIRMATIONS_TABLE = 'Confirmations';
-
-  function normId(v) {
-    return String(v ?? '').trim().toUpperCase().replace(/[\s_]+/g, '-');
-  }
-
-  function getStudent(record) {
-    return record?.student || record || {};
-  }
-
-  function getStudentId(record) {
-    const s = getStudent(record);
-    return s?.['Student Id'] || s?.studentId || s?.student_id || record?.studentId || record?.id || '';
-  }
-
-  function getBatchStart(record) {
-    const s = getStudent(record);
-    return s?.['Batch Start'] || s?.batchStart || s?.batch_start || '';
-  }
-
-  function addOneMonth(dateValue) {
-    if (!dateValue) return null;
-    const d = new Date(dateValue);
-    if (Number.isNaN(d.getTime())) return null;
-
-    const originalDay = d.getDate();
-    d.setMonth(d.getMonth() + 1);
-
-    // Clamp dates such as Jan 31 -> Feb last day.
-    if (d.getDate() !== originalDay) d.setDate(0);
-    return d;
-  }
-
-  async function fetchCurrentStudent(studentId) {
-    try {
-      const encodedId = encodeURIComponent(normId(studentId));
-      const url =
-        `${SUPABASE_URL}/rest/v1/Students` +
-        `?select=*&Student%20Id=eq.${encodedId}&limit=1`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          apikey: SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-          Accept: 'application/json'
-        }
-      });
-
-      if (!response.ok) return null;
-
-      const rows = await response.json();
-      return Array.isArray(rows) && rows.length ? rows[0] : null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  async function confirmationExists(studentId) {
-    try {
-      const encodedId = encodeURIComponent(normId(studentId));
-      const url =
-        `${SUPABASE_URL}/rest/v1/${CONFIRMATIONS_TABLE}` +
-        `?select="Student%20Id"&Student%20Id=eq.${encodedId}&limit=1`;
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          apikey: SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-          Accept: 'application/json'
-        }
-      });
-
-      if (!response.ok) return false;
-
-      const rows = await response.json();
-      return Array.isArray(rows) && rows.length > 0;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function newSetupState(student, confirmed) {
-    const batchStart = getBatchStart(student);
-    const endDate = addOneMonth(batchStart);
-
-    // Without Batch Start, leave the old record untouched.
-    if (!endDate) return null;
-
-    const completed = new Date() >= endDate;
-
-    if (!completed && confirmed) {
-      return {
-        overall: 'RUNNING',
-        verification: 'VERIFIED',
-        certificate: 'COMING SOON',
-        pending: false,
-        complete: false
-      };
-    }
-
-    if (!completed && !confirmed) {
-      return {
-        overall: 'RUNNING',
-        verification: 'CONFIRMATION PENDING',
-        certificate: 'COMING SOON',
-        pending: true,
-        complete: false
-      };
-    }
-
-    if (completed && confirmed) {
-      return {
-        overall: 'COMPLETE',
-        verification: 'VERIFIED',
-        certificate: 'RECEIVED / VERIFIED',
-        pending: false,
-        complete: true
-      };
-    }
-
-    return {
-      overall: 'COMPLETE',
-      verification: 'NOT VERIFIED',
-      certificate: 'NOT ISSUED',
-      pending: true,
-      complete: true
-    };
-  }
-
-  function installStyles() {
-    if (document.getElementById('sgt-connected-workflow-styles')) return;
-
-    const style = document.createElement('style');
-    style.id = 'sgt-connected-workflow-styles';
-    style.textContent = `
-      .sgt-connected-workflow {
-        margin-top: 20px;
-        padding: 18px;
-        border-radius: 14px;
-        border: 1px solid var(--sgt-border);
-        background: var(--sgt-bg);
-      }
-      .sgt-connected-workflow .sgt-wf-title {
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:10px;
-        margin-bottom:14px;
-        color:var(--sgt-text);
-        font-size:12px;
-        font-weight:800;
-      }
-      .sgt-connected-workflow .sgt-wf-title strong {
-        background:var(--sgt-main);
-        color:#fff;
-        border-radius:7px;
-        padding:7px 10px;
-        font-size:10px;
-      }
-      .sgt-connected-workflow .sgt-wf-grid {
-        display:grid;
-        grid-template-columns:170px 1fr;
-        gap:18px;
-        align-items:center;
-      }
-      .sgt-connected-workflow .sgt-wf-overall {
-        background:#fff;
-        border:1px solid #e2e8f0;
-        border-radius:11px;
-        padding:16px;
-        text-align:center;
-      }
-      .sgt-connected-workflow .sgt-wf-icon {
-        width:48px;
-        height:48px;
-        margin:0 auto 7px;
-        border-radius:50%;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        background:#eef2ff;
-        color:var(--sgt-main);
-        font-size:22px;
-        font-weight:900;
-      }
-      .sgt-connected-workflow .sgt-wf-overall small {
-        display:block;
-        color:#64748b;
-        font-size:10px;
-      }
-      .sgt-connected-workflow .sgt-wf-overall b {
-        display:block;
-        color:var(--sgt-main);
-        font-size:18px;
-        margin-top:3px;
-      }
-      .sgt-connected-workflow .sgt-wf-overall p {
-        margin:6px auto 0;
-        max-width:135px;
-        color:#64748b;
-        font-size:10px;
-        line-height:1.35;
-      }
-      .sgt-connected-workflow h3 {
-        margin:0 0 9px;
-        font-size:16px;
-      }
-      .sgt-connected-workflow .sgt-wf-row {
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:12px;
-        padding:11px 12px;
-        margin-top:7px;
-        background:#fff;
-        border:1px solid #e2e8f0;
-        border-radius:9px;
-      }
-      .sgt-connected-workflow .sgt-wf-row strong {
-        display:block;
-        font-size:12px;
-      }
-      .sgt-connected-workflow .sgt-wf-row small {
-        display:block;
-        margin-top:3px;
-        color:#64748b;
-        font-size:10px;
-        line-height:1.3;
-      }
-      .sgt-connected-workflow .sgt-wf-badge {
-        white-space:nowrap;
-        border-radius:6px;
-        padding:7px 8px;
-        font-size:10px;
-        font-weight:800;
-      }
-      .sgt-connected-workflow .ok { background:#dcfce7; color:#15803d; }
-      .sgt-connected-workflow .soon { background:#dbeafe; color:#1d4ed8; }
-      .sgt-connected-workflow .pending { background:#fee2e2; color:#b91c1c; }
-      .sgt-connected-workflow .notissued { background:#fee2e2; color:#b91c1c; }
-      .sgt-connected-workflow .sgt-wf-action {
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        margin-top:13px;
-        padding:12px 13px;
-        border:1px solid #fca5a5;
-        border-radius:9px;
-        background:#fff;
-        color:#b91c1c;
-        text-decoration:none;
-        font-size:12px;
-        font-weight:800;
-        animation:sgtWorkflowPulse 1.8s ease-in-out infinite;
-      }
-      .sgt-connected-workflow .sgt-wf-congrats {
-        margin-top:13px;
-        padding:12px 13px;
-        border:1px solid #bfdbfe;
-        border-radius:9px;
-        background:#eff6ff;
-        color:#1d4ed8;
-        font-size:11px;
-        line-height:1.4;
-      }
-      @keyframes sgtWorkflowPulse {
-        0%,100% { box-shadow:0 0 0 0 rgba(220,38,38,.08); }
-        50% { box-shadow:0 0 0 5px rgba(220,38,38,.04); }
-      }
-      @media(max-width:760px) {
-        .sgt-connected-workflow .sgt-wf-grid { grid-template-columns:1fr; }
-        .sgt-connected-workflow .sgt-wf-row {
-          flex-direction:column;
-          align-items:flex-start;
-        }
-        .sgt-connected-workflow .sgt-wf-badge { white-space:normal; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  function renderConnectedWorkflow(state) {
-    const mount =
-      document.getElementById('verificationResultPage') ||
-      document.getElementById('verificationResult');
-
-    if (!mount) return;
-
-    mount.querySelectorAll('.sgt-connected-workflow').forEach(el => el.remove());
-
-    const blue = state.verification === 'VERIFIED';
-    const theme = blue
-      ? { main:'#2563eb', bg:'#eff6ff', border:'#bfdbfe', text:'#1e3a8a' }
-      : { main:'#dc2626', bg:'#fff7f7', border:'#fecaca', text:'#991b1b' };
-
-    const verifyClass = state.verification === 'VERIFIED' ? 'ok' : 'pending';
-    const certClass =
-      state.certificate === 'RECEIVED / VERIFIED' ? 'ok' :
-      state.certificate === 'COMING SOON' ? 'soon' : 'notissued';
-
-    const action = state.pending
-      ? `<a class="sgt-wf-action" href="confirmation.html">
-           <span>Complete Your Confirmation</span><b>→</b>
-         </a>`
-      : `<div class="sgt-wf-congrats">
-           🎉 Congratulations! Your confirmation has been successfully verified.
-           ${state.complete
-             ? 'Your internship is complete. We wish you continued success!'
-             : 'Keep going and complete your internship successfully!'}
-         </div>`;
-
-    const card = document.createElement('section');
-    card.className = 'sgt-connected-workflow';
-    card.style.setProperty('--sgt-main', theme.main);
-    card.style.setProperty('--sgt-bg', theme.bg);
-    card.style.setProperty('--sgt-border', theme.border);
-    card.style.setProperty('--sgt-text', theme.text);
-
-    card.innerHTML = `
-      <div class="sgt-wf-title">
-        <span>${state.complete ? 'INTERNSHIP COMPLETED' : 'INTERNSHIP IN PROGRESS'}</span>
-        <strong>${state.overall}</strong>
-      </div>
-
-      <div class="sgt-wf-grid">
-        <div class="sgt-wf-overall">
-          <div class="sgt-wf-icon">${state.complete ? '✓' : '◷'}</div>
-          <small>Overall Status</small>
-          <b>${state.overall}</b>
-          <p>${state.complete
-            ? 'Your internship duration has been completed.'
-            : 'Your internship is currently running.'}</p>
-        </div>
-
-        <div>
-          <h3>Verification Status</h3>
-
-          <div class="sgt-wf-row">
-            <div>
-              <strong>Confirmation</strong>
-              <small>${state.verification === 'VERIFIED'
-                ? 'Confirmation form received successfully.'
-                : 'Confirmation form has not been received yet.'}</small>
-            </div>
-            <span class="sgt-wf-badge ${verifyClass}">${state.verification}</span>
-          </div>
-
-          <div class="sgt-wf-row">
-            <div>
-              <strong>Certificate</strong>
-              <small>${state.certificate === 'COMING SOON'
-                ? 'Certificate will be available after successful completion.'
-                : state.certificate === 'RECEIVED / VERIFIED'
-                  ? 'Certificate has been received and verified.'
-                  : 'Certificate has not been issued.'}</small>
-            </div>
-            <span class="sgt-wf-badge ${certClass}">${state.certificate}</span>
-          </div>
-        </div>
-      </div>
-
-      ${action}
-    `;
-
-    // Append only for NEW records. The original final result remains untouched.
-    mount.appendChild(card);
-  }
-
-  async function runConnectedWorkflow() {
-    const raw = sessionStorage.getItem('softgrowVerificationResult');
-    if (!raw) return;
-
-    let result;
-    try { result = JSON.parse(raw); } catch (_) { return; }
-    if (!result || result.type !== 'valid') return;
-
-    const initialStudent = result.student || result.record || result.data || result;
-    const studentId =
-      initialStudent?.['Student Id'] ||
-      initialStudent?.studentId ||
-      result.studentId ||
-      result.id ||
-      '';
-
-    if (!studentId) return;
-
-    // Read the CURRENT Students row so Batch Start is available even when
-    // the original verification response does not include the new column.
-    const student = await fetchCurrentStudent(studentId);
-
-    // Legacy record: no Batch Start => do absolutely nothing.
-    if (!student || !getBatchStart(student)) return;
-
-    const confirmed = await confirmationExists(studentId);
-    const state = newSetupState(student, confirmed);
-    if (!state) return;
-
-    renderConnectedWorkflow(state);
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    setTimeout(runConnectedWorkflow, 250);
-  });
-})();
-
