@@ -1039,7 +1039,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initResultPage();
 });
 
-/* SOFTGROWTECH NEW SETUP — PRESERVE EXISTING FINAL DESIGN */
+/* SOFTGROWTECH NEW SETUP — CONNECT TO CURRENT STUDENTS DATA */
 (function () {
   const CONFIRMATIONS_TABLE = 'Confirmations';
 
@@ -1047,184 +1047,404 @@ document.addEventListener("DOMContentLoaded", () => {
     return String(v ?? '').trim().toUpperCase().replace(/[\s_]+/g, '-');
   }
 
-  function parseDate(v) {
-    if (!v) return null;
-    const d = new Date(v);
-    return Number.isNaN(d.getTime()) ? null : d;
+  function getStudent(record) {
+    return record?.student || record || {};
   }
 
-  function endDateFromBatchStart(v) {
-    const d = parseDate(v);
-    if (!d) return null;
-    const x = new Date(d);
-    const day = x.getDate();
-    x.setMonth(x.getMonth() + 1);
-    if (x.getDate() !== day) x.setDate(0);
-    return x;
+  function getStudentId(record) {
+    const s = getStudent(record);
+    return s?.['Student Id'] || s?.studentId || s?.student_id || record?.studentId || record?.id || '';
   }
 
-  async function hasConfirmation(studentId) {
+  function getBatchStart(record) {
+    const s = getStudent(record);
+    return s?.['Batch Start'] || s?.batchStart || s?.batch_start || '';
+  }
+
+  function addOneMonth(dateValue) {
+    if (!dateValue) return null;
+    const d = new Date(dateValue);
+    if (Number.isNaN(d.getTime())) return null;
+
+    const originalDay = d.getDate();
+    d.setMonth(d.getMonth() + 1);
+
+    // Clamp dates such as Jan 31 -> Feb last day.
+    if (d.getDate() !== originalDay) d.setDate(0);
+    return d;
+  }
+
+  async function fetchCurrentStudent(studentId) {
     try {
-      const encoded = encodeURIComponent(normId(studentId));
-      const url = `${SUPABASE_URL}/rest/v1/${CONFIRMATIONS_TABLE}?select="Student%20Id"&Student%20Id=eq.${encoded}&limit=1`;
+      const encodedId = encodeURIComponent(normId(studentId));
+      const url =
+        `${SUPABASE_URL}/rest/v1/Students` +
+        `?select=*&Student%20Id=eq.${encodedId}&limit=1`;
+
       const response = await fetch(url, {
+        method: 'GET',
         headers: {
           apikey: SUPABASE_PUBLISHABLE_KEY,
-          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          Accept: 'application/json'
         }
       });
-      if (!response.ok) return false;
+
+      if (!response.ok) return null;
+
       const rows = await response.json();
-      return Array.isArray(rows) && rows.some(r => normId(r['Student Id']) === normId(studentId));
-    } catch (e) {
+      return Array.isArray(rows) && rows.length ? rows[0] : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function confirmationExists(studentId) {
+    try {
+      const encodedId = encodeURIComponent(normId(studentId));
+      const url =
+        `${SUPABASE_URL}/rest/v1/${CONFIRMATIONS_TABLE}` +
+        `?select="Student%20Id"&Student%20Id=eq.${encodedId}&limit=1`;
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+          Accept: 'application/json'
+        }
+      });
+
+      if (!response.ok) return false;
+
+      const rows = await response.json();
+      return Array.isArray(rows) && rows.length > 0;
+    } catch (_) {
       return false;
     }
   }
 
-  function getBatchStart(record) {
-    return record?.batchStart || record?.batch_start || record?.['Batch Start'] || '';
-  }
+  function newSetupState(student, confirmed) {
+    const batchStart = getBatchStart(student);
+    const endDate = addOneMonth(batchStart);
 
-  function getStudentId(record) {
-    return record?.studentId || record?.['Student Id'] || record?.id || '';
-  }
+    // Without Batch Start, leave the old record untouched.
+    if (!endDate) return null;
 
-  function isNewSetupRecord(record) {
-    // New records are identified by having a Batch Start value.
-    // Existing/legacy records in the original final site have no Batch Start
-    // in the verification payload and are left completely untouched.
-    return !!getBatchStart(record);
-  }
+    const completed = new Date() >= endDate;
 
-  function workflowState(record, confirmed) {
-    const start = getBatchStart(record);
-    const end = endDateFromBatchStart(start);
-    const ended = !!end && new Date() >= end;
-
-    if (!ended && !confirmed) {
-      return { phase: 'running-pending', overall: 'RUNNING', verify: 'CONFIRMATION PENDING', cert: 'COMING SOON', color: 'red' };
+    if (!completed && confirmed) {
+      return {
+        overall: 'RUNNING',
+        verification: 'VERIFIED',
+        certificate: 'COMING SOON',
+        pending: false,
+        complete: false
+      };
     }
-    if (!ended && confirmed) {
-      return { phase: 'running-confirmed', overall: 'RUNNING', verify: 'VERIFIED', cert: 'COMING SOON', color: 'blue' };
+
+    if (!completed && !confirmed) {
+      return {
+        overall: 'RUNNING',
+        verification: 'CONFIRMATION PENDING',
+        certificate: 'COMING SOON',
+        pending: true,
+        complete: false
+      };
     }
-    if (ended && confirmed) {
-      return { phase: 'completed-confirmed', overall: 'COMPLETE', verify: 'VERIFIED', cert: 'RECEIVED / VERIFIED', color: 'blue' };
+
+    if (completed && confirmed) {
+      return {
+        overall: 'COMPLETE',
+        verification: 'VERIFIED',
+        certificate: 'RECEIVED / VERIFIED',
+        pending: false,
+        complete: true
+      };
     }
-    return { phase: 'completed-pending', overall: 'COMPLETE', verify: 'NOT VERIFIED', cert: 'NOT ISSUED', color: 'red' };
+
+    return {
+      overall: 'COMPLETE',
+      verification: 'NOT VERIFIED',
+      certificate: 'NOT ISSUED',
+      pending: true,
+      complete: true
+    };
   }
 
-  function injectStyles() {
-    if (document.getElementById('sgt-new-setup-styles')) return;
-    const s = document.createElement('style');
-    s.id = 'sgt-new-setup-styles';
-    s.textContent = `
-      .sgt-new-setup{margin-top:20px;border-radius:14px;border:1px solid var(--sgt-border);background:var(--sgt-bg);overflow:hidden}
-      .sgt-new-setup .sgt-head{padding:10px 14px;background:var(--sgt-main);color:#fff;font-size:12px;font-weight:800;letter-spacing:.2px}
-      .sgt-new-setup .sgt-body{padding:18px}
-      .sgt-new-setup .sgt-grid{display:grid;grid-template-columns:180px 1fr;gap:20px;align-items:center}
-      .sgt-new-setup .sgt-overall{text-align:center;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px}
-      .sgt-new-setup .sgt-icon{width:54px;height:54px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;background:#eef2ff;color:var(--sgt-main);font-size:25px;font-weight:900}
-      .sgt-new-setup .sgt-overall small{display:block;color:#64748b;font-size:11px}
-      .sgt-new-setup .sgt-overall strong{display:block;color:var(--sgt-main);font-size:20px;margin-top:4px}
-      .sgt-new-setup .sgt-overall p{font-size:10px;color:#64748b;line-height:1.4;margin:7px auto 0;max-width:145px}
-      .sgt-new-setup h3{margin:0 0 10px;font-size:17px}
-      .sgt-new-setup .sgt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px 13px;margin-top:8px}
-      .sgt-new-setup .sgt-row strong{display:block;font-size:13px}
-      .sgt-new-setup .sgt-row span.desc{display:block;color:#64748b;font-size:11px;margin-top:4px;line-height:1.35}
-      .sgt-new-setup .sgt-badge{white-space:nowrap;border-radius:7px;padding:7px 9px;font-size:10px;font-weight:800}
-      .sgt-new-setup .ok{background:#dcfce7;color:#15803d}
-      .sgt-new-setup .soon{background:#dbeafe;color:#1d4ed8}
-      .sgt-new-setup .bad{background:#fee2e2;color:#b91c1c}
-      .sgt-new-setup .pending{background:#fff1f2;color:#be123c}
-      .sgt-new-setup .sgt-action{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;padding:13px 14px;border-radius:10px;text-decoration:none;font-size:12px;font-weight:800}
-      .sgt-new-setup .sgt-action.red{border:1px solid #fca5a5;background:#fff;color:#b91c1c;animation:sgtConfirmPulse 1.8s ease-in-out infinite}
-      .sgt-new-setup .sgt-congrats{margin-top:14px;padding:13px 14px;border:1px solid #bfdbfe;background:#eff6ff;border-radius:10px;color:#1d4ed8;font-size:12px;font-weight:700}
-      @keyframes sgtConfirmPulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.08)}50%{box-shadow:0 0 0 5px rgba(220,38,38,.04)}}
-      @media(max-width:760px){.sgt-new-setup .sgt-grid{grid-template-columns:1fr}.sgt-new-setup .sgt-row{flex-direction:column;align-items:flex-start}.sgt-new-setup .sgt-badge{white-space:normal}}
+  function installStyles() {
+    if (document.getElementById('sgt-connected-workflow-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'sgt-connected-workflow-styles';
+    style.textContent = `
+      .sgt-connected-workflow {
+        margin-top: 20px;
+        padding: 18px;
+        border-radius: 14px;
+        border: 1px solid var(--sgt-border);
+        background: var(--sgt-bg);
+      }
+      .sgt-connected-workflow .sgt-wf-title {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+        margin-bottom:14px;
+        color:var(--sgt-text);
+        font-size:12px;
+        font-weight:800;
+      }
+      .sgt-connected-workflow .sgt-wf-title strong {
+        background:var(--sgt-main);
+        color:#fff;
+        border-radius:7px;
+        padding:7px 10px;
+        font-size:10px;
+      }
+      .sgt-connected-workflow .sgt-wf-grid {
+        display:grid;
+        grid-template-columns:170px 1fr;
+        gap:18px;
+        align-items:center;
+      }
+      .sgt-connected-workflow .sgt-wf-overall {
+        background:#fff;
+        border:1px solid #e2e8f0;
+        border-radius:11px;
+        padding:16px;
+        text-align:center;
+      }
+      .sgt-connected-workflow .sgt-wf-icon {
+        width:48px;
+        height:48px;
+        margin:0 auto 7px;
+        border-radius:50%;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:#eef2ff;
+        color:var(--sgt-main);
+        font-size:22px;
+        font-weight:900;
+      }
+      .sgt-connected-workflow .sgt-wf-overall small {
+        display:block;
+        color:#64748b;
+        font-size:10px;
+      }
+      .sgt-connected-workflow .sgt-wf-overall b {
+        display:block;
+        color:var(--sgt-main);
+        font-size:18px;
+        margin-top:3px;
+      }
+      .sgt-connected-workflow .sgt-wf-overall p {
+        margin:6px auto 0;
+        max-width:135px;
+        color:#64748b;
+        font-size:10px;
+        line-height:1.35;
+      }
+      .sgt-connected-workflow h3 {
+        margin:0 0 9px;
+        font-size:16px;
+      }
+      .sgt-connected-workflow .sgt-wf-row {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        padding:11px 12px;
+        margin-top:7px;
+        background:#fff;
+        border:1px solid #e2e8f0;
+        border-radius:9px;
+      }
+      .sgt-connected-workflow .sgt-wf-row strong {
+        display:block;
+        font-size:12px;
+      }
+      .sgt-connected-workflow .sgt-wf-row small {
+        display:block;
+        margin-top:3px;
+        color:#64748b;
+        font-size:10px;
+        line-height:1.3;
+      }
+      .sgt-connected-workflow .sgt-wf-badge {
+        white-space:nowrap;
+        border-radius:6px;
+        padding:7px 8px;
+        font-size:10px;
+        font-weight:800;
+      }
+      .sgt-connected-workflow .ok { background:#dcfce7; color:#15803d; }
+      .sgt-connected-workflow .soon { background:#dbeafe; color:#1d4ed8; }
+      .sgt-connected-workflow .pending { background:#fee2e2; color:#b91c1c; }
+      .sgt-connected-workflow .notissued { background:#fee2e2; color:#b91c1c; }
+      .sgt-connected-workflow .sgt-wf-action {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        margin-top:13px;
+        padding:12px 13px;
+        border:1px solid #fca5a5;
+        border-radius:9px;
+        background:#fff;
+        color:#b91c1c;
+        text-decoration:none;
+        font-size:12px;
+        font-weight:800;
+        animation:sgtWorkflowPulse 1.8s ease-in-out infinite;
+      }
+      .sgt-connected-workflow .sgt-wf-congrats {
+        margin-top:13px;
+        padding:12px 13px;
+        border:1px solid #bfdbfe;
+        border-radius:9px;
+        background:#eff6ff;
+        color:#1d4ed8;
+        font-size:11px;
+        line-height:1.4;
+      }
+      @keyframes sgtWorkflowPulse {
+        0%,100% { box-shadow:0 0 0 0 rgba(220,38,38,.08); }
+        50% { box-shadow:0 0 0 5px rgba(220,38,38,.04); }
+      }
+      @media(max-width:760px) {
+        .sgt-connected-workflow .sgt-wf-grid { grid-template-columns:1fr; }
+        .sgt-connected-workflow .sgt-wf-row {
+          flex-direction:column;
+          align-items:flex-start;
+        }
+        .sgt-connected-workflow .sgt-wf-badge { white-space:normal; }
+      }
     `;
-    document.head.appendChild(s);
+    document.head.appendChild(style);
   }
 
-  function renderNewSetup(record, state) {
-    injectStyles();
-    const mount = document.getElementById('verificationResultPage') || document.getElementById('verificationResult');
+  function renderConnectedWorkflow(state) {
+    const mount =
+      document.getElementById('verificationResultPage') ||
+      document.getElementById('verificationResult');
+
     if (!mount) return;
 
-    mount.querySelectorAll('.sgt-new-setup').forEach(e => e.remove());
+    mount.querySelectorAll('.sgt-connected-workflow').forEach(el => el.remove());
 
-    const color = state.color === 'blue'
-      ? { main:'#2563eb', bg:'#eff6ff', border:'#bfdbfe' }
-      : { main:'#dc2626', bg:'#fff7f7', border:'#fecaca' };
+    const blue = state.verification === 'VERIFIED';
+    const theme = blue
+      ? { main:'#2563eb', bg:'#eff6ff', border:'#bfdbfe', text:'#1e3a8a' }
+      : { main:'#dc2626', bg:'#fff7f7', border:'#fecaca', text:'#991b1b' };
 
-    const verifyClass = state.verify === 'VERIFIED' ? 'ok' : 'pending';
-    const certClass = state.cert === 'RECEIVED / VERIFIED' ? 'ok' : state.cert === 'COMING SOON' ? 'soon' : 'bad';
+    const verifyClass = state.verification === 'VERIFIED' ? 'ok' : 'pending';
+    const certClass =
+      state.certificate === 'RECEIVED / VERIFIED' ? 'ok' :
+      state.certificate === 'COMING SOON' ? 'soon' : 'notissued';
 
-    const action = state.verify !== 'VERIFIED'
-      ? `<a class="sgt-action red" href="confirmation.html"><span>Complete Your Confirmation</span><b>→</b></a>`
-      : state.phase === 'running-confirmed'
-        ? `<div class="sgt-congrats">🎉 Congratulations! Your confirmation has been received successfully. Keep up the great work!</div>`
-        : `<div class="sgt-congrats">🎉 Congratulations! Your internship is complete and your confirmation has been verified.</div>`;
+    const action = state.pending
+      ? `<a class="sgt-wf-action" href="confirmation.html">
+           <span>Complete Your Confirmation</span><b>→</b>
+         </a>`
+      : `<div class="sgt-wf-congrats">
+           🎉 Congratulations! Your confirmation has been successfully verified.
+           ${state.complete
+             ? 'Your internship is complete. We wish you continued success!'
+             : 'Keep going and complete your internship successfully!'}
+         </div>`;
 
     const card = document.createElement('section');
-    card.className = 'sgt-new-setup';
-    card.style.setProperty('--sgt-main', color.main);
-    card.style.setProperty('--sgt-bg', color.bg);
-    card.style.setProperty('--sgt-border', color.border);
+    card.className = 'sgt-connected-workflow';
+    card.style.setProperty('--sgt-main', theme.main);
+    card.style.setProperty('--sgt-bg', theme.bg);
+    card.style.setProperty('--sgt-border', theme.border);
+    card.style.setProperty('--sgt-text', theme.text);
+
     card.innerHTML = `
-      <div class="sgt-head">
-        ${state.phase === 'running-pending' ? 'RUNNING — CONFIRMATION PENDING' :
-          state.phase === 'running-confirmed' ? 'RUNNING — CONFIRMATION RECEIVED' :
-          state.phase === 'completed-confirmed' ? 'COMPLETED — CONFIRMATION RECEIVED' :
-          'COMPLETED — CONFIRMATION NOT RECEIVED'}
+      <div class="sgt-wf-title">
+        <span>${state.complete ? 'INTERNSHIP COMPLETED' : 'INTERNSHIP IN PROGRESS'}</span>
+        <strong>${state.overall}</strong>
       </div>
-      <div class="sgt-body">
-        <div class="sgt-grid">
-          <div class="sgt-overall">
-            <div class="sgt-icon">${state.overall === 'COMPLETE' ? '✓' : '◷'}</div>
-            <small>Overall Status</small>
-            <strong>${state.overall}</strong>
-            <p>${state.overall === 'RUNNING' ? 'Your internship is currently in progress.' : 'Your internship has successfully completed.'}</p>
+
+      <div class="sgt-wf-grid">
+        <div class="sgt-wf-overall">
+          <div class="sgt-wf-icon">${state.complete ? '✓' : '◷'}</div>
+          <small>Overall Status</small>
+          <b>${state.overall}</b>
+          <p>${state.complete
+            ? 'Your internship duration has been completed.'
+            : 'Your internship is currently running.'}</p>
+        </div>
+
+        <div>
+          <h3>Verification Status</h3>
+
+          <div class="sgt-wf-row">
+            <div>
+              <strong>Confirmation</strong>
+              <small>${state.verification === 'VERIFIED'
+                ? 'Confirmation form received successfully.'
+                : 'Confirmation form has not been received yet.'}</small>
+            </div>
+            <span class="sgt-wf-badge ${verifyClass}">${state.verification}</span>
           </div>
-          <div>
-            <h3>Document Status</h3>
-            <div class="sgt-row">
-              <div><strong>Offer Letter</strong><span class="desc">Offer letter has been issued.</span></div>
-              <span class="sgt-badge ok">✓ Received &amp; Verified</span>
+
+          <div class="sgt-wf-row">
+            <div>
+              <strong>Certificate</strong>
+              <small>${state.certificate === 'COMING SOON'
+                ? 'Certificate will be available after successful completion.'
+                : state.certificate === 'RECEIVED / VERIFIED'
+                  ? 'Certificate has been received and verified.'
+                  : 'Certificate has not been issued.'}</small>
             </div>
-            <div class="sgt-row">
-              <div><strong>Verification Status</strong><span class="desc">${state.verify === 'VERIFIED' ? 'Confirmation received successfully.' : 'Confirmation has not been received yet.'}</span></div>
-              <span class="sgt-badge ${verifyClass}">${state.verify}</span>
-            </div>
-            <div class="sgt-row">
-              <div><strong>Certificate</strong><span class="desc">${state.cert === 'COMING SOON' ? 'Certificate will be issued after successful completion.' : state.cert === 'RECEIVED / VERIFIED' ? 'Certificate has been issued and verified.' : 'Certificate has not been issued.'}</span></div>
-              <span class="sgt-badge ${certClass}">${state.cert}</span>
-            </div>
+            <span class="sgt-wf-badge ${certClass}">${state.certificate}</span>
           </div>
         </div>
-        ${action}
-      </div>`;
+      </div>
+
+      ${action}
+    `;
+
+    // Append only for NEW records. The original final result remains untouched.
     mount.appendChild(card);
   }
 
-  async function runNewSetup() {
+  async function runConnectedWorkflow() {
     const raw = sessionStorage.getItem('softgrowVerificationResult');
     if (!raw) return;
 
-    let record;
-    try { record = JSON.parse(raw); } catch (_) { return; }
-    if (!record || record.type !== 'valid') return;
+    let result;
+    try { result = JSON.parse(raw); } catch (_) { return; }
+    if (!result || result.type !== 'valid') return;
 
-    // Critical: old records are untouched. New setup only applies when
-    // Batch Start is present in the verification record.
-    if (!isNewSetupRecord(record)) return;
+    const initialStudent = result.student || result.record || result.data || result;
+    const studentId =
+      initialStudent?.['Student Id'] ||
+      initialStudent?.studentId ||
+      result.studentId ||
+      result.id ||
+      '';
 
-    const studentId = getStudentId(record);
     if (!studentId) return;
 
-    const confirmed = await hasConfirmation(studentId);
-    renderNewSetup(record, workflowState(record, confirmed));
+    // Read the CURRENT Students row so Batch Start is available even when
+    // the original verification response does not include the new column.
+    const student = await fetchCurrentStudent(studentId);
+
+    // Legacy record: no Batch Start => do absolutely nothing.
+    if (!student || !getBatchStart(student)) return;
+
+    const confirmed = await confirmationExists(studentId);
+    const state = newSetupState(student, confirmed);
+    if (!state) return;
+
+    renderConnectedWorkflow(state);
   }
 
-  document.addEventListener('DOMContentLoaded', () => setTimeout(runNewSetup, 300));
+  document.addEventListener('DOMContentLoaded', function () {
+    setTimeout(runConnectedWorkflow, 250);
+  });
 })();
 
