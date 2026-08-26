@@ -89,9 +89,9 @@ function initHomeReviewPopup() {
     { name: "Sadiya Afreen", text: "Working on projects during my SoftGrowTech internship helped me improve my programming and problem-solving skills." },
     { name: "Roshani Kumari", text: "I gained useful knowledge and practical exposure through my SoftGrowTech internship experience." },
     { name: "Anchal Shukla", text: "SoftGrowTech gave me a good opportunity to improve my technical skills through practical internship work." },
-    { name: "Khushi Bhatnagar", text: "The project work made my internship experience engaging and gave me the opportunity to learn something new." },
-    { name: "Vivek Kumar", text: "The internship provided a clear learning path with practical work that helped me build confidence in my skills." },
-    { name: "Mehak Gupta", text: "I found the internship well structured and appreciated the practical learning experience throughout the program." }
+    { name: "Khushi Bhatnagar", text: "The project work made my SoftGrowTech internship experience engaging and gave me the opportunity to learn something new." },
+    { name: "Vivek Kumar", text: "The SoftGrowTech internship provided a clear learning path with practical work that helped me build confidence in my skills." },
+    { name: "Mehak Gupta", text: "I found the SoftGrowTech internship well structured and appreciated the practical learning experience throughout the program." }
   ];
 
   const textEl = document.getElementById("reviewPopupText");
