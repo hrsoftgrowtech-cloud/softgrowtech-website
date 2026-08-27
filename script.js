@@ -374,26 +374,10 @@ async function handleVerification(form) {
   await new Promise(resolve => setTimeout(resolve, 3000));
 
   try {
-    // ORIENTATION FIRST:
-    // Newly registered interns stay in the Orientation table until the
-    // orientation session is completed. The legacy/new-student flows remain
-    // unchanged after that stage.
-    const orientationStudent = await verifyOrientationStudent(id, mobileLast4);
-
-    if (orientationStudent) {
-      sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
-        type: "orientation",
-        student: orientationStudent
-      }));
-
-      // Do not put the mobile digits in the URL.
-      window.location.href = `verification-result.html?id=${encodeURIComponent(id)}`;
-      return;
-    }
-
-    // NEW STUDENTS:
-    // If this ID belongs to the new-batch table, use the existing automatic
-    // batch/confirmation logic. The legacy Students table is untouched.
+    // NEW STUDENTS FIRST:
+    // Once an intern is moved into New_Students after orientation, the
+    // existing verification flow must take priority even if the old
+    // Orientation row is still present.
     const newStudent = await verifyNewStudent(id, mobileLast4);
 
     if (newStudent) {
@@ -403,6 +387,20 @@ async function handleVerification(form) {
       }));
 
       // Do not put the mobile digits in the URL.
+      window.location.href = `verification-result.html?id=${encodeURIComponent(id)}`;
+      return;
+    }
+
+    // ORIENTATION:
+    // If the ID is not yet in New_Students, show the orientation-stage page.
+    const orientationStudent = await verifyOrientationStudent(id, mobileLast4);
+
+    if (orientationStudent) {
+      sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
+        type: "orientation",
+        student: orientationStudent
+      }));
+
       window.location.href = `verification-result.html?id=${encodeURIComponent(id)}`;
       return;
     }
@@ -1499,22 +1497,10 @@ function ensureDownloadAndBadgeStyles() {
       border-radius:12px 12px 16px 16px;
       background:linear-gradient(180deg,#eff6ff,#dbeafe);
       box-shadow:0 4px 10px rgba(37,99,235,.16);
-      clip-path:polygon(50% 0%, 92% 17%, 88% 66%, 72% 86%, 50% 100%, 28% 86%, 12% 66%, 8% 17%);
-    }
-    .result-official .verified-shield::before{
-      content:"";
-      position:absolute;inset:4px;
-      border:1px solid rgba(37,99,235,.25);
-      border-radius:9px 9px 12px 12px;
-      clip-path:polygon(50% 0%, 92% 17%, 88% 66%, 72% 86%, 50% 100%, 28% 86%, 12% 66%, 8% 17%);
-    }
-    .result-official .verified-shield > span{
-      position:relative;z-index:1;
-      color:#2563eb;font-weight:900;font-size:20px;line-height:1;
     }
     .result-official .verified-shield .record-svg{
-      width:24px;height:24px;display:block;position:relative;z-index:2;
-      color:#2563eb;
+      width:26px;height:26px;display:block;position:relative;z-index:2;
+      color:#2563eb;overflow:visible;
     }
     .pdf-capture-root{
       width:100% !important;
