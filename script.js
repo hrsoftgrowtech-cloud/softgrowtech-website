@@ -74,6 +74,32 @@ async function verifyNewStudent(id, mobileLast4) {
   return Array.isArray(data) && data.length ? data[0] : null;
 }
 
+/*
+ * ORIENTATION VERIFICATION
+ * Orientation records are checked before New_Students so that a newly
+ * registered intern gets the orientation-stage result page.
+ */
+async function verifyOrientationStudent(id, mobileLast4) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_orientation_student`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_PUBLISHABLE_KEY,
+      "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      p_student_id: id,
+      p_mobile_last4: mobileLast4
+    })
+  });
+
+  // A missing RPC should not break the existing verification flow.
+  if (response.status === 404 || response.status === 400) return null;
+  if (!response.ok) throw new Error("Orientation verification request failed");
+  const data = await response.json();
+  return Array.isArray(data) && data.length ? data[0] : null;
+}
+
 
 
 function addReviewPopupResponsiveStyles(){if(document.getElementById("softgrow-review-popup-mobile-fix"))return;const s=document.createElement("style");s.id="softgrow-review-popup-mobile-fix";s.textContent=`#reviewPopup{max-width:min(380px,calc(100vw - 28px));box-sizing:border-box}@media(max-width:600px){#reviewPopup{width:calc(100vw - 24px)!important;max-width:360px!important;left:12px!important;right:12px!important;bottom:12px!important;margin:0 auto!important;padding:14px!important;font-size:13px}#reviewPopup #reviewPopupText{line-height:1.45;margin-bottom:7px}#reviewPopup #reviewPopupName{font-size:12px}#reviewPopup #reviewPopupStars{font-size:13px}}`;document.head.appendChild(s);}
@@ -89,9 +115,9 @@ function initHomeReviewPopup() {
     { name: "Sadiya Afreen", text: "Working on projects during my SoftGrowTech internship helped me improve my programming and problem-solving skills." },
     { name: "Roshani Kumari", text: "I gained useful knowledge and practical exposure through my SoftGrowTech internship experience." },
     { name: "Anchal Shukla", text: "SoftGrowTech gave me a good opportunity to improve my technical skills through practical internship work." },
-    { name: "Khushi Bhatnagar", text: "The project work made my SoftGrowTech internship experience engaging and gave me the opportunity to learn something new." },
-    { name: "Vivek Kumar", text: "The SoftGrowTech internship provided a clear learning path with practical work that helped me build confidence in my skills." },
-    { name: "Mehak Gupta", text: "I found the SoftGrowTech internship well structured and appreciated the practical learning experience throughout the program." }
+    { name: "Khushi Bhatnagar", text: "The project work made my internship experience engaging and gave me the opportunity to learn something new." },
+    { name: "Vivek Kumar", text: "The internship provided a clear learning path with practical work that helped me build confidence in my skills." },
+    { name: "Mehak Gupta", text: "I found the internship well structured and appreciated the practical learning experience throughout the program." }
   ];
 
   const textEl = document.getElementById("reviewPopupText");
@@ -348,8 +374,25 @@ async function handleVerification(form) {
   await new Promise(resolve => setTimeout(resolve, 3000));
 
   try {
-    // NEW STUDENTS FIRST:
-    // If this ID belongs to the new-batch table, use the new automatic
+    // ORIENTATION FIRST:
+    // Newly registered interns stay in the Orientation table until the
+    // orientation session is completed. The legacy/new-student flows remain
+    // unchanged after that stage.
+    const orientationStudent = await verifyOrientationStudent(id, mobileLast4);
+
+    if (orientationStudent) {
+      sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
+        type: "orientation",
+        student: orientationStudent
+      }));
+
+      // Do not put the mobile digits in the URL.
+      window.location.href = `verification-result.html?id=${encodeURIComponent(id)}`;
+      return;
+    }
+
+    // NEW STUDENTS:
+    // If this ID belongs to the new-batch table, use the existing automatic
     // batch/confirmation logic. The legacy Students table is untouched.
     const newStudent = await verifyNewStudent(id, mobileLast4);
 
@@ -634,6 +677,10 @@ function initResultPage() {
   }
 
   if (savedRecord && savedRecord.student) {
+    if (savedRecord.type === "orientation") {
+      renderOrientationRecord(savedRecord.student);
+      return;
+    }
     if (savedRecord.type === "new") {
       renderNewStudentRecord(savedRecord.student);
       return;
@@ -905,6 +952,183 @@ function ensureNewStudentLegacyVisualStyles() {
     }
   `;
   document.head.appendChild(style);
+}
+
+function ensureOrientationRecordStyles() {
+  if (document.getElementById("softgrow-orientation-record-styles")) return;
+  const style = document.createElement("style");
+  style.id = "softgrow-orientation-record-styles";
+  style.textContent = `
+    .orientation-result .orientation-hero-card{
+      background:linear-gradient(135deg,#f8fbff 0%,#ffffff 55%,#f7f3ff 100%);
+      border:1px solid #e2e8f0;border-radius:16px;padding:28px 24px;margin-bottom:18px;text-align:center;
+      box-shadow:0 10px 30px rgba(15,23,42,.05);
+    }
+    .orientation-result .orientation-hero-icon{
+      width:62px;height:62px;margin:0 auto 13px;border-radius:50%;background:#22c55e;color:#fff;
+      display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px rgba(34,197,94,.2);
+    }
+    .orientation-result .orientation-hero-icon .record-svg{width:34px;height:34px}
+    .orientation-result .orientation-hero-card h1{margin:0;font-size:28px;color:#061a33;line-height:1.2}
+    .orientation-result .orientation-hero-card .orientation-validity{margin:7px 0 0;color:#475569;font-size:13px}
+    .orientation-result .orientation-note{
+      max-width:760px;margin:20px auto 0;padding:13px 16px;background:#f8fbff;border:1px solid #dbe7f5;
+      border-radius:10px;color:#475569;font-size:12px;line-height:1.5;display:flex;align-items:flex-start;gap:9px;text-align:left;
+    }
+    .orientation-result .orientation-note .record-svg{width:18px;height:18px;min-width:18px;color:#2563eb;margin-top:1px}
+    .orientation-result .orientation-success{
+      padding:28px 20px 24px;border:1px solid #dbe7f5;border-radius:16px;background:#fff;text-align:center;
+      margin-bottom:18px;box-shadow:0 10px 30px rgba(15,23,42,.05);
+    }
+    .orientation-result .orientation-success .trophy{
+      width:88px;height:88px;margin:0 auto 14px;border-radius:50%;background:#061a33;color:#fbbf24;
+      display:flex;align-items:center;justify-content:center;box-shadow:0 12px 28px rgba(6,26,51,.16);
+    }
+    .orientation-result .orientation-success .trophy .record-svg{width:48px;height:48px}
+    .orientation-result .orientation-success h2{margin:0;color:#061a33;font-size:27px;line-height:1.25}
+    .orientation-result .orientation-success h2 span{color:#1d4ed8}
+    .orientation-result .orientation-success .success-divider{width:170px;height:2px;background:#f4c84a;margin:15px auto 13px;position:relative}
+    .orientation-result .orientation-success .success-divider:after{content:"★";position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);background:#fff;padding:0 8px;color:#f4b400;font-size:15px}
+    .orientation-result .orientation-success p{margin:0 auto;color:#334155;font-size:15px;line-height:1.55;max-width:650px}
+    .orientation-result .orientation-success p strong{color:#061a33}
+    .orientation-result .orientation-one-step{display:inline-flex;align-items:center;gap:8px;margin:18px auto 0;padding:12px 24px;border-radius:999px;background:linear-gradient(90deg,#1d4ed8,#6d28d9);color:#fff;font-size:14px;font-weight:900;box-shadow:0 8px 20px rgba(79,70,229,.18)}
+    .orientation-result .orientation-one-step .record-svg{width:18px;height:18px}
+    .orientation-result .orientation-group{
+      max-width:620px;margin:18px auto 0;padding:14px 17px;border-radius:11px;background:#f8fafc;border:1px solid #e2e8f0;
+      display:flex;align-items:center;gap:12px;text-align:left;color:#334155;font-size:13px;line-height:1.45;
+    }
+    .orientation-result .orientation-group-icon{width:42px;height:42px;min-width:42px;border-radius:50%;background:#061a33;color:#fff;display:flex;align-items:center;justify-content:center}
+    .orientation-result .orientation-group-icon .record-svg{width:22px;height:22px}
+    .orientation-result .orientation-group strong{color:#1d4ed8}
+    .orientation-result .orientation-status{border:1px solid #dbe7f5;background:#fff;border-radius:15px;padding:20px;margin-bottom:18px;box-shadow:0 8px 24px rgba(15,23,42,.04)}
+    .orientation-result .orientation-status h2{margin:0 0 22px;font-size:16px;color:#061a33}
+    .orientation-result .orientation-steps{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:start;position:relative}
+    .orientation-result .orientation-step{position:relative;text-align:center;z-index:1}
+    .orientation-result .orientation-step:before{content:"";position:absolute;top:22px;left:-50%;right:50%;height:2px;background:#dbe3ef;z-index:-1}
+    .orientation-result .orientation-step:first-child:before{display:none}
+    .orientation-result .orientation-step.active:before{background:#2563eb}
+    .orientation-result .orientation-step-icon{width:46px;height:46px;margin:0 auto 9px;border-radius:50%;border:2px solid #dbe3ef;background:#fff;color:#94a3b8;display:flex;align-items:center;justify-content:center}
+    .orientation-result .orientation-step.active .orientation-step-icon{border-color:#1d4ed8;background:#1d4ed8;color:#fff;box-shadow:0 7px 18px rgba(29,78,216,.2)}
+    .orientation-result .orientation-step-icon .record-svg{width:23px;height:23px}
+    .orientation-result .orientation-step strong{display:block;font-size:12px;color:#64748b}
+    .orientation-result .orientation-step.active strong{color:#1d4ed8}
+    .orientation-result .orientation-step small{display:block;margin-top:3px;color:#64748b;font-size:10px}
+    .orientation-result .orientation-action-wrap{display:flex;justify-content:center;padding:2px 0 18px}
+    .orientation-result .orientation-action{
+      display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:12px 19px;border-radius:9px;
+      border:1px solid #2563eb;background:#fff;color:#061a33;text-decoration:none;font-size:13px;font-weight:900;
+      transition:transform .2s ease,box-shadow .2s ease,background .2s ease,border-color .2s ease;position:relative;overflow:hidden;
+    }
+    .orientation-result .orientation-action:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 20%,rgba(37,99,235,.10) 45%,transparent 70%);transform:translateX(-120%);transition:transform .55s ease}
+    .orientation-result .orientation-action:hover{transform:translateY(-2px);background:#f8fbff;border-color:#1d4ed8;box-shadow:0 9px 22px rgba(37,99,235,.15)}
+    .orientation-result .orientation-action:hover:after{transform:translateX(120%)}
+    .orientation-result .orientation-action .record-svg{width:18px;height:18px;color:#1d4ed8;transition:transform .2s ease}
+    .orientation-result .orientation-action:hover .record-svg{transform:translateX(-2px)}
+    .orientation-result .record-footer{margin-top:0}
+    @media(prefers-reduced-motion:reduce){.orientation-result .orientation-action,.orientation-result .orientation-action .record-svg{transition:none}.orientation-result .orientation-action:after{display:none}}
+    @media(max-width:760px){
+      .orientation-result .orientation-hero-card{padding:22px 16px}.orientation-result .orientation-hero-card h1{font-size:23px}
+      .orientation-result .orientation-success{padding:22px 14px}.orientation-result .orientation-success h2{font-size:22px}.orientation-result .orientation-success p{font-size:13px}
+      .orientation-result .orientation-steps{grid-template-columns:1fr}.orientation-result .orientation-step{display:grid;grid-template-columns:52px 1fr;column-gap:10px;text-align:left;align-items:center;margin-bottom:14px}.orientation-result .orientation-step:before{display:none}.orientation-result .orientation-step-icon{margin:0}.orientation-result .orientation-step small{grid-column:2}.orientation-result .orientation-action{width:100%;max-width:340px}
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function renderOrientationRecord(student) {
+  ensureRecordFooterStyles();
+  ensureOrientationRecordStyles();
+  const root = document.getElementById("verificationResult");
+  const backUrl = "documents-verification.html";
+
+  const id = student["Student Id"] || student["Student ID"] || "Not Available";
+  const name = student["Name"] || "Not Available";
+  const email = student["Student Email"] || student["Email"] || "Not Available";
+  const domain = student["Domain"] || "Not Available";
+  const batch = student["Batch Start"] || student["Batch date"] || "";
+
+  const icons = {
+    verified:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8 12 2.5 2.5L16.5 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    shield:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M12 3 20 6v5.5c0 4.6-3.1 7.9-8 9.5-4.9-1.6-8-4.9-8-9.5V6l8-3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8.5 12 2.2 2.2 4.8-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    celebration:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M5 19 8 9l7 7-10 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8 9 7-4M12 13l7-3M16 4l1-2M20 8l2-1M5 5 3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+    trophy:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M8 5h8v6.2c0 2.4-1.7 4.3-4 4.3s-4-1.9-4-4.3V5Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 7H5.5v2.2A2.8 2.8 0 0 0 8 12M16 7h2.5v2.2A2.8 2.8 0 0 1 16 12M12 15.5V19M8.5 20h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    group:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="9" cy="9" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16.5" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c.6-3 2.4-4.5 5.5-4.5s4.9 1.5 5.5 4.5M14 15.2c2.9-.2 4.9 1.1 5.5 3.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    profile:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.8-3.4 3-5 7-5s6.2 1.6 7 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    arrow:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+  };
+
+  root.innerHTML = `
+    <div class="result-shell softgrow-result-animate orientation-result">
+      <div class="result-header">
+        <div class="result-brand">
+          <img src="assets/softgrowtech-logo.png" alt="SoftGrowTech">
+          <div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div>
+        </div>
+        <div class="result-official">
+          <span class="verified-shield new-flow-header-shield" aria-hidden="true">${icons.shield}</span>
+          <div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div>
+        </div>
+      </div>
+
+      <div class="result-main">
+        <section class="orientation-hero-card">
+          <div class="orientation-hero-icon">${icons.verified}</div>
+          <h1>Official ID Verified</h1>
+          <p class="orientation-validity">Your official Student ID has been successfully verified.</p>
+          <div class="orientation-note">${icons.shield}<span>This confirms that your registered ID is valid and officially recorded with SoftGrowTech.</span></div>
+        </section>
+
+        <div class="student-grid new-flow-student-grid orientation-student-grid">
+          <div><small>Student / Letter ID</small><strong>${escapeHtml(id)}</strong></div>
+          <div><small>Student Name</small><strong>${escapeHtml(name)}</strong></div>
+          <div><small>Student Email</small><strong>${escapeHtml(maskPublicEmail(email))}</strong></div>
+          <div><small>Domain</small><strong>${escapeHtml(domain)}</strong></div>
+          <div><small>Batch Start</small><strong>${escapeHtml(batch ? formatDate(batch) : "Not Available")}</strong></div>
+        </div>
+
+        <section class="orientation-success">
+          <div class="trophy">${icons.trophy}</div>
+          <h2>🎉 Congratulations! <span>You’re Officially Selected!</span></h2>
+          <div class="success-divider"></div>
+          <p>Your profile will go live after completing the <strong>Orientation Session.</strong></p>
+          <div class="orientation-one-step">${icons.celebration}<span>You’re One Step Away!</span></div>
+          <div class="orientation-group"><div class="orientation-group-icon">${icons.group}</div><div>📢 Orientation details will be shared in the <strong>Official Group.</strong></div></div>
+        </section>
+
+        <section class="orientation-status" aria-label="Current status">
+          <h2>Current Status</h2>
+          <div class="orientation-steps">
+            <div class="orientation-step active">
+              <div class="orientation-step-icon">${icons.verified}</div>
+              <div><strong>Official ID Verified</strong><small>Verified</small></div>
+            </div>
+            <div class="orientation-step">
+              <div class="orientation-step-icon">${icons.group}</div>
+              <div><strong>Orientation Session</strong><small>Next Step</small></div>
+            </div>
+            <div class="orientation-step">
+              <div class="orientation-step-icon">${icons.profile}</div>
+              <div><strong>Profile Live</strong><small>After Orientation</small></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="orientation-action-wrap">
+          <a class="orientation-action" href="${backUrl}" aria-label="Verify Another ID and go back">${icons.arrow}<span>Verify Another ID &amp; Back</span></a>
+        </div>
+
+        <footer class="record-footer" aria-label="Verification record footer">
+          <section class="verification-trust-strip" aria-label="Verification assurance">
+            <div class="trust-item"><div class="trust-icon">${icons.shield}</div><div><strong>100% Authentic</strong><span>All records are verified and genuine.</span></div></div>
+            <div class="trust-item"><div class="trust-icon">${icons.shield}</div><div><strong>Secure Verification</strong><span>Your privacy and data are fully protected.</span></div></div>
+            <div class="trust-item"><div class="trust-icon">${icons.verified}</div><div><strong>Trusted by Thousands</strong><span>Thousands of students trust SoftGrowTech.</span></div></div>
+            <div class="trust-item"><div class="trust-icon">${icons.group}</div><div><strong>Need Support?</strong><span>We’re here to help you whenever you need.</span></div></div>
+          </section>
+          <p class="result-bottom-line">Verify another ID or return to the official verification page.</p>
+          <div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div>
+        </footer>
+      </div>
+    </div>`;
 }
 
 function renderNewStudentRecord(student) {
