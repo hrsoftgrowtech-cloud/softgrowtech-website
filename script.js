@@ -987,6 +987,18 @@ function ensureOrientationRecordStyles() {
     .orientation-result .orientation-success .trophy .record-svg{width:48px;height:48px}
     .orientation-result .orientation-success h2{margin:0;color:#061a33;font-size:27px;line-height:1.25}
     .orientation-result .orientation-success h2 span{color:#1d4ed8}
+    .orientation-result .orientation-success h2 .orientation-congrats-icon{
+      display:inline-flex;vertical-align:-4px;margin-right:5px;color:#1d4ed8;
+    }
+    .orientation-result .orientation-success h2 .orientation-congrats-icon .record-svg{
+      width:23px;height:23px;display:block;
+    }
+    .orientation-result .orientation-group-marker{
+      display:inline-flex;vertical-align:-4px;margin-right:3px;color:#1d4ed8;
+    }
+    .orientation-result .orientation-group-marker .record-svg{
+      width:17px;height:17px;display:block;
+    }
     .orientation-result .orientation-success .success-divider{width:170px;height:2px;background:#f4c84a;margin:15px auto 13px;position:relative}
     .orientation-result .orientation-success .success-divider:after{content:"★";position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);background:#fff;padding:0 8px;color:#f4b400;font-size:15px}
     .orientation-result .orientation-success p{margin:0 auto;color:#334155;font-size:15px;line-height:1.55;max-width:650px}
@@ -1054,7 +1066,7 @@ function renderOrientationRecord(student) {
     trophy:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M8 5h8v6.2c0 2.4-1.7 4.3-4 4.3s-4-1.9-4-4.3V5Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 7H5.5v2.2A2.8 2.8 0 0 0 8 12M16 7h2.5v2.2A2.8 2.8 0 0 1 16 12M12 15.5V19M8.5 20h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
     group:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="9" cy="9" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16.5" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c.6-3 2.4-4.5 5.5-4.5s4.9 1.5 5.5 4.5M14 15.2c2.9-.2 4.9 1.1 5.5 3.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
     profile:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.8-3.4 3-5 7-5s6.2 1.6 7 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
-    arrow:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M5 12h13M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    arrow:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M19 12H5M11 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
   };
 
   root.innerHTML = `
@@ -1088,11 +1100,11 @@ function renderOrientationRecord(student) {
 
         <section class="orientation-success">
           <div class="trophy">${icons.trophy}</div>
-          <h2>🎉 Congratulations! <span>You’re Officially Selected!</span></h2>
+          <h2><span class="orientation-congrats-icon">${icons.celebration}</span> Congratulations! <span>You’re Officially Selected!</span></h2>
           <div class="success-divider"></div>
           <p>Your profile will go live after completing the <strong>Orientation Session.</strong></p>
           <div class="orientation-one-step">${icons.celebration}<span>You’re One Step Away!</span></div>
-          <div class="orientation-group"><div class="orientation-group-icon">${icons.group}</div><div>📢 Orientation details will be shared in the <strong>Official Group.</strong></div></div>
+          <div class="orientation-group"><div class="orientation-group-icon">${icons.group}</div><div><span class="orientation-group-marker">${icons.group}</span> Orientation details will be shared in the <strong>Official Group.</strong></div></div>
         </section>
 
         <section class="orientation-status" aria-label="Current status">
@@ -1124,7 +1136,6 @@ function renderOrientationRecord(student) {
             <div class="trust-item"><div class="trust-icon">${icons.verified}</div><div><strong>Trusted by Thousands</strong><span>Thousands of students trust SoftGrowTech.</span></div></div>
             <div class="trust-item"><div class="trust-icon">${icons.group}</div><div><strong>Need Support?</strong><span>We’re here to help you whenever you need.</span></div></div>
           </section>
-          <p class="result-bottom-line">Verify another ID or return to the official verification page.</p>
           <div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div>
         </footer>
       </div>
@@ -1341,10 +1352,9 @@ function renderNewStudentRecord(student) {
 
           <div class="record-footer-actions">
             <button class="result-button download-record" type="button" data-download-record>Download Verification Record <span>⇩</span></button>
-            <a class="result-button verify-another" href="${backUrl}">Verify Another Letter ID <span>→</span></a>
+            <a class="result-button verify-another" href="${backUrl}">Verify Another Letter ID <span>←</span></a>
           </div>
 
-          <p class="result-bottom-line">Verify another ID or return to the official verification page.</p>
           <div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div>
         </footer>
       </div>
@@ -1463,7 +1473,7 @@ function renderVerified(student) {
               Download Verification Record <span>⇩</span>
             </button>
             <a class="result-button verify-another" href="${backUrl}">
-              Verify Another Letter ID <span>→</span>
+              Verify Another Letter ID <span>←</span>
             </a>
           </div>
 
@@ -1501,6 +1511,10 @@ function ensureDownloadAndBadgeStyles() {
     .result-official .verified-shield > span{
       position:relative;z-index:1;
       color:#2563eb;font-weight:900;font-size:20px;line-height:1;
+    }
+    .result-official .verified-shield .record-svg{
+      width:24px;height:24px;display:block;position:relative;z-index:2;
+      color:#2563eb;
     }
     .pdf-capture-root{
       width:100% !important;
