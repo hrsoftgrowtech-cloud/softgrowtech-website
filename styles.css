@@ -422,3 +422,16 @@ footer{background:#060c16;color:#fff;padding:60px 0 25px}
 }
 
 .fee-badge .fee-notice-svg{width:34px;height:34px;display:block;overflow:visible}
+
+
+/* Program clarity / fee transparency */
+.program-note{display:flex;flex-direction:column;gap:5px;margin:18px 0 4px;padding:12px 14px;border:1px solid rgba(0,0,0,.10);border-radius:12px;background:rgba(255,255,255,.65);max-width:620px}
+.program-note strong{font-size:.88rem;letter-spacing:.01em}
+.program-note span{font-size:.82rem;opacity:.78;line-height:1.5}
+.program-clarity-card{padding:28px}
+.program-clarity-card>p{max-width:850px}
+.clarity-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+.clarity-grid>div{padding:16px;border:1px solid rgba(0,0,0,.08);border-radius:12px}
+.clarity-grid strong,.clarity-grid span{display:block}
+.clarity-grid span{margin-top:6px;font-size:.9rem;line-height:1.5;opacity:.78}
+@media (max-width:760px){.clarity-grid{grid-template-columns:1fr}.program-note{max-width:none}}
