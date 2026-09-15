@@ -1,17 +1,12 @@
-SoftGrowTech final update notes
+SOFTGROWTECH FINAL SETUP NOTES
 
-Database:
-- The previously supplied supabase-final-setup.sql is NOT repeated here.
-- No new SQL migration is required for the UI/navigation/email-flow changes in this update.
-- The Admin Panel's Current Registration WhatsApp Group setting uses the existing sgt_settings table and creates its setting row automatically when saved.
-- Task 1, Task 2 and Final Project Google Form links also use the existing sgt_settings/task_forms setup.
-
-Email:
-- Supabase default Auth email is still controlled by Supabase until custom SMTP/email templates are configured.
-- For production, configure custom SMTP and SoftGrowTech-branded Auth templates separately. Do not put SMTP secrets in frontend files.
-
-After deployment:
-1. Login to Admin Panel.
-2. Add the current registration WhatsApp group link.
-3. Add Task 1, Task 2 and Final Project Google Form links.
-4. Configure Supabase Auth email templates/SMTP for SoftGrowTech sender.
+1. You already ran the earlier base Supabase SQL. Do NOT run that file again.
+2. Run only SUPABASE-MIGRATION-FINAL.sql in Supabase SQL Editor.
+3. Make sure info.softgrowtech@gmail.com is an Auth user and set its raw_user_meta_data role to admin using the admin-role SQL previously provided.
+4. Admin login page: admin-login.html. The protected console is management-console-x7.html.
+5. In Admin > Tasks & Submission Forms, paste Google Form links for Task 1, Task 2 and Final Project.
+6. In Admin > Communication, paste the current registration/orientation WhatsApp group link.
+7. In Admin > Payments, add/update QR image URLs and any payment details you want students to see.
+8. In Admin > Assessment, publish the 10 questions for each domain/question set. The student assessment is intentionally score-free.
+9. Configure Supabase Auth email templates + custom SMTP separately when you are ready. The website does not contain SMTP secrets.
+10. Task project files use Google Drive links; task submissions use Google Forms and therefore do not use Supabase Storage.

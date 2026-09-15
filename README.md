@@ -1,36 +1,38 @@
-# SoftGrowTech — Final Website Package
+# SoftGrowTech — Final Updated Website
 
-This package keeps the existing SoftGrowTech visual language and adds the final student portal, selection assessment, enrollment/payment flow, client enquiry flow and private admin console.
+This package is the revised static website + student portal + management console. The existing visual language is preserved while the requested navigation, payment/assessment journey, student dashboard, business services and admin workflow are improved.
 
-## Main pages
-- `index.html` — homepage, programs, services and existing content
-- `student-register.html` — native student registration
-- `student-login.html` — student login
-- `reset-password.html` — email reset link + new password
-- `portal.html` — student dashboard
-- `assessment.html` — website-native 10-question selection assessment
-- `enrollment.html` — payment/enrollment verification
-- `contact.html` — client enquiries + student support
-- `admin-login.html` / `admin.html` — protected management console
-- Existing verification/policy/domain pages remain included
+## Important Supabase note
+You already ran the earlier base SQL setup. **Do not run that old setup again.**
 
-## Supabase setup
-1. Run `supabase-final-setup.sql` in the Supabase SQL Editor.
-2. Create the first admin in Supabase Auth.
-3. Set that Auth user's metadata to `{"role":"admin"}` (or use the SQL comment in the setup file).
-4. Configure Auth email settings/SMTP and the password reset redirect URL for your production domain.
-5. Configure payment QR image URLs/details in `sgt_settings` through the admin/database layer as required.
-6. Add domain-specific assessment questions to `sgt_assessment_questions` (10 primary + optional reassessment set per domain).
-7. Add/edit task rows in `sgt_tasks` with the exact Google Drive project/submission links and dates.
+Run only:
+- `SUPABASE-MIGRATION-FINAL.sql`
 
-## Security
-- Student data is protected by Supabase RLS.
-- Payment receipts use a private Storage bucket.
-- Admin access requires Supabase Auth + admin role; the URL being private is not the security boundary.
-- Do not put service-role keys, SMTP passwords or payment secrets in frontend code.
+This migration updates admin authorization, keeps the generated Student ID available in Auth metadata for future custom email templates, adds editable payment-method configuration, program schedule settings, service settings, registration WhatsApp setting, task-form settings, and seeds the supplied domain project instruction links.
 
-## Existing verification
-The existing verification flow and its Supabase publishable configuration are preserved in `script.js`.
+## Admin login
+1. Create/use the separate Supabase Auth user `info.softgrowtech@gmail.com`.
+2. Give that Auth user the `role=admin` metadata using the SQL approach already discussed.
+3. Open `admin-login.html`.
+4. After login, the protected management console is `management-console-x7.html`.
+
+The management console is noindex/nofollow, but authentication + RLS remain the real security boundary.
+
+## Student flow
+- `student-login.html` → Student Login
+- `internships.html` → program/domain selection
+- `student-register.html` → registration with country, study year and gender
+- `registration-success.html` → registration confirmation
+- `portal.html` → student dashboard; dashboard has Logout only
+- `assessment.html` → assessment introduction → payment → assessment → final review → under review
+- `enrollment.html` → individual payment methods and complete details
+- `reset-password.html` → Gmail reset link; create-new-password appears only through the reset-link flow
+
+## Task submissions
+Task 1, Task 2 and Final Project submissions intentionally use **Google Forms** so large student project files do not fill Supabase Storage. Add the three Google Form URLs from the Admin Panel under `Tasks & Submission Forms`.
+
+## Email
+The frontend is prepared for the custom registration/reset email flow, but the sender identity and Auth email templates must be configured in Supabase/your SMTP provider. Do not put SMTP credentials in the website files.
 
 ## Deployment
-Static files can be deployed to the existing hosting/Vercel setup. No build command is required.
+Deploy the static files to the existing hosting. No build command is required.
