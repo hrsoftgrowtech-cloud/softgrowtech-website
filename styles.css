@@ -435,3 +435,6 @@ footer{background:#060c16;color:#fff;padding:60px 0 25px}
 .clarity-grid strong,.clarity-grid span{display:block}
 .clarity-grid span{margin-top:6px;font-size:.9rem;line-height:1.5;opacity:.78}
 @media (max-width:760px){.clarity-grid{grid-template-columns:1fr}.program-note{max-width:none}}
+/* Final responsive asset rules */
+img{max-width:100%;height:auto}.sg-icon,.menu-btn svg,.footer-social svg,.scroll-top svg{width:1.25em;height:1.25em;display:block;flex:0 0 auto}.menu-btn{display:none;align-items:center;justify-content:center}.menu-btn svg{width:22px;height:22px}.icon-box .sg-icon{width:28px;height:28px}.footer-social svg{width:20px;height:20px}.scroll-top svg{width:20px;height:20px}
+@media(max-width:900px){.menu-btn{display:inline-flex}.nav-links{display:none}.nav-links.open{display:flex}}
