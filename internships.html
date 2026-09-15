@@ -24,8 +24,8 @@
       <li><a href="how-it-works.html">How It Works</a></li>
       <li><a href="internships.html">Internships</a></li>
       <li><a href="projects.html">Projects</a></li>
-      <li><a href="documents-verification.html">Verify</a></li>
-      <li><a class="nav-apply" href="student-register.html">Register Now <span class="arrow">→</span></a></li>
+      <li><a href="services.html">Services</a></li>
+      <li><a class="nav-apply" href="student-login.html">Login Now <span class="arrow">→</span></a></li>
     </ul>
   </div>
 </header>
@@ -54,6 +54,7 @@
     </div>
   </div>
 </section>
+<section class="section"><div class="container"><div class="card" style="max-width:760px;margin:0 auto;text-align:center"><div class="eyebrow">Choose Your Domain</div><h2>Select the learning path you want to explore.</h2><p>Continue to registration with your selected domain already filled in. You can still change it on the registration form.</p><div class="form-grid" style="margin-top:18px;text-align:left"><div class="field"><label for="programDomainSelect">Interest Domain</label><select id="programDomainSelect"><option value="">Select a domain</option><option>Web Development</option><option>Android App Development</option><option>Java Programming</option><option>Python Programming</option><option>Artificial Intelligence</option><option>Machine Learning</option><option>Data Science</option><option>C++ Programming</option><option>C Programming</option><option>Internet of Things</option><option>Graphic Designing</option><option>UI/UX Design</option><option>Data Analysis</option><option>Frontend Developer</option><option>Backend Developer</option><option>Flutter Development</option></select></div><div class="field" style="align-self:end"><button class="btn btn-primary" id="continueRegistration" type="button">Continue →</button></div></div></div></div></section>
 <section class="section"><div class="container">
   <div class="grid-3">
     <a class="card domain-card" href="web-development.html"><div class="icon-box"><svg class="sg-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></g></svg></div><h3>Web Development</h3><p>Responsive websites, frontend fundamentals, interactive interfaces and practical web projects.</p><span class="text-link">Explore Program →</span></a>
@@ -144,7 +145,7 @@
         <h4>Support</h4>
         <ul>
           <li><a href="documents-verification.html">Document Verification</a></li>
-          <li><a href="student-register.html">Register Now</a></li>
+          <li><a href="student-login.html">Student Login</a></li>
         </ul>
       </div>
     <div class="footer-col footer-connect"><h4>Connect</h4><p class="footer-connect-copy">Stay connected with SoftGrowTech for learning updates, opportunities and support.</p><div class="footer-socials" aria-label="SoftGrowTech social and contact links">
@@ -168,5 +169,5 @@
 </footer>
 
 <script src="script.js"></script>
-</body>
+<script>document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('continueRegistration'),d=document.getElementById('programDomainSelect');if(b)b.onclick=()=>{if(!d.value){d.focus();return}location.href='student-register.html?domain='+encodeURIComponent(d.value)};const menu=document.querySelector('.menu-btn'),nav=document.getElementById('navLinks');if(menu&&nav)menu.onclick=()=>nav.classList.toggle('open')});</script></body>
 </html>
