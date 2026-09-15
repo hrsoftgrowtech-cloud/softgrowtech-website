@@ -155,6 +155,11 @@ as $$
   ) or coalesce((select (raw_user_meta_data->>'role') = 'admin' from auth.users where id = auth.uid()), false);
 $$;
 
+-- Additional registration details requested for student onboarding.
+alter table public.sgt_profiles add column if not exists country text;
+alter table public.sgt_profiles add column if not exists study_year text;
+alter table public.sgt_profiles add column if not exists gender text;
+
 alter table public.sgt_profiles enable row level security;
 alter table public.sgt_settings enable row level security;
 alter table public.sgt_domains enable row level security;
@@ -299,6 +304,25 @@ begin
   sid=coalesce(cfg->>'prefix','SGT')||'-'||coalesce(cfg->>'year_code',right(extract(year from now())::text,2))||'S-'||next_no;
   insert into public.sgt_profiles(id,student_id,name,email,phone,domain)
   values(new.id,sid,coalesce(new.raw_user_meta_data->>'full_name','Student'),lower(new.email),coalesce(new.raw_user_meta_data->>'phone',''),coalesce(new.raw_user_meta_data->>'domain','General'))
+  on conflict(id) do nothing;
+  update public.sgt_settings set value=jsonb_set(cfg,'{last_used}',to_jsonb(next_no),true),updated_at=now() where key='student_id';
+  return new;
+end; $$;
+drop trigger if exists sgt_auth_signup_profile on auth.users;
+create trigger sgt_auth_signup_profile after insert on auth.users for each row execute function public.sgt_after_auth_signup();
+
+
+-- Final signup trigger definition: stores country, current study year and gender from registration metadata.
+create or replace function public.sgt_after_auth_signup()
+returns trigger language plpgsql security definer set search_path=public as $$
+declare cfg jsonb; next_no bigint; sid text;
+begin
+  select value into cfg from public.sgt_settings where key='student_id' for update;
+  if cfg is null then cfg=jsonb_build_object('prefix','SGT','year_code',right(extract(year from now())::text,2),'last_used',0); end if;
+  next_no=coalesce((cfg->>'last_used')::bigint,0)+1;
+  sid=coalesce(cfg->>'prefix','SGT')||'-'||coalesce(cfg->>'year_code',right(extract(year from now())::text,2))||'S-'||next_no;
+  insert into public.sgt_profiles(id,student_id,name,email,phone,domain,country,study_year,gender)
+  values(new.id,sid,coalesce(new.raw_user_meta_data->>'full_name','Student'),lower(new.email),coalesce(new.raw_user_meta_data->>'phone',''),coalesce(new.raw_user_meta_data->>'domain','General'),coalesce(new.raw_user_meta_data->>'country',''),coalesce(new.raw_user_meta_data->>'study_year',''),coalesce(new.raw_user_meta_data->>'gender',''))
   on conflict(id) do nothing;
   update public.sgt_settings set value=jsonb_set(cfg,'{last_used}',to_jsonb(next_no),true),updated_at=now() where key='student_id';
   return new;

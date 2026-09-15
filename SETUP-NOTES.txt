@@ -1,0 +1,17 @@
+SoftGrowTech final update notes
+
+Database:
+- The previously supplied supabase-final-setup.sql is NOT repeated here.
+- No new SQL migration is required for the UI/navigation/email-flow changes in this update.
+- The Admin Panel's Current Registration WhatsApp Group setting uses the existing sgt_settings table and creates its setting row automatically when saved.
+- Task 1, Task 2 and Final Project Google Form links also use the existing sgt_settings/task_forms setup.
+
+Email:
+- Supabase default Auth email is still controlled by Supabase until custom SMTP/email templates are configured.
+- For production, configure custom SMTP and SoftGrowTech-branded Auth templates separately. Do not put SMTP secrets in frontend files.
+
+After deployment:
+1. Login to Admin Panel.
+2. Add the current registration WhatsApp group link.
+3. Add Task 1, Task 2 and Final Project Google Form links.
+4. Configure Supabase Auth email templates/SMTP for SoftGrowTech sender.
