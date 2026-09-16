@@ -26,3 +26,7 @@ The reset link should return to:
 Configure a custom SMTP provider in Supabase Auth. Verify the sending domain with the provider and publish its SPF/DKIM DNS records. Keep SMTP credentials out of the website files.
 
 Note: the website intentionally does not store a student's temporary password in the database or Auth metadata. If you want the temporary password inside the registration email, implement that through a secure server-side/Edge Function flow rather than storing passwords in plain text.
+
+
+### Registration welcome email
+The registration flow now passes the generated temporary password as `{{ .Data.temp_password }}` so the configured Supabase Auth/Brevo registration template can include it. Use the ready template in `REGISTRATION-WELCOME-EMAIL-TEMPLATE.txt`. Keep the template restricted to the registration email; do not expose the temporary password on public pages.
