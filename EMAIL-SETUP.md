@@ -1,32 +1,23 @@
-# SoftGrowTech Email Setup (after deployment)
+# SoftGrowTech Email Setup
 
-The website code does not contain SMTP credentials. Configure email in Supabase Auth separately.
+The website uses Supabase Auth for registration and password-reset emails. SMTP credentials are not stored in the website.
 
-## Registration confirmation email
-Use a SoftGrowTech-branded Auth email template instead of the default Supabase wording. The signup trigger now stores the generated Student ID in Auth user metadata, so the template can use:
+## Registration welcome email
+Use a SoftGrowTech-branded Supabase Auth confirmation template. The registration code sends these metadata fields:
 
-`{{ .Data.student_id }}`
+- `{{ .Data.full_name }}` — student name
+- `{{ .Data.domain }}` — selected domain
+- `{{ .Data.student_id }}` — generated Student ID
+- `{{ .Data.temp_password }}` — temporary password
 
-Useful template fields include `{{ .Data.full_name }}`, `{{ .Data.domain }}`, and `{{ .ConfirmationURL }}`.
+A ready professional template is included in `REGISTRATION-WELCOME-EMAIL-TEMPLATE.txt`.
 
-Suggested sender:
-
-SoftGrowTech <no-reply@softgrowtech.in>
+The Login page link should appear near the top of the email:
+`https://softgrowtech.in/student-login.html`
 
 ## Password reset email
-Use a SoftGrowTech-branded recovery template with:
-
-`{{ .ConfirmationURL }}`
-
-The reset link should return to:
-
+Use a SoftGrowTech-branded recovery template with `{{ .ConfirmationURL }}` and keep the redirect target as:
 `https://softgrowtech.in/reset-password.html?mode=new`
 
 ## SMTP
-Configure a custom SMTP provider in Supabase Auth. Verify the sending domain with the provider and publish its SPF/DKIM DNS records. Keep SMTP credentials out of the website files.
-
-Note: the website intentionally does not store a student's temporary password in the database or Auth metadata. If you want the temporary password inside the registration email, implement that through a secure server-side/Edge Function flow rather than storing passwords in plain text.
-
-
-### Registration welcome email
-The registration flow now passes the generated temporary password as `{{ .Data.temp_password }}` so the configured Supabase Auth/Brevo registration template can include it. Use the ready template in `REGISTRATION-WELCOME-EMAIL-TEMPLATE.txt`. Keep the template restricted to the registration email; do not expose the temporary password on public pages.
+Configure your custom SMTP provider in Supabase Auth and verify the sending domain with the provider. Keep SMTP credentials out of website files.

@@ -9,9 +9,42 @@ async function user(){const {data}=await sb.auth.getUser();return data.user}
 async function profile(){const u=await user();if(!u)return null;const {data,error}=await sb.from('sgt_profiles').select('*').eq('id',u.id).maybeSingle();if(error)throw error;return data}
 function statusClass(s){s=String(s||'').toLowerCase();return s==='selected'||s==='complete'||s==='completed'||s.includes('verified')?'success':s.includes('invalid')||s.includes('not selected')||s.includes('failed')?'danger':s.includes('pending')||s.includes('verification')||s.includes('review')?'warn':'blue'}
 async function logout(){await sb.auth.signOut();location.href='student-login.html'}
-async function initRegister(){const f=document.getElementById('registerForm');if(!f)return;const dom=document.getElementById('domain'),requested=new URLSearchParams(location.search).get('domain');const {data:ds}=await sb.from('sgt_domains').select('name').eq('enabled',true).order('name');if(ds){dom.innerHTML=ds.map(d=>`<option>${esc(d.name)}</option>`).join('');if(requested&&ds.some(d=>d.name===requested))dom.value=requested}const gen=(n,p)=>{let a=n.trim().replace(/\s+/g,'').slice(0,3);a=a.charAt(0).toUpperCase()+a.slice(1).toLowerCase();return`SGT@${a}${p.replace(/\D/g,'').slice(-4)}`};const update=()=>{const el=document.getElementById('tempPreview');if(el)el.value=gen(document.getElementById('name').value,document.getElementById('phone').value)};f.addEventListener('input',update);update();f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;b.textContent='Creating registration…';try{const name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim().toLowerCase(),phone=document.getElementById('phone').value.trim(),country=document.getElementById('country').value.trim(),study_year=document.getElementById('studyYear').value,gender=document.getElementById('gender').value,domain=dom.value,temp=gen(name,phone);if(!name||!email||!phone||!country||!study_year||!gender||!domain)throw Error('Please complete all required fields.');const {error}=await sb.auth.signUp({email,password:temp,options:{emailRedirectTo:location.origin+'/student-login.html',data:{full_name:name,phone,country,study_year,gender,domain,temp_password:temp}}});if(error)throw error;sessionStorage.setItem('sgt_new_registration',JSON.stringify({name,email,domain}));location.href='registration-success.html'}catch(err){toast(err.message||'Registration failed.');b.disabled=false;b.textContent='Create Registration →'}}}
-async function initLogin(){const f=document.getElementById('loginForm');if(!f)return;f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;b.textContent='Signing in…';try{let id=document.getElementById('loginId').value.trim(),email=id;if(/^SGT-/i.test(id)){const {data:lookup,error}=await sb.rpc('sgt_lookup_login_email',{p_student_id:id.toUpperCase()});if(error)throw error;if(!lookup)throw Error('Student ID not found.');email=lookup}const {error}=await sb.auth.signInWithPassword({email,password:document.getElementById('password').value});if(error)throw error;location.href='portal.html'}catch(err){toast(err.message||'Login failed.');b.disabled=false;b.textContent='Login →'}}}
-async function initReset(){const r=document.getElementById('resetRequest'),c=document.getElementById('resetChange'),rv=document.getElementById('resetRequestView'),cv=document.getElementById('resetChangeView'),mode=new URLSearchParams(location.search).get('mode');if(cv&&rv){if(mode==='new'){rv.hidden=true;cv.hidden=false}else{rv.hidden=false;cv.hidden=true}}if(r)r.onsubmit=async e=>{e.preventDefault();const {error}=await sb.auth.resetPasswordForEmail(document.getElementById('resetEmail').value.trim(),{redirectTo:location.origin+location.pathname+'?mode=new'});if(error)toast(error.message);else toast('Reset link sent to your registered Gmail. Please check your inbox.')};if(c)c.onsubmit=async e=>{e.preventDefault();const p=document.getElementById('newPass').value,cp=document.getElementById('confirmPass').value;if(!/^(?=.{8}$)(?=.*[A-Z])(?=.*\d)(?=.*[#@?!/]).*$/.test(p))return toast('Use exactly 8 characters with capital, number and # @ ? ! /.');if(p!==cp)return toast('Passwords do not match.');const {error}=await sb.auth.updateUser({password:p});if(error)toast(error.message);else{const form=c,success=document.getElementById('resetSuccess'),count=document.getElementById('resetCountdown');form.querySelectorAll('input,button').forEach(x=>x.disabled=true);success.hidden=false;let n=5;count.textContent=n;const timer=setInterval(()=>{n-=1;if(n<=0){clearInterval(timer);location.href='student-login.html'}else count.textContent=n},1000)}}}
+async function initRegister(){const f=document.getElementById('registerForm');if(!f)return;const dom=document.getElementById('domain'),requested=new URLSearchParams(location.search).get('domain');const {data:ds}=await sb.from('sgt_domains').select('name').eq('enabled',true).order('name');if(ds){dom.innerHTML=ds.map(d=>`<option>${esc(d.name)}</option>`).join('');if(requested&&ds.some(d=>d.name===requested))dom.value=requested}const gen=(n,p)=>{let a=n.trim().replace(/\s+/g,'').slice(0,3);a=a.charAt(0).toUpperCase()+a.slice(1).toLowerCase();return`SGT@${a}${p.replace(/\D/g,'').slice(-4)}`};const update=()=>{const el=document.getElementById('tempPreview');if(el)el.value=gen(document.getElementById('name').value,document.getElementById('phone').value)};f.addEventListener('input',update);update();f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;b.textContent='Creating registration…';try{const name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim().toLowerCase(),phone=document.getElementById('phone').value.trim(),country=document.getElementById('country').value.trim(),study_year=document.getElementById('studyYear').value,gender=document.getElementById('gender').value,domain=dom.value,temp=gen(name,phone);if(!name||!email||!phone||!country||!study_year||!gender||!domain)throw Error('Please complete all required fields.');const {error}=await sb.auth.signUp({email,password:temp,options:{emailRedirectTo:location.origin+'/student-login.html',data:{full_name:name,phone,country,study_year,gender,domain,temp_password:temp,must_change_password:true}}});if(error)throw error;sessionStorage.setItem('sgt_new_registration',JSON.stringify({name,email,domain}));location.href='registration-success.html'}catch(err){toast(err.message||'Registration failed.');b.disabled=false;b.textContent='Create Registration →'}}}
+async function initLogin(){const f=document.getElementById('loginForm');if(!f)return;f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;b.textContent='Signing in…';try{let id=document.getElementById('loginId').value.trim(),email=id;if(/^SGT-/i.test(id)){const {data:lookup,error}=await sb.rpc('sgt_lookup_login_email',{p_student_id:id.toUpperCase()});if(error)throw error;if(!lookup)throw Error('Student ID not found.');email=lookup}const {data:authData,error}=await sb.auth.signInWithPassword({email,password:document.getElementById('password').value});if(error)throw error;const meta=authData?.user?.user_metadata||{};const mustChange=meta.must_change_password===true||Boolean(meta.temp_password);location.href=mustChange?'create-password.html':'portal.html'}catch(err){toast(err.message||'Login failed.');b.disabled=false;b.textContent='Login →'}}}
+async function initFirstPassword(){
+  const f=document.getElementById('firstPasswordForm');
+  if(!f)return;
+  const u=await user();
+  if(!u){location.replace('student-login.html');return}
+  const meta=u.user_metadata||{};
+  if(meta.must_change_password!==true && !meta.temp_password){location.replace('portal.html');return}
+  f.onsubmit=async e=>{
+    e.preventDefault();
+    const p=document.getElementById('firstNewPass').value,
+          cp=document.getElementById('firstConfirmPass').value,
+          b=f.querySelector('button');
+    if(!/^(?=.{8}$)(?=.*[A-Z])(?=.*\d)(?=.*[#@?!/]).*$/.test(p))return toast('Use exactly 8 characters with capital, number and # @ ? ! /.');
+    if(p!==cp)return toast('Passwords do not match.');
+    b.disabled=true;b.textContent='Creating Password…';
+    const {error}=await sb.auth.updateUser({password:p,data:{must_change_password:false,temp_password:''}});
+    if(error){toast(error.message);b.disabled=false;b.textContent='Create New Password →';return}
+    const success=document.getElementById('firstPasswordSuccess'),count=document.getElementById('firstPasswordCountdown');
+    if(success)success.hidden=false;
+    f.querySelectorAll('input,button').forEach(x=>x.disabled=true);
+    let n=3;if(count)count.textContent=n;
+    await sb.auth.signOut();
+    const timer=setInterval(()=>{n-=1;if(n<=0){clearInterval(timer);location.href='student-login.html'}else if(count)count.textContent=n},1000);
+  };
+}
+async function initReset(){
+  const r=document.getElementById('resetRequest'),c=document.getElementById('resetChange'),rv=document.getElementById('resetRequestView'),cv=document.getElementById('resetChangeView'),mode=new URLSearchParams(location.search).get('mode');
+  if(cv&&rv){if(mode==='new'){rv.hidden=true;cv.hidden=false}else{rv.hidden=false;cv.hidden=true}}
+  const startResendTimer=()=>{const btn=document.getElementById('sendResetBtn'),timer=document.getElementById('resetResendTimer'),resend=document.getElementById('resendResetBtn'),sec=document.getElementById('resetSeconds');if(!timer||!resend||!sec)return;let n=60;timer.hidden=false;resend.hidden=true;if(btn)btn.disabled=true;sec.textContent=n;const old=window.__sgtResetTimer;if(old)clearInterval(old);window.__sgtResetTimer=setInterval(()=>{n-=1;sec.textContent=n;if(n<=0){clearInterval(window.__sgtResetTimer);window.__sgtResetTimer=null;timer.hidden=true;resend.hidden=false;if(btn)btn.disabled=false}},1000)};
+  const sendReset=async()=>{const email=document.getElementById('resetEmail').value.trim();if(!email)return toast('Enter your registered Gmail.');const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname+'?mode=new'});if(error)toast(error.message);else{toast('Reset link sent to your registered Gmail. Please check your inbox.');startResendTimer()}};
+  if(r)r.onsubmit=async e=>{e.preventDefault();await sendReset()};
+  document.getElementById('resendResetBtn')?.addEventListener('click',sendReset);
+  if(c)c.onsubmit=async e=>{e.preventDefault();const p=document.getElementById('newPass').value,cp=document.getElementById('confirmPass').value;if(!/^(?=.{8}$)(?=.*[A-Z])(?=.*\d)(?=.*[#@?!/]).*$/.test(p))return toast('Use exactly 8 characters with capital, number and # @ ? ! /.');if(p!==cp)return toast('Passwords do not match.');const {error}=await sb.auth.updateUser({password:p,data:{must_change_password:false,temp_password:''}});if(error)toast(error.message);else{const success=document.getElementById('resetSuccess'),count=document.getElementById('resetCountdown');c.querySelectorAll('input,button').forEach(x=>x.disabled=true);if(success)success.hidden=false;let n=5;if(count)count.textContent=n;const timer=setInterval(()=>{n-=1;if(n<=0){clearInterval(timer);location.href='student-login.html'}else if(count)count.textContent=n},1000)}}
+}
 async function getScheduleConfig(){const {data}=await sb.from('sgt_settings').select('value').eq('key','program_schedule').maybeSingle();return data?.value||{task1:{open:0,submit:5,deadline:6,presentation_start:7,presentation_end:8},task2:{open:9,submit:14,deadline:15,presentation_start:16,presentation_end:17},final:{open:18,submit:24,deadline:26,review_end:31}}}
 function timelineState(date,kind){const today=new Date();today.setHours(0,0,0,0);if(!date)return'upcoming';const d=new Date(date+'T00:00:00');if(d<today)return'complete';if(d.getTime()===today.getTime())return'current';return'upcoming'}
 async function initPortal(){
@@ -91,17 +124,47 @@ async function initPortal(){
     return `<div class="timeline-item"><span class="timeline-dot ${state==='Submission Form Live'?'current':state==='Submission Closed'?'complete':state==='In Progress'?'current':'upcoming'}"></span><div style="flex:1"><strong>${esc(t.title)}</strong><small>${esc(t.description||'')} • ${range}</small><div style="margin-top:10px"><span class="status ${statusClass(state)}">${esc(state)}</span></div><div class="portal-actions">${openD&&today>=openD&&t.project_url?`<a class="portal-btn secondary" target="_blank" rel="noopener" href="${esc(t.project_url)}">Open Project Instructions</a>`:''}${button}</div></div></div>`
   }).join('')||'<div class="empty">Tasks will appear according to your assigned batch.</div>';
 
-  const {data:noteRows}=await sb.from('sgt_student_notes').select('id,category,message,created_at').eq('user_id',u.id).order('created_at',{ascending:false}).limit(8);
-  const {data:paymentNotes}=await sb.from('sgt_payments').select('id,admin_note,created_at,submitted_at').eq('user_id',u.id).not('admin_note','is',null).neq('admin_note','').order('created_at',{ascending:false}).limit(5);
-  const notes=[...(noteRows||[]).map(x=>({id:x.id,category:x.category||'Other',message:x.message,created_at:x.created_at})),...(paymentNotes||[]).map(x=>({id:'payment-'+x.id,category:'Payment Related',message:x.admin_note,created_at:x.created_at||x.submitted_at}))].filter(x=>x.message).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-  const noteBox=document.getElementById('adminNoteBox');
-  if(noteBox){
-    noteBox.innerHTML=notes.length?`<div class="admin-note-panel"><div class="admin-note-head"><span class="note-icon">🔔</span><div><strong>Important Update</strong><small>${esc(notes[0].category)} • From SoftGrowTech Team</small></div></div><p>${esc(notes[0].message)}</p><small class="admin-note-date">Updated ${adt(notes[0].created_at)}</small></div>`:'<div class="admin-note-empty">No new admin updates at the moment.</div>';
-    if(notes[0] && notes[0].id!==sessionStorage.getItem('sgt_last_note')){
-      const pop=document.createElement('div'); pop.className='admin-note-popup'; pop.innerHTML=`<div class="admin-note-panel"><div class="admin-note-head"><span class="note-icon">🔔</span><div><strong>New Notification</strong><small>${esc(notes[0].category)} • From SoftGrowTech Team</small></div><button type="button" class="close-btn" style="margin-left:auto">×</button></div><p>${esc(notes[0].message)}</p><small class="admin-note-date">${adt(notes[0].created_at)}</small></div>`;
-      document.body.appendChild(pop); pop.querySelector('.close-btn').onclick=()=>pop.remove(); setTimeout(()=>pop.remove(),9000); sessionStorage.setItem('sgt_last_note',notes[0].id);
+  const notificationBell=document.getElementById('studentNotificationBell');
+  const notificationBadge=document.getElementById('studentNotificationBadge');
+  let notificationInitialized=false;
+  let latestStudentNote=null;
+  const getStudentNotes=async()=>{
+    const [{data:noteRows},{data:paymentNotes}]=await Promise.all([
+      sb.from('sgt_student_notes').select('id,category,message,created_at').eq('user_id',u.id).order('created_at',{ascending:false}).limit(8),
+      sb.from('sgt_payments').select('id,admin_note,created_at,submitted_at').eq('user_id',u.id).not('admin_note','is',null).neq('admin_note','').order('created_at',{ascending:false}).limit(5)
+    ]);
+    return [...(noteRows||[]).map(x=>({id:x.id,category:x.category||'Other',message:x.message,created_at:x.created_at})),...(paymentNotes||[]).map(x=>({id:'payment-'+x.id,category:'Payment Related',message:x.admin_note,created_at:x.created_at||x.submitted_at}))].filter(x=>x.message).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  };
+  const showNotification=note=>{
+    if(!note)return;
+    const old=document.querySelector('.admin-note-popup');if(old)old.remove();
+    const pop=document.createElement('div');pop.className='admin-note-popup';
+    pop.innerHTML=`<div class="admin-note-panel"><div class="admin-note-head"><span class="note-icon">🔔</span><div><strong>New Notification</strong><small>${esc(note.category)} • From SoftGrowTech Team</small></div><button type="button" class="close-btn" style="margin-left:auto">×</button></div><p>${esc(note.message)}</p><small class="admin-note-date">${adt(note.created_at)}</small></div>`;
+    document.body.appendChild(pop);
+    pop.querySelector('.close-btn').onclick=()=>pop.remove();
+    setTimeout(()=>pop.remove(),9000);
+  };
+  const updateNotifications=async(showPopup)=>{
+    const notes=await getStudentNotes();
+    const latest=notes[0]||null;
+    latestStudentNote=latest;
+    if(notificationBadge)notificationBadge.textContent=latest?'1':'';
+    if(notificationBadge)notificationBadge.hidden=!latest;
+    if(!notificationInitialized){
+      notificationInitialized=true;
+      if(latest)sessionStorage.setItem('sgt_last_note',latest.id);
+      return;
     }
-  }
+    if(latest && latest.id!==sessionStorage.getItem('sgt_last_note')){
+      sessionStorage.setItem('sgt_last_note',latest.id);
+      if(notificationBadge)notificationBadge.hidden=false;
+      if(showPopup)showNotification(latest);
+    }
+  };
+  await updateNotifications(false);
+  notificationBell?.addEventListener('click',()=>{if(latestStudentNote)showNotification(latestStudentNote)});
+  setInterval(()=>updateNotifications(true),8000);
+
 
   function makeDocumentPdf(kind){
     if(!window.jspdf?.jsPDF)return null;
@@ -161,4 +224,4 @@ async function initEnrollment(){
   };
 }
 async function initContact(){const sf=document.getElementById('supportForm'),cf=document.getElementById('clientForm');if(cf){const svc=new URLSearchParams(location.search).get('service');if(svc&&document.getElementById('clientService'))document.getElementById('clientService').value=svc;cf.onsubmit=async e=>{e.preventDefault();const {error}=await sb.from('sgt_client_enquiries').insert({name:document.getElementById('clientName').value.trim(),company:document.getElementById('clientCompany').value.trim(),email:document.getElementById('clientEmail').value.trim(),phone:document.getElementById('clientPhone').value.trim(),service:document.getElementById('clientService').value,requirement:document.getElementById('clientRequirement').value.trim()});if(error)toast(error.message);else{toast('Thanks. Your enquiry has been received.');cf.reset()}}}if(sf)sf.onsubmit=async e=>{e.preventDefault();const u=await user(),p=u?await profile():null;const {error}=await sb.from('sgt_support_queries').insert({user_id:u?.id||null,student_id:p?.student_id||null,name:p?.name||document.getElementById('supportName')?.value||'Visitor',email:p?.email||document.getElementById('supportEmail')?.value||'',category:document.getElementById('supportCategory').value,query_text:document.getElementById('supportQuery').value.trim()});if(error)toast(error.message);else{toast('Query submitted successfully.');sf.reset()}}}
-document.addEventListener('DOMContentLoaded',()=>{initRegister();initLogin();initReset();initPortal();initAssessment();initEnrollment();initContact();});
+document.addEventListener('DOMContentLoaded',()=>{initRegister();initLogin();initFirstPassword();initReset();initPortal();initAssessment();initEnrollment();initContact();});
