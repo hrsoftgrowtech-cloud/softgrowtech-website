@@ -35,7 +35,7 @@
 <button class="card domain-choice" type="button" data-domain="Flutter Development"><div class="icon-box"><svg class="sg-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10 5h4M11 18.5h2"/></g></svg></div><h3>Flutter Development</h3><p>Build cross-platform mobile applications through practical Flutter projects.</p><span class="text-link">Select Domain <span class="arrow">→</span></span></button></div>
 <div class="card selected-domain-box" id="selectedDomainBox">
 <div><div class="eyebrow">Your Selection</div><h3 id="selectedDomainTitle">Select a domain to continue</h3><p id="selectedDomainText">Choose a domain above and continue to see its learning journey.</p></div>
-<a class="btn btn-primary disabled-btn" id="continueApply" href="#" aria-disabled="true">Continue This Domain <span class="arrow">→</span></a>
+<a class="btn btn-primary disabled-btn" id="continueApply" href="#" aria-disabled="true">Continue Register <span class="arrow">→</span></a>
 </div>
 </div></section>
 <script>
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded',()=>{
  cards.forEach(card=>card.addEventListener('click',()=>{
    cards.forEach(c=>c.classList.remove('selected')); card.classList.add('selected');
    const d=card.dataset.domain; title.textContent=d; text.textContent=`You selected ${d}. Continue to registration to create your permanent Student ID.`;
-   btn.href='domain-details.html?domain='+encodeURIComponent(d); btn.classList.remove('disabled-btn'); btn.removeAttribute('aria-disabled');
+   btn.href='student-register.html?domain='+encodeURIComponent(d); btn.classList.remove('disabled-btn'); btn.removeAttribute('aria-disabled');
    box.scrollIntoView({behavior:'smooth',block:'center'});
  }));
 });
