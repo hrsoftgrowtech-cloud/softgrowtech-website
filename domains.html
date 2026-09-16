@@ -35,9 +35,21 @@
 <button class="card domain-choice" type="button" data-domain="Flutter Development"><div class="icon-box"><svg class="sg-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10 5h4M11 18.5h2"/></g></svg></div><h3>Flutter Development</h3><p>Build cross-platform mobile applications through practical Flutter projects.</p><span class="text-link">Select Domain <span class="arrow">→</span></span></button></div>
 <div class="card selected-domain-box" id="selectedDomainBox">
 <div><div class="eyebrow">Your Selection</div><h3 id="selectedDomainTitle">Select a domain to continue</h3><p id="selectedDomainText">Choose a domain above and continue to see its learning journey.</p></div>
-<a class="btn btn-primary disabled-btn" id="continueApply" href="#" aria-disabled="true">Continue — Apply in Domain <span class="arrow">→</span></a>
+<a class="btn btn-primary disabled-btn" id="continueApply" href="#" aria-disabled="true">Continue Register <span class="arrow">→</span></a>
 </div>
-</div></section></main><footer><div class="container"><div class="footer-grid">
+</div></section>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+ const cards=[...document.querySelectorAll('.domain-choice')], box=document.getElementById('selectedDomainBox'), title=document.getElementById('selectedDomainTitle'), text=document.getElementById('selectedDomainText'), btn=document.getElementById('continueApply');
+ cards.forEach(card=>card.addEventListener('click',()=>{
+   cards.forEach(c=>c.classList.remove('selected')); card.classList.add('selected');
+   const d=card.dataset.domain; title.textContent=d; text.textContent=`You selected ${d}. Continue to registration to create your permanent Student ID.`;
+   btn.href='student-register.html?domain='+encodeURIComponent(d); btn.classList.remove('disabled-btn'); btn.removeAttribute('aria-disabled');
+   box.scrollIntoView({behavior:'smooth',block:'center'});
+ }));
+});
+</script>
+</main><footer><div class="container"><div class="footer-grid">
 <div class="footer-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><h3>Soft<span>Grow</span>Tech</h3><p>Learn • Build • Evolve. Practical learning, projects and career-focused internship experiences.</p></div></div>
 <div class="footer-col"><h4>Explore</h4><ul><li><a href="internships.html">Internships</a></li><li><a href="projects.html">Projects</a></li><li><a href="how-it-works.html">How It Works</a></li><li><a href="about.html">About</a></li></ul></div>
 <div class="footer-col"><h4>Domains</h4><ul><li><a href="web-development.html">Web Development</a></li><li><a href="data-analysis.html">Data Analysis</a></li><li><a href="artificial-intelligence.html">Artificial Intelligence</a></li><li><a href="domains.html">Other Domains</a></li></ul></div>
@@ -54,7 +66,7 @@
   <ul>
     <li><a href="privacy-policy.html">Privacy Policy</a></li>
     <li><a href="terms-conditions.html">Terms &amp; Conditions</a></li>
-    <li><a href="internship-fee-policy.html">Internship Fee Policy</a></li>
+    <li><a href="internship-fee-policy.html">Program Fee Policy</a></li>
     <li><a href="verification-policy.html">Verification Policy</a></li>
   </ul>
 </div></div>
