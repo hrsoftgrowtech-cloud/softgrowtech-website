@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<body style="margin:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#172033">
+  <div style="max-width:640px;margin:0 auto;padding:28px 16px">
+    <div style="background:#071a33;border-radius:18px 18px 0 0;padding:24px 28px;color:#fff">
+      <div style="font-size:24px;font-weight:700">Soft<span style="color:#60a5fa">Grow</span>Tech</div>
+      <div style="margin-top:5px;font-size:13px;color:#cbd5e1">Learn • Build • Evolve</div>
+    </div>
+    <div style="background:#fff;padding:30px 28px;border:1px solid #e5e7eb;border-top:0;border-radius:0 0 18px 18px">
+      <div style="font-size:13px;color:#2563eb;font-weight:700;letter-spacing:1px;text-transform:uppercase">Registration Successful</div>
+      <h1 style="font-size:28px;margin:9px 0 12px">Welcome to SoftGrowTech!</h1>
+      <p style="font-size:15px;line-height:1.7;margin:0 0 18px">Hello <strong>{{ .Data.full_name }}</strong>, your registration has been successfully received. We are excited to have you begin your learning journey with SoftGrowTech.</p>
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:18px;margin:20px 0">
+        <div style="font-size:13px;color:#64748b;margin-bottom:10px">YOUR STUDENT DETAILS</div>
+        <p style="margin:7px 0"><strong>Student ID:</strong> {{ .Data.student_id }}</p>
+        <p style="margin:7px 0"><strong>Domain:</strong> {{ .Data.domain }}</p>
+        <p style="margin:7px 0"><strong>Temporary Password:</strong> {{ .Data.temp_password }}</p>
+      </div>
+      <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:13px 20px;border-radius:10px;font-weight:700">Confirm Email & Complete Registration →</a><div style="margin-top:14px;font-size:13px;color:#64748b">After confirmation, login here: <a href="https://softgrowtech.in/student-login.html" style="color:#2563eb">Student Login</a></div>
+      <p style="font-size:13px;line-height:1.7;color:#64748b;margin:20px 0 0">Use the temporary password for your first login. Before opening your dashboard, you will be required to create a new password. Your temporary password will stop working after the new password is created.</p>
+      <p style="font-size:13px;line-height:1.7;color:#64748b">Please keep this email safe for your records. Your Student ID is your permanent SoftGrowTech ID.</p>
+      <hr style="border:0;border-top:1px solid #e5e7eb;margin:24px 0">
+      <p style="font-size:13px;color:#64748b;margin:0">Regards,<br><strong>SoftGrowTech Team</strong></p>
+    </div>
+  </div>
+</body>
+</html>
