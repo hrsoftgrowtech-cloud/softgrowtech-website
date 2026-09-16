@@ -1,24 +1,20 @@
-SoftGrowTech — Registration Welcome Email Template
+SoftGrowTech — Registration Welcome Email
 
-Subject:
-Welcome to SoftGrowTech — Your Student Portal Details
-
-Body:
+Subject: Welcome to SoftGrowTech — Your Student Portal Details
 
 Hello {{ .Data.full_name }},
 
 Welcome to SoftGrowTech! Your registration has been successfully received.
+
+Login to your Student Portal:
+https://softgrowtech.in/student-login.html
 
 Your Student Details
 • Student ID: {{ .Data.student_id }}
 • Domain: {{ .Data.domain }}
 • Temporary Password: {{ .Data.temp_password }}
 
-Login to your Student Portal:
-https://softgrowtech.in/student-login.html
-
-For your security, please change your temporary password after your first login.
-
+Please use the temporary password for your first login and change it after signing in.
 Your Student ID is your permanent SoftGrowTech ID. Please keep this email safe for your records.
 
 Learn • Build • Evolve
