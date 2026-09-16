@@ -18,39 +18,87 @@ async function initPortal(){
   const root=document.getElementById('portalRoot');
   if(!root)return;
   const u=await user();
-  if(!u){location.href='student-login.html';return}
+  if(!u){location.replace('student-login.html');return}
   const p=await profile();
-  if(!p){root.innerHTML='<div class="portal-card"><h2>Profile not found</h2><p>Please contact support.</p></div>';return}
-  document.getElementById('studentName').textContent=p.name;
+  if(!p){root.innerHTML='<div class="portal-card"><h2>Profile not found</h2><p>Please contact SoftGrowTech support.</p></div>';return}
+  const escDate=v=>v?new Date(v+'T00:00:00'):null;
+  const today=new Date();today.setHours(0,0,0,0);
+  const rangeState=(start,end)=>{const s=escDate(start),e=escDate(end)||s;if(!s)return'upcoming';if(today>e)return'complete';if(today>=s&&today<=e)return'current';return'upcoming'};
+  const rangeLabel=(start,end)=>start&&end&&start!==end?`${dateFmt(start)} – ${dateFmt(end)}`:dateFmt(start);
+  document.getElementById('studentName').textContent=p.name||'Student';
   document.getElementById('logoutBtn').onclick=logout;
-  const orient=p.batch_start?addDays(p.batch_start,-2):null;
-  document.getElementById('profileMeta').innerHTML=[['Student ID',p.student_id],['Gmail',p.email],['Phone / WhatsApp',p.phone],['Country',p.country],['Study Year',p.study_year],['Gender',p.gender],['Domain',p.domain],['Status',p.status]].map(x=>`<div class="meta-box"><small>${x[0]}</small><strong>${esc(x[1]||'—')}</strong></div>`).join('');
+
+  const programStart=p.batch_start||null, programEnd=programStart?monthEnd(programStart):null, orient=programStart?addDays(programStart,-2):null;
+  const programStatus=!programStart?'Batch Assignment Pending':today<escDate(programStart)?'Internship Upcoming':today<=escDate(programEnd)?'Internship Running':'Internship Complete';
+  const profileMeta=[['Student ID',p.student_id],['Gmail',p.email],['Phone / WhatsApp',p.phone],['Country',p.country],['Gender',p.gender],['Domain',p.domain],['Status',p.status]];
+  document.getElementById('profileMeta').innerHTML=profileMeta.map(x=>`<div class="meta-box"><small>${x[0]}</small><strong>${esc(x[1]||'—')}</strong></div>`).join('');
+
   const sched=await getScheduleConfig();
-  const scheduleItems=p.batch_start?[['Orientation',orient],['Batch Start',p.batch_start],['Task 1 Opens',addDays(p.batch_start,sched.task1.open)],['Task 2 Opens',addDays(p.batch_start,sched.task2.open)],['Final Project Opens',addDays(p.batch_start,sched.final.open)],['Batch End',monthEnd(p.batch_start)]]:[['Orientation',null],['Batch Start',null],['Batch End',null]];
-  document.getElementById('schedule').innerHTML=scheduleItems.map(x=>`<div class="timeline-item"><span class="timeline-dot ${timelineState(x[1])}"></span><div><strong>${x[0]}</strong><small>${dateFmt(x[1])}</small></div></div>`).join('');
-  document.getElementById('statusCards').innerHTML=[['Enroll Fee',p.payment_status],['Selection Assessment',p.assessment_status],['Selection',p.selection_status],['Review',p.review_status]].map(x=>`<div class="meta-box"><small>${x[0]}</small><span class="status ${statusClass(x[1])}">${esc(x[1])}</span></div>`).join('');
+  const scheduleItems=programStart?[
+    ['Orientation Session',orient,orient],
+    ['Internship Program Start',programStart,programStart],
+    ['Task 1 — Work Window',addDays(programStart,sched.task1.open),addDays(programStart,Math.max(sched.task1.open,(sched.task1.submit||sched.task1.open)-1))],
+    ['Task 1 — Submission',addDays(programStart,sched.task1.submit),addDays(programStart,sched.task1.deadline)],
+    ['Task 1 — Presentation',addDays(programStart,sched.task1.presentation_start),addDays(programStart,sched.task1.presentation_end)],
+    ['Task 2 — Work Window',addDays(programStart,sched.task2.open),addDays(programStart,Math.max(sched.task2.open,(sched.task2.submit||sched.task2.open)-1))],
+    ['Task 2 — Submission',addDays(programStart,sched.task2.submit),addDays(programStart,sched.task2.deadline)],
+    ['Task 2 — Presentation',addDays(programStart,sched.task2.presentation_start),addDays(programStart,sched.task2.presentation_end)],
+    ['Final Project — Work Window',addDays(programStart,sched.final.open),addDays(programStart,Math.max(sched.final.open,(sched.final.submit||sched.final.open)-1))],
+    ['Final Project — Submission',addDays(programStart,sched.final.submit),addDays(programStart,sched.final.deadline)],
+    ['Review & Evaluation',addDays(programStart,27),addDays(programStart,sched.final.review_end)],
+    ['Internship Completion',programEnd,programEnd]
+  ]:[['Orientation Session',null,null],['Internship Program Start',null,null],['Batch End',null,null]];
+  document.getElementById('schedule').innerHTML=scheduleItems.map(([name,start,end])=>{const state=rangeState(start,end);const status=state==='complete'?'Completed':state==='current'?'In Progress':'Upcoming';return `<div class="timeline-item"><span class="timeline-dot ${state}"></span><div style="flex:1"><strong>${name}</strong><small>${start?rangeLabel(start,end):'Coming Soon'}</small><div style="margin-top:7px"><span class="status ${state==='complete'?'success':state==='current'?'blue':'warn'}">${status}</span></div></div></div>`}).join('');
+
+  document.getElementById('statusCards').innerHTML=[['Internship Program',programStatus],['Enroll Fee',p.payment_status],['Selection Assessment',p.assessment_status],['Selection',p.selection_status],['Review',p.review_status]].map(x=>`<div class="meta-box"><small>${x[0]}</small><span class="status ${statusClass(x[1])}">${esc(x[1])}</span></div>`).join('');
+
   const {data:grp}=await sb.from('sgt_settings').select('value').eq('key','registration_group').maybeSingle();
   const groupUrl=p.whatsapp_group_url||grp?.value?.url||'';
   document.getElementById('groupAction').innerHTML=groupUrl?`<a class="portal-btn secondary" href="${esc(groupUrl)}" target="_blank" rel="noopener">Join Official WhatsApp Group →</a>`:'';
+
   let action='';
-  if(p.selection_status==='Not Selected') action=`<div class="help-note">If your batch has not officially started, you may use the re-assessment option with the same Student ID and no additional assessment fee.</div><div class="portal-actions"><a class="portal-btn primary" href="assessment.html">Re-Assessment →</a></div>`;
-  else if(p.assessment_status==='Complete') action='<div class="portal-actions"><a class="portal-btn secondary" href="assessment.html">View Assessment Status</a></div>';
-  else action='<div class="portal-actions"><a class="portal-btn primary" href="assessment.html">Start Selection Assessment →</a></div>';
+  if(p.selection_status==='Not Selected'){
+    const started=programStart&&today>=escDate(programStart);
+    if(started){
+      action=`<div class="help-note">Your selection assessment was not selected after review. Because your assigned batch has already started, the re-assessment option is closed for this batch. Please follow the refund process or register again for a future batch.</div><div class="portal-actions"><a class="portal-btn secondary" href="contact.html#support">Refund / Support →</a><a class="portal-btn primary" href="student-register.html">New Registration →</a></div>`;
+    }else{
+      action=`<div class="help-note">You can take a re-assessment before your batch officially starts. No additional assessment fee is required. Your existing Student ID remains unchanged.</div><div class="portal-actions"><a class="portal-btn primary" href="assessment.html">Re-Assessment →</a></div>`;
+    }
+  }else if(p.selection_status==='Selected' && p.payment_status==='Verified'){
+    action=`<div class="success-panel"><strong>Selection Confirmed ✓</strong><p style="margin:6px 0 0">Your payment has been verified and your selection is confirmed. Your program documents and schedule will appear here as they become available.</p></div>`;
+  }else if(p.assessment_status==='Complete'){
+    action='<div class="portal-actions"><a class="portal-btn secondary" href="assessment.html">View Assessment Status</a></div>';
+  }else{
+    action='<div class="portal-actions"><a class="portal-btn primary" href="assessment.html">Start Selection Assessment →</a></div>';
+  }
   document.getElementById('assessmentAction').innerHTML=action;
+
   const [{data:tasks},{data:tf}]=await Promise.all([sb.from('sgt_tasks').select('*').eq('enabled',true).or(`domain.eq.${p.domain},domain.is.null`).order('title'),sb.from('sgt_settings').select('value').eq('key','task_forms').maybeSingle()]);
   const forms=tf?.value||{};
   const standard=[{task_key:'task1',title:'Task 1',description:'Complete any 2 of the 3 domain projects.',project_url:''},{task_key:'task2',title:'Task 2',description:'Complete the assigned domain project.',project_url:''},{task_key:'final',title:'Final Project',description:'Choose 1 of the 2 final project options.',project_url:''}];
   const taskItems=(tasks&&tasks.length)?tasks:standard;
   const formFor=t=>{const k=String(t.task_key||t.title).toLowerCase();if(k.includes('task1')||k.includes('task-1')||k.includes('task 1'))return forms.task1;if(k.includes('task2')||k.includes('task-2')||k.includes('task 2'))return forms.task2;if(k.includes('final'))return forms.final;return t.submission_url||''};
-  const dateFor=(key,type)=>{const sc=key.includes('task1')||key.includes('task-1')||key.includes('task 1')?sched.task1:key.includes('task2')||key.includes('task-2')||key.includes('task 2')?sched.task2:sched.final;return p.batch_start?addDays(p.batch_start,sc[type]):null};
+  const dateFor=(key,type)=>{const sc=key.includes('task1')||key.includes('task-1')||key.includes('task 1')?sched.task1:key.includes('task2')||key.includes('task-2')||key.includes('task 2')?sched.task2:sched.final;return programStart&&sc[type]!=null?addDays(programStart,sc[type]):null};
   document.getElementById('taskList').innerHTML=taskItems.map(t=>{
-    const key=String(t.task_key||t.title).toLowerCase(),live=dateFor(key,'submit'),deadline=dateFor(key,'deadline'),open=dateFor(key,'open');
-    const today=new Date();today.setHours(0,0,0,0);const openD=open?new Date(open+'T00:00:00'):null,liveD=live?new Date(live+'T00:00:00'):null,deadD=deadline?new Date(deadline+'T23:59:59'):null;
+    const key=String(t.task_key||t.title).toLowerCase(),open=dateFor(key,'open'),live=dateFor(key,'submit'),deadline=dateFor(key,'deadline');
+    const openD=escDate(open),liveD=escDate(live),deadD=deadline?new Date(deadline+'T23:59:59'):null;
     let state='Coming Soon',button='';
     if(deadD&&new Date()>deadD){state='Submission Closed';button='<a class="portal-btn secondary" href="contact.html#support">Couldn’t submit on time? 💬 Get Help</a>'}
     else if(liveD&&today>=liveD){state='Submission Form Live';button=formFor(t)?`<a class="portal-btn primary" target="_blank" rel="noopener" href="${esc(formFor(t))}">Submit ${esc(t.title)} →</a>`:'<span class="help-note">Submission form link will be added by the management team.</span>'}
-    return `<div class="timeline-item"><span class="timeline-dot ${state==='Submission Form Live'?'current':state==='Submission Closed'?'locked':openD&&today>=openD?'current':'upcoming'}"></span><div style="flex:1"><strong>${esc(t.title)}</strong><small>${esc(t.description||'')} ${open?'• Opens '+dateFmt(open):''} ${live?'• Form live '+dateFmt(live):''} ${deadline?'• Deadline '+dateFmt(deadline):''}</small><div style="margin-top:10px"><span class="status ${statusClass(state)}">${esc(state)}</span></div><div class="portal-actions">${openD&&today>=openD&&t.project_url?`<a class="portal-btn secondary" target="_blank" rel="noopener" href="${esc(t.project_url)}">Open Project Instructions</a>`:''}${button}</div></div></div>`
+    else if(openD&&today>=openD){state='In Progress'}
+    const range=open&&deadline?rangeLabel(open,deadline):open?dateFmt(open):'Coming Soon';
+    return `<div class="timeline-item"><span class="timeline-dot ${state==='Submission Form Live'?'current':state==='Submission Closed'?'complete':state==='In Progress'?'current':'upcoming'}"></span><div style="flex:1"><strong>${esc(t.title)}</strong><small>${esc(t.description||'')} • ${range}</small><div style="margin-top:10px"><span class="status ${statusClass(state)}">${esc(state)}</span></div><div class="portal-actions">${openD&&today>=openD&&t.project_url?`<a class="portal-btn secondary" target="_blank" rel="noopener" href="${esc(t.project_url)}">Open Project Instructions</a>`:''}${button}</div></div></div>`
   }).join('')||'<div class="empty">Tasks will appear according to your assigned batch.</div>';
+
+  const {data:noteRows}=await sb.from('sgt_payments').select('id,admin_note,created_at,submitted_at').eq('user_id',u.id).not('admin_note','is',null).neq('admin_note','').order('created_at',{ascending:false}).limit(5);
+  const notes=(noteRows||[]).filter(x=>x.admin_note).sort((a,b)=>new Date(b.created_at||b.submitted_at)-new Date(a.created_at||a.submitted_at));
+  const noteBox=document.getElementById('adminNoteBox');
+  if(noteBox){noteBox.innerHTML=notes.length?`<div class="admin-note-panel ${notes[0].id!==sessionStorage.getItem('sgt_last_note')?'is-new':''}"><div class="admin-note-head"><span class="note-icon">🔔</span><div><strong>Important Update</strong><small>From SoftGrowTech Team</small></div></div><p>${esc(notes[0].admin_note)}</p><small class="admin-note-date">Updated ${adt(notes[0].created_at||notes[0].submitted_at)}</small></div>`:'<div class="admin-note-empty">No new admin updates at the moment.</div>';if(notes[0])sessionStorage.setItem('sgt_last_note',notes[0].id)}
+
+  const docs=[];
+  if(p.offer_letter_url)docs.push(`<a class="portal-btn secondary" href="${esc(p.offer_letter_url)}" target="_blank" rel="noopener">View Offer Letter</a>`);
+  if(p.certificate_url)docs.push(`<a class="portal-btn secondary" href="${esc(p.certificate_url)}" target="_blank" rel="noopener">View Certificate</a>`);
+  const docBox=document.getElementById('documentActions');if(docBox)docBox.innerHTML=docs.join('')||'<span class="help-note">Documents will appear here when issued.</span>';
 }
 async function initAssessment(){const root=document.getElementById('assessmentRoot');if(!root)return;const u=await user();if(!u){location.href='student-login.html';return}const p=await profile();if(!p)return;const set=p.selection_status==='Not Selected'?'reassessment':'primary';let {data:q}=await sb.from('sgt_assessment_questions').select('*').eq('domain',p.domain).eq('question_set',set).eq('enabled',true).order('question_no');if(!q?.length){root.innerHTML='<div class="portal-card"><h1>Assessment is being prepared</h1><p>Your domain-specific questions have not been published yet.</p><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div>';return}q=q.slice(0,10);if(p.assessment_status==='Complete'&&set==='primary'){root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Selection Assessment</div><h1>Assessment Under Review</h1><div class="success-panel"><strong>Your assessment has already been submitted.</strong><p>Payment: ${esc(p.payment_status)}<br>Assessment: Complete<br>Overall Review: ${esc(p.review_status)}</p></div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;return}let i=0,ans={};const intro=()=>{root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Selection Assessment</div><h1>Before you begin</h1><p>This interview-style assessment helps our team understand your fundamentals, problem-solving approach and readiness for the selected program.</p><div class="portal-meta"><div class="meta-box"><small>Name</small><strong>${esc(p.name)}</strong></div><div class="meta-box"><small>Student ID</small><strong>${esc(p.student_id)}</strong></div><div class="meta-box"><small>Domain</small><strong>${esc(p.domain)}</strong></div><div class="meta-box"><small>Payment</small><strong>${esc(p.payment_status)}</strong></div></div><div class="help-note" style="margin-top:18px">First complete the enrollment payment step. After you submit your payment receipt and transaction ID, you can continue directly to this assessment while payment verification is in progress.</div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a><button class="portal-btn primary" id="continueAssess">Continue →</button></div></div>`;document.getElementById('continueAssess').onclick=()=>{if(p.payment_status==='Pending')location.href='enrollment.html';else renderQuestion()}};const renderQuestion=()=>{root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Selection Assessment</div><h1>Question ${i+1} of ${q.length}</h1><p>${esc(q[i].question)}</p><div class="help-note">${i} completed • ${q.length-i-1} remaining. Scores are not shown to students.</div><div class="field" style="margin-top:15px"><label>Your answer</label><textarea id="answer" rows="7" placeholder="Write your answer clearly…">${esc(ans[q[i].id]||'')}</textarea></div><div class="portal-actions"><button class="portal-btn secondary" id="prev" ${i===0?'disabled':''}>← Previous</button><button class="portal-btn primary" id="next">${i===q.length-1?'Review & Submit →':'Save & Continue →'}</button></div></div>`;document.getElementById('prev').onclick=()=>{ans[q[i].id]=document.getElementById('answer').value;i--;renderQuestion()};document.getElementById('next').onclick=()=>{ans[q[i].id]=document.getElementById('answer').value;if(i<q.length-1){i++;renderQuestion();return}renderReview()}};const renderReview=()=>{root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Final Check</div><h1>Review Your Answers</h1><p>Please carefully check all your answers before final submission. Once submitted, your assessment will be sent for evaluation.</p>${q.map((x,n)=>`<div class="review-answer"><small>Question ${n+1}</small><strong>${esc(x.question)}</strong><p style="margin:7px 0 0;white-space:pre-wrap">${esc(ans[x.id]||'No answer provided')}</p></div>`).join('')}<div class="help-note" style="margin-top:18px">Please make sure your answers are complete and correct before you submit.</div><div class="portal-actions"><button class="portal-btn secondary" id="backCheck">← Back & Check Answers</button><button class="portal-btn primary" id="finalSubmit">Submit Assessment →</button></div></div>`;document.getElementById('backCheck').onclick=()=>renderQuestion();document.getElementById('finalSubmit').onclick=async()=>{const btn=document.getElementById('finalSubmit');btn.disabled=true;btn.textContent='Submitting…';const {data:a,error}=await sb.from('sgt_assessment_attempts').insert({student_id:p.student_id,user_id:u.id,attempt_no:Date.now(),question_set:set,status:'Complete',submitted_at:new Date().toISOString()}).select().single();if(error){toast(error.message);btn.disabled=false;btn.textContent='Submit Assessment →';return}const {error:ae}=await sb.from('sgt_assessment_answers').insert(q.map(x=>({attempt_id:a.id,question_id:x.id,answer:ans[x.id]||''})));if(ae){toast(ae.message);return}const mark=await sb.rpc('sgt_mark_assessment_review');if(mark.error)return toast(mark.error.message);root.innerHTML='<div class="portal-card"><div class="success-panel"><h1>Submission Received ✓</h1><p><strong>Payment and Selection Assessment are now Under Review.</strong></p><p>Our team will review your submitted payment details and assessment. Your selection status will be updated after the review is completed.</p></div><div class="portal-actions"><a class="portal-btn primary" href="portal.html">Back to Dashboard →</a></div></div>'}};intro()}
 async function initEnrollment(){

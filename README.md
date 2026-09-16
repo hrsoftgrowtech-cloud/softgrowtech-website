@@ -1,38 +1,72 @@
-# SoftGrowTech — Final Updated Website
+# SoftGrowTech — Final Implementation Package
 
-This package is the revised static website + student portal + management console. The existing visual language is preserved while the requested navigation, payment/assessment journey, student dashboard, business services and admin workflow are improved.
+This package contains the SoftGrowTech public website, student registration/login/dashboard, public document verification, selection assessment/payment journey, and protected Management Console.
 
-## Important Supabase note
-You already ran the earlier base SQL setup. **Do not run that old setup again.**
+## 1. Supabase migration
 
-Run only:
-- `SUPABASE-MIGRATION-FINAL.sql`
+Run **SUPABASE-MIGRATION-FINAL.sql** in the existing SoftGrowTech Supabase project after the earlier base setup.
 
-This migration updates admin authorization, keeps the generated Student ID available in Auth metadata for future custom email templates, adds editable payment-method configuration, program schedule settings, service settings, registration WhatsApp setting, task-form settings, and seeds the supplied domain project instruction links.
+The migration adds/fixes:
+- website-registration public verification through `sgt_profiles` without changing legacy confirmation verification
+- admin RLS so Management Console edits actually save to the database
+- founder/team-admin access management
+- founder-only activity/audit log
+- permission-controlled admin writes
+- editable services/domains/payment settings/program schedule
+- payment status synchronization to student profiles
+- editable student/admin notes
+- authenticator-app 2FA support for the Founder account
 
-## Admin login
-1. Create/use the separate Supabase Auth user `info.softgrowtech@gmail.com`.
-2. Give that Auth user the `role=admin` metadata using the SQL approach already discussed.
-3. Open `admin-login.html`.
-4. After login, the protected management console is `management-console-x7.html`.
+Do not put a Supabase service-role key in the website. The package uses only the publishable key in browser code.
 
-The management console is noindex/nofollow, but authentication + RLS remain the real security boundary.
+## 2. Founder account
 
-## Student flow
-- `student-login.html` → Student Login
-- `internships.html` → program/domain selection
-- `student-register.html` → registration with country, study year and gender
-- `registration-success.html` → registration confirmation
-- `portal.html` → student dashboard; dashboard has Logout only
-- `assessment.html` → assessment introduction → payment → assessment → final review → under review
-- `enrollment.html` → individual payment methods and complete details
-- `reset-password.html` → Gmail reset link; create-new-password appears only through the reset-link flow
+The existing Founder/management account is expected to be:
+- `info.softgrowtech@gmail.com`
 
-## Task submissions
-Task 1, Task 2 and Final Project submissions intentionally use **Google Forms** so large student project files do not fill Supabase Storage. Add the three Google Form URLs from the Admin Panel under `Tasks & Submission Forms`.
+Its Supabase Auth user must have `raw_user_meta_data.role = admin` (or `founder`). The package treats that account as Founder-level access.
 
-## Email
-The frontend is prepared for the custom registration/reset email flow, but the sender identity and Auth email templates must be configured in Supabase/your SMTP provider. Do not put SMTP credentials in the website files.
+After the first successful login, open **Settings → Founder Security** and set up Authenticator 2FA. Once a verified TOTP factor exists, the Management Console login requires the authenticator code after the password.
 
-## Deployment
-Deploy the static files to the existing hosting. No build command is required.
+## 3. Team members
+
+Create the team member's Supabase Auth account first. Then, while logged in as Founder, open **Team & Access** and grant Management Console access with the required permissions.
+
+Removing access deactivates the team member without deleting their Auth account. The Founder can see login/logout and management changes in the private Activity Log.
+
+## 4. Student journey
+
+Registration is free and creates the permanent Student ID. The student can log in with Student ID or registered Gmail.
+
+Selection journey:
+1. Start Selection Assessment
+2. Enrollment Fee & payment details
+3. Payment receipt/transaction submission
+4. Payment under verification
+5. Continue the website-native assessment
+6. Review answers
+7. Final submission
+8. Admin reviews payment + assessment
+9. Selected → program/offer letter flow
+10. Not Selected before batch start → re-assessment with the same Student ID
+11. Not Selected after batch start → refund/new registration flow
+
+Task submissions remain Google Forms/Google Drive to avoid filling Supabase Storage with project files.
+
+## 5. Public Document Verification
+
+New website registrations are verified from the registration database using:
+- Student ID
+- Last 4 digits of registered phone
+
+New records show only essential public information: Student ID, name, masked Gmail, domain, batch start/end, offer letter status, certificate status and internship status.
+
+Legacy verification records continue through the existing legacy/orientation flow, including their historical confirmation information. Public verification has no document-download button.
+
+## 6. Admin → Website synchronization
+
+Changes saved in the Management Console are database-backed. Services and domains are rendered dynamically on the public website; payment settings are used by the enrollment page; student status/payment/document changes are reflected on the Student Dashboard.
+
+## 7. Deployment
+
+Upload the contents of this package to the existing hosting. No build command is required for the static website.

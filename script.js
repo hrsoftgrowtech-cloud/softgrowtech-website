@@ -56,22 +56,20 @@ function playPremiumClick() {
  * New records are authenticated through the verify_new_student RPC.
  */
 async function verifyNewStudent(id, mobileLast4) {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/verify_new_student`, {
-    method: "POST",
-    headers: {
-      "apikey": SUPABASE_PUBLISHABLE_KEY,
-      "Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      p_student_id: id,
-      p_mobile_last4: mobileLast4
-    })
-  });
-
-  if (!response.ok) throw new Error("New student verification request failed");
-  const data = await response.json();
-  return Array.isArray(data) && data.length ? data[0] : null;
+  const callRpc = async (name) => {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+      method: "POST",
+      headers: {"apikey": SUPABASE_PUBLISHABLE_KEY,"Authorization": `Bearer ${SUPABASE_PUBLISHABLE_KEY}`,"Content-Type": "application/json"},
+      body: JSON.stringify({p_student_id:id,p_mobile_last4:mobileLast4})
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return Array.isArray(data) && data.length ? data[0] : null;
+  };
+  // New website registrations are checked first. Legacy verification remains as a fallback.
+  const registered = await callRpc("sgt_verify_registered_student");
+  if (registered) return {...registered,__registered:true};
+  return await callRpc("verify_new_student");
 }
 
 /*
@@ -382,7 +380,7 @@ async function handleVerification(form) {
 
     if (newStudent) {
       sessionStorage.setItem("softgrowVerificationResult", JSON.stringify({
-        type: "new",
+        type: newStudent.__registered ? "registered" : "new",
         student: newStudent
       }));
 
@@ -679,7 +677,7 @@ function initResultPage() {
       renderOrientationRecord(savedRecord.student);
       return;
     }
-    if (savedRecord.type === "new") {
+    if (savedRecord.type === "new" || savedRecord.type === "registered") {
       renderNewStudentRecord(savedRecord.student);
       return;
     }
@@ -1141,225 +1139,55 @@ function renderOrientationRecord(student) {
 }
 
 function renderNewStudentRecord(student) {
-  ensureRecordFooterStyles();
-  ensureDownloadAndBadgeStyles();
-  ensureNewStudentLegacyVisualStyles();
-
-  const root = document.getElementById("verificationResult");
-  const backUrl = "documents-verification.html";
-
-  const id = student["Student Id"] || "Not Available";
-  const name = student["Name"] || "Not Available";
-  const email = student["Student Email"] || "Not Available";
-  const domain = student["Domain"] || "Not Available";
-  const batchStart = student["Batch Start"] || "";
-  const confirmed = student.confirmed === true || String(student.confirmed).toLowerCase() === "true";
-
-  const startDate = batchStart ? new Date(batchStart) : null;
-  const endDate = addOneCalendarMonth(batchStart);
-  const now = new Date();
-  const validStart = startDate && !Number.isNaN(startDate.getTime());
-  const completed = !!(endDate && now >= endDate);
-
-  let mode;
-  if (!validStart) mode = confirmed ? "running-confirmed" : "running-pending";
-  else if (!completed && confirmed) mode = "running-confirmed";
-  else if (!completed) mode = "running-pending";
-  else if (confirmed) mode = "completed-confirmed";
-  else mode = "completed-pending";
-
-  const batchStartText = validStart ? formatDate(batchStart) : "Not Available";
-  const batchEndText = endDate ? formatDate(endDate) : "Not Available";
-
-  const icons = {
-    verified: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8 12 2.5 2.5L16.5 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-    clock: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-    offer: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M6 3.5h9l3 3V20.5H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.5 3.5v3h3M8.5 11h7M8.5 14.5h7M8.5 8h3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
-    certificate: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M6 3.5h12v12H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m9 15.5-1 5 4-2 4 2-1-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 7.5h6M9 10.5h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
-    info: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 10.5v5M12 7.5h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>`,
-    check: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7.5 12 3 3L17 8.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-    warning: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M12 3 22 20H2L12 3Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 9v5M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
-    celebration: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M5 19 8 9l7 7-10 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8 9 7-4M12 13l7-3M16 4l1-2M20 8l2-1M5 5 3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
-    shield: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M12 3 20 6v5.5c0 4.6-3.1 7.9-8 9.5-4.9-1.6-8-4.9-8-9.5V6l8-3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8.5 12 2.2 2.2 4.8-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-    lock: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><rect x="5" y="10" width="14" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10M12 14v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
-    support: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M4 13a8 8 0 0 1 16 0v3.5a2.5 2.5 0 0 1-2.5 2.5H16v-5h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 16h4v3H6.5A2.5 2.5 0 0 1 4 16Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>`,
-    trust: `<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.8-3.4 3-5 7-5s6.2 1.6 7 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`
-  };
-
-  const cfg = {
-    "running-pending": {
-      color:"#dc2626", bg:"#fffafa", border:"#fecaca", iconBg:"#fee2e2",
-      title:"INTERNSHIP RUNNING", overall:"RUNNING",
-      overallText:"Your internship is currently in progress.",
-      certBadge:null,
-      certText:"Please complete your confirmation to receive your certificate.",
-      note:"Complete your confirmation to move forward."
-    },
-    "running-confirmed": {
-      color:"#2563eb", bg:"#f8fbff", border:"#bfdbfe", iconBg:"#dbeafe",
-      title:"INTERNSHIP RUNNING", overall:"RUNNING",
-      overallText:"Your internship is currently in progress.",
-      certBadge:`${icons.clock} Coming Soon`, certClass:"yellow",
-      certText:"Certificate will be issued after successful completion.",
-      note:"Once the internship is completed, your certificate will be issued and verified."
-    },
-    "completed-confirmed": {
-      color:"#15803d", bg:"#f7fff9", border:"#bbf7d0", iconBg:"#dcfce7",
-      title:"INTERNSHIP COMPLETED", overall:"COMPLETE",
-      overallText:"Your internship has been successfully completed.",
-      certBadge:"✓ Received & Verified", certClass:"green",
-      certText:"Certificate has been issued and verified.",
-      note:"Your certificate is now available and verified."
-    },
-    "completed-pending": {
-      color:"#dc2626", bg:"#fffafa", border:"#fecaca", iconBg:"#fee2e2",
-      title:"INTERNSHIP COMPLETED", overall:"COMPLETE",
-      overallText:"Your internship has been successfully completed.",
-      certBadge:`${icons.warning} Not Issued`, certClass:"red",
-      certText:"Certificate has not been issued.",
-      note:"Complete your confirmation to get your certificate."
-    }
-  }[mode];
-
-  const whatsappMessage = "Hii, I need confirmation information";
-  const whatsapp = `https://wa.me/917839686310?text=${encodeURIComponent(whatsappMessage)}`;
-  const confirmationButton = `<a class="new-flow-confirm-button" href="${whatsapp}" target="_blank" rel="noopener noreferrer" aria-label="Complete your confirmation on WhatsApp">Complete Your Confirmation <span>→</span></a>`;
-
-  let certificateBadge = "";
-  if (mode === "running-pending") {
-    certificateBadge = confirmationButton;
-  } else if (mode === "completed-pending") {
-    certificateBadge = `<span class="badge red">${icons.warning} Not Issued</span><a class="new-flow-confirm-button" href="${whatsapp}" target="_blank" rel="noopener noreferrer" aria-label="Complete your confirmation on WhatsApp">Complete Your Confirmation <span>→</span></a>`;
-  } else {
-    certificateBadge = `<span class="badge ${cfg.certClass}">${cfg.certBadge}</span>`;
-  }
-
-  let bottomMessage = "";
-  if (mode === "running-pending") {
-    bottomMessage = `
-      <div class="new-flow-message red">
-        <div class="new-flow-message-icon">${icons.info}</div>
-        <div><strong>Why is confirmation required?</strong><p>Your confirmation helps us verify your details and prepare your certificate.</p></div>
+  const root=document.getElementById('verificationResult');
+  if(!root)return;
+  const id=student['Student Id']||student['Student ID']||'Not Available';
+  const name=student['Name']||'Not Available';
+  const email=student['Student Email']||student['Email']||'Not Available';
+  const domain=student['Domain']||'Not Available';
+  const batchStart=student['Batch Start']||'';
+  const batchEnd=student['Batch End']||addOneCalendarMonth(batchStart);
+  const offer=String(student['Offer Letter']||'').toLowerCase();
+  const certificate=String(student['Certificate']||'').toLowerCase();
+  const statusRaw=String(student['Internship Status']||student['Status']||'').toLowerCase();
+  const now=new Date();
+  const start=batchStart?new Date(batchStart+'T00:00:00'):null;
+  const end=batchEnd?new Date(batchEnd+'T23:59:59'):null;
+  const running=statusRaw.includes('running')||(start&&!Number.isNaN(start.getTime())&&end&&!Number.isNaN(end.getTime())&&now>=start&&now<=end);
+  const complete=statusRaw.includes('complete')||(end&&!Number.isNaN(end.getTime())&&now>end);
+  const offerVerified=offer.includes('verified')||offer.includes('received')||offer.includes('issued')||student['Offer Letter URL'];
+  const certVerified=certificate.includes('verified')||certificate.includes('received')||certificate.includes('issued')||student['Certificate URL'];
+  const internshipStatus=complete?'Internship Complete':running?'Internship Running':batchStart?'Internship Upcoming':'Batch Assignment Pending';
+  const offerText=offerVerified?'Received / Verified':'Coming Soon';
+  const certText=certVerified?'Received / Verified':'Coming Soon';
+  const batchStartText=batchStart?formatDate(batchStart):'Coming Soon';
+  const batchEndText=batchEnd?formatDate(batchEnd):'Coming Soon';
+  const badge=(text,kind)=>`<span class="badge ${kind}">${text}</span>`;
+  root.innerHTML=`<div class="result-shell softgrow-result-animate new-clean-verification">
+    <div class="result-header"><div class="result-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div></div><div class="result-official"><span class="verified-shield" aria-hidden="true">✓</span><div><strong>Official Verification</strong><small>Secure student record verification</small></div></div></div>
+    <div class="result-main">
+      <div class="verified-title"><div class="verified-icon">✓</div><div><h1>Student Record Verified</h1><p>The record associated with this Student ID has been successfully verified.</p></div></div>
+      <div class="mobile-last4-privacy-note" style="margin:0 0 16px;padding:10px 14px;border:1px solid #dbeafe;background:#eff6ff;border-radius:10px;color:#1e3a8a;font-size:12px">Verification was completed using the Student ID and the last 4 digits of the registered mobile number. Personal contact details remain protected.</div>
+      <div class="student-grid new-clean-grid">
+        <div><small>Student ID</small><strong>${escapeHtml(id)}</strong></div>
+        <div><small>Full Name</small><strong>${escapeHtml(name)}</strong></div>
+        <div><small>Gmail</small><strong>${escapeHtml(maskPublicEmail(email))}</strong></div>
+        <div><small>Domain</small><strong>${escapeHtml(domain)}</strong></div>
+        <div><small>Batch Start</small><strong>${escapeHtml(batchStartText)}</strong></div>
+        <div><small>Batch End</small><strong>${escapeHtml(batchEndText)}</strong></div>
       </div>
-      <div class="running-note new-flow-note-red">${icons.info} Complete your confirmation to move forward.</div>`;
-  } else if (mode === "running-confirmed") {
-    bottomMessage = `
-      <div class="new-flow-message blue">
-        <div class="new-flow-message-icon">${icons.celebration}</div>
-        <div><strong>Congratulations! <span class="congrats-inline-icon">${icons.celebration}</span></strong><p>Great job! Your confirmation has been received successfully. You're one step closer to earning your certificate. Keep up the good work!</p></div>
-      </div>
-      <div class="running-note new-flow-note-blue">${icons.check} Once the internship is completed, your certificate will be issued and verified.</div>`;
-  } else if (mode === "completed-confirmed") {
-    bottomMessage = `
-      <div class="new-flow-message green">
-        <div class="new-flow-message-icon">${icons.celebration}</div>
-        <div><strong>Congratulations! <span class="congrats-inline-icon">${icons.celebration}</span></strong><p>Your internship has been successfully completed and your confirmation has been verified. Keep growing!</p></div>
-      </div>
-      <div class="running-note new-flow-note-green">${icons.check} Your certificate is now available and verified.</div>`;
-  } else {
-    bottomMessage = `
-      <div class="new-flow-message red">
-        <div class="new-flow-message-icon">${icons.warning}</div>
-        <div><strong>Your confirmation was not received.</strong><p>Please complete the confirmation process to proceed with certificate issuance.</p></div>
-      </div>
-      <div class="running-note new-flow-note-red">${icons.info} Complete your confirmation to get your certificate.</div>`;
-  }
-
-  root.innerHTML = `
-    <div class="result-shell softgrow-result-animate new-flow-result">
-      <div class="result-header">
-        <div class="result-brand">
-          <img src="assets/softgrowtech-logo.png" alt="SoftGrowTech">
-          <div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div>
-        </div>
-        <div class="result-official">
-          <span class="verified-shield new-flow-header-shield" aria-hidden="true">${icons.shield}</span>
-          <div><strong>Official Verification</strong><small>100% Trusted &amp; Secure</small></div>
-        </div>
-      </div>
-
-      <div class="result-main">
-        <div class="verified-title">
-          <div class="verified-icon new-flow-verified-icon">${icons.verified}</div>
-          <div><h1>Document Record Verified</h1><p>The record associated with this Student / Letter ID is valid.</p></div>
-        </div>
-
-        <div class="mobile-last4-privacy-note new-flow-privacy">
-          ${icons.shield}
-          <span>Verification completed using the Student / Letter ID and the last 4 digits of the registered mobile number. Personal contact details are hidden on this public page.</span>
-        </div>
-
-        <div class="student-grid new-flow-student-grid">
-          <div><small>Student / Letter ID</small><strong>${escapeHtml(id)}</strong></div>
-          <div><small>Student Name</small><strong>${escapeHtml(name)}</strong></div>
-          <div><small>Student Email</small><strong>${escapeHtml(maskPublicEmail(email))}</strong></div>
-          <div><small>Domain</small><strong>${escapeHtml(domain)}</strong></div>
-          <div><small>Batch Start</small><strong>${escapeHtml(batchStartText)}</strong></div>
-          <div><small>Batch End</small><strong>${escapeHtml(batchEndText)}</strong></div>
-        </div>
-
-        <div class="new-flow-stage-title"><span>${completed ? "INTERNSHIP COMPLETION" : "DURING INTERNSHIP"}</span></div>
-
-        <section class="status-section new-flow-status-section" style="--status:${cfg.color};--status-bg:${cfg.bg}">
-          <div class="status-label">${escapeHtml(mode === "running-pending" ? "RUNNING - CONFIRMATION PENDING" :
-            mode === "running-confirmed" ? "RUNNING - CONFIRMATION RECEIVED" :
-            mode === "completed-confirmed" ? "COMPLETED - CONFIRMATION RECEIVED" :
-            "COMPLETED - CONFIRMATION NOT RECEIVED")}</div>
-
-          <div class="status-content">
-            <div class="overall-circle">
-              <div class="overall-check new-flow-overall-icon">
-                ${mode === "completed-confirmed" ? icons.verified : mode === "completed-pending" ? icons.warning : icons.clock}
-              </div>
-              <small>Overall Status</small>
-              <strong>${escapeHtml(cfg.overall)}</strong>
-              <p>${escapeHtml(cfg.overallText)}</p>
-            </div>
-
-            <div class="document-status">
-              <h2>Document Status</h2>
-
-              <div class="doc-row">
-                <div class="new-flow-doc-left">
-                  <div class="new-flow-doc-icon offer">${icons.offer}</div>
-                  <div><strong>Offer Letter</strong><small>Offer letter has been issued.</small></div>
-                </div>
-                <span class="badge green">${icons.check} Received &amp; Verified</span>
-              </div>
-
-              <div class="doc-row">
-                <div class="new-flow-doc-left">
-                  <div class="new-flow-doc-icon cert" style="--icon-color:${cfg.color};--icon-bg:${cfg.iconBg}">${icons.certificate}</div>
-                  <div><strong>Certificate</strong><small>${escapeHtml(cfg.certText)}</small></div>
-                </div>
-                ${certificateBadge}
-              </div>
-
-              ${bottomMessage}
-            </div>
-          </div>
-        </section>
-
-        <footer class="record-footer" aria-label="Verification record footer">
-          <section class="verification-trust-strip" aria-label="Verification assurance">
-            <div class="trust-item"><div class="new-flow-trust-icon">${icons.shield}</div><div><strong>100% Authentic</strong><span>All documents are verified and genuine.</span></div></div>
-            <div class="trust-item"><div class="new-flow-trust-icon">${icons.lock}</div><div><strong>Secure Verification</strong><span>Your privacy and data are fully protected.</span></div></div>
-            <div class="trust-item"><div class="new-flow-trust-icon">${icons.trust}</div><div><strong>Trusted by Thousands</strong><span>Thousands of students trust SoftGrowTech.</span></div></div>
-            <div class="trust-item"><div class="new-flow-trust-icon">${icons.support}</div><div><strong>Need Support?</strong><span>We're here to help you whenever you need.</span></div></div>
-          </section>
-
-          <div class="record-footer-actions">
-            <button class="result-button download-record" type="button" data-download-record>Download Verification Record <span>⇩</span></button>
-            <a class="result-button verify-another" href="${backUrl}">Verify Another Letter ID <span>←</span></a>
-          </div>
-
-          <div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div>
-        </footer>
-      </div>
-    </div>`;
-  bindVerificationResultActions();
+      <section class="status-section new-clean-status" style="--status:#2563eb;--status-bg:#f8fbff">
+        <div class="status-label">PROGRAM STATUS</div>
+        <div class="status-content"><div class="overall-circle"><div class="overall-check">${complete?'✓':running?'↻':'○'}</div><small>Internship Status</small><strong>${escapeHtml(internshipStatus)}</strong><p>${complete?'The program journey is complete.':running?'The internship program is currently running.':'The program schedule will appear after batch assignment.'}</p></div>
+        <div class="document-status"><h2>Document Status</h2>
+          <div class="doc-row"><div><strong>Offer Letter</strong><small>${offerVerified?'The offer letter has been received and verified.':'The offer letter will appear after the applicable selection and onboarding stage.'}</small></div>${badge(offerText,offerVerified?'green':'yellow')}</div>
+          <div class="doc-row"><div><strong>Certificate</strong><small>${certVerified?'The certificate has been received and verified.':'The certificate status will update after successful completion and applicable evaluation.'}</small></div>${badge(certText,certVerified?'green':'yellow')}</div>
+        </div></div>
+      </section>
+      <div class="running-note"><strong>Official record:</strong> This public verification page displays only essential student and document status information. Internal confirmation, payment and assessment details are not shown.</div>
+      <footer class="record-footer"><section class="verification-trust-strip"><div class="trust-item"><div class="trust-icon">✓</div><div><strong>Authentic Record</strong><span>Student details are matched with the official record.</span></div></div><div class="trust-item"><div class="trust-icon">⌁</div><div><strong>Privacy Protected</strong><span>Personal contact details are masked on this page.</span></div></div><div class="trust-item"><div class="trust-icon">◉</div><div><strong>Official Verification</strong><span>Use the Student ID to verify the record.</span></div></div><div class="trust-item"><div class="trust-icon">?</div><div><strong>Need Support?</strong><span>Contact SoftGrowTech for verification help.</span></div></div></section><div class="record-footer-actions"><a class="result-button verify-another" href="documents-verification.html">Verify Another ID <span>←</span></a></div><div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div></footer>
+    </div></div>`;
 }
-
 
 function renderVerified(student) {
   ensureRecordFooterStyles();
@@ -1467,9 +1295,6 @@ function renderVerified(student) {
           </section>
 
           <div class="record-footer-actions">
-            <button class="result-button download-record" type="button" data-download-record>
-              Download Verification Record <span>⇩</span>
-            </button>
             <a class="result-button verify-another" href="${backUrl}">
               Verify Another Letter ID <span>←</span>
             </a>
