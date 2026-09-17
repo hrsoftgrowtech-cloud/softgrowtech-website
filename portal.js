@@ -11,7 +11,13 @@ async function profile(){const u=await user();if(!u)return null;const {data,erro
 function statusClass(s){s=String(s||'').toLowerCase();return s==='selected'||s==='complete'||s==='completed'||s.includes('verified')?'success':s.includes('invalid')||s.includes('not selected')||s.includes('failed')?'danger':s.includes('pending')||s.includes('verification')||s.includes('review')?'warn':'blue'}
 async function logout(){await sb.auth.signOut();location.href='student-login.html'}
 async function initRegister(){const f=document.getElementById('registerForm');if(!f)return;const dom=document.getElementById('domain'),requested=new URLSearchParams(location.search).get('domain');const {data:ds}=await sb.from('sgt_domains').select('name').eq('enabled',true).order('name');if(ds){dom.innerHTML=ds.map(d=>`<option>${esc(d.name)}</option>`).join('');if(requested&&ds.some(d=>d.name===requested))dom.value=requested}const gen=(n,p)=>{let a=n.trim().replace(/\s+/g,'').slice(0,3);a=a.charAt(0).toUpperCase()+a.slice(1).toLowerCase();return`SGT@${a}${p.replace(/\D/g,'').slice(-4)}`};const update=()=>{const el=document.getElementById('tempPreview');if(el)el.value=gen(document.getElementById('name').value,document.getElementById('phone').value)};f.addEventListener('input',update);update();f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;b.textContent='Creating registration…';try{const name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim().toLowerCase(),phone=document.getElementById('phone').value.trim(),country=document.getElementById('country').value.trim(),study_year=document.getElementById('studyYear').value,gender=document.getElementById('gender').value,domain=dom.value,temp=gen(name,phone);if(!name||!email||!phone||!country||!study_year||!gender||!domain)throw Error('Please complete all required fields.');const {error}=await sb.auth.signUp({email,password:temp,options:{emailRedirectTo:location.origin+'/student-login.html',data:{full_name:name,phone,country,study_year,gender,domain,temp_password:temp,must_change_password:true}}});if(error)throw error;sessionStorage.setItem('sgt_new_registration',JSON.stringify({name,email,domain}));location.href='registration-success.html'}catch(err){toast(err.message||'Registration failed.');b.disabled=false;b.textContent='Create Registration →'}}}
-async function initLogin(){const f=document.getElementById('loginForm');if(!f)return;f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;b.textContent='Signing in…';try{let id=document.getElementById('loginId').value.trim(),email=id;if(/^SGT-/i.test(id)){const {data:lookup,error}=await sb.rpc('sgt_lookup_login_email',{p_student_id:id.toUpperCase()});if(error)throw error;if(!lookup)throw Error('Student ID not found.');email=lookup}const {data:authData,error}=await sb.auth.signInWithPassword({email,password:document.getElementById('password').value});if(error)throw error;const meta=authData?.user?.user_metadata||{};const mustChange=meta.must_change_password===true||Boolean(meta.temp_password);location.href=mustChange?'create-password.html':'portal.html'}catch(err){toast(err.message||'Login failed.');b.disabled=false;b.textContent='Login →'}}}
+async function initLogin(){
+  const f=document.getElementById('loginForm');
+  if(!f)return;
+  const eye=document.getElementById('loginPasswordToggle'),pass=document.getElementById('password');
+  eye?.addEventListener('click',()=>{if(!pass)return;const show=pass.type==='password';pass.type=show?'text':'password';eye.setAttribute('aria-label',show?'Hide password':'Show password');eye.title=show?'Hide password':'Show password';eye.innerHTML=show?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.2 12s3.4-6 9.8-6 9.8 6 9.8 6-3.4 6-9.8 6-9.8-6-9.8-6Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6.4 0 9.8 6 9.8 6a17.8 17.8 0 0 1-3.1 3.8M6.2 6.9C3.6 8.5 2.2 12 2.2 12s3.4 6 9.8 6c1.3 0 2.5-.3 3.6-.8"></path></svg>';});
+  f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button[type="submit"]');b.disabled=true;b.textContent='Signing in…';try{let id=document.getElementById('loginId').value.trim(),email=id;if(/^SGT-/i.test(id)){const {data:lookup,error}=await sb.rpc('sgt_lookup_login_email',{p_student_id:id.toUpperCase()});if(error)throw error;if(!lookup)throw Error('Student ID not found.');email=lookup}const {data:authData,error}=await sb.auth.signInWithPassword({email,password:pass.value});if(error)throw error;const meta=authData?.user?.user_metadata||{};const mustChange=meta.must_change_password===true||Boolean(meta.temp_password);location.href=mustChange?'create-password.html':'portal.html'}catch(err){toast(err.message||'Login failed.');b.disabled=false;b.textContent='Login →'}}
+}
 async function initFirstPassword(){
   const f=document.getElementById('firstPasswordForm');
   if(!f)return;
@@ -42,37 +48,24 @@ async function initReset(){
   if(cv&&rv){if(mode==='new'){rv.hidden=true;cv.hidden=false}else{rv.hidden=false;cv.hidden=true}}
   const btn=document.getElementById('sendResetBtn'),timer=document.getElementById('resetResendTimer'),sec=document.getElementById('resetSeconds');
   const cooldownKey='sgt_reset_cooldown_until';
-  const renderCooldown=()=>{
-    const until=Number(localStorage.getItem(cooldownKey)||0),left=Math.max(0,Math.ceil((until-Date.now())/1000));
-    if(!timer||!sec||!btn)return;
-    if(left>0){btn.textContent='Resend Reset Link →';btn.disabled=true;timer.hidden=false;sec.textContent=left;window.__sgtResetTimer&&clearInterval(window.__sgtResetTimer);window.__sgtResetTimer=setInterval(renderCooldown,250)}
-    else{localStorage.removeItem(cooldownKey);btn.textContent='Send Reset Link →';btn.disabled=false;timer.hidden=true;window.__sgtResetTimer&&clearInterval(window.__sgtResetTimer);window.__sgtResetTimer=null}
-  };
-  const startCooldown=()=>{localStorage.setItem(cooldownKey,String(Date.now()+60000));if(btn)btn.textContent='Resend Reset Link →';renderCooldown()};
+  const renderCooldown=()=>{const until=Number(localStorage.getItem(cooldownKey)||0),left=Math.max(0,Math.ceil((until-Date.now())/1000));if(!timer||!sec||!btn)return;if(left>0){btn.textContent='Resend Reset Link →';btn.disabled=true;timer.hidden=false;sec.textContent=left;window.__sgtResetTimer&&clearInterval(window.__sgtResetTimer);window.__sgtResetTimer=setInterval(renderCooldown,250)}else{localStorage.removeItem(cooldownKey);btn.textContent='Send Reset Link →';btn.disabled=false;timer.hidden=true;window.__sgtResetTimer&&clearInterval(window.__sgtResetTimer);window.__sgtResetTimer=null}};
+  const startCooldown=()=>{localStorage.setItem(cooldownKey,String(Date.now()+60000));renderCooldown()};
   if(btn)renderCooldown();
   const sendReset=async()=>{
     const email=document.getElementById('resetEmail')?.value.trim().toLowerCase();
     if(!email)return toast('Enter your registered Gmail.');
     const until=Number(localStorage.getItem(cooldownKey)||0);if(until>Date.now())return;
-    btn.disabled=true;btn.textContent='Sending…';
+    btn.disabled=true;btn.textContent='Checking…';
+    const {data:registered,error:checkError}=await sb.rpc('sgt_check_registered_email',{p_email:email});
+    if(checkError){btn.disabled=false;btn.textContent='Send Reset Link →';return toast('Unable to verify the email right now. Please try again.')}
+    if(!registered){btn.disabled=false;btn.textContent='Send Reset Link →';if(timer)timer.hidden=true;toast('Gmail not registered. Please enter your registered Gmail.');return}
+    btn.textContent='Sending…';
     const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname+'?mode=new'});
-    if(error){toast(error.message);renderCooldown();return}
+    if(error){btn.disabled=false;btn.textContent='Send Reset Link →';return toast(error.message)}
     toast('Reset link sent to your registered Gmail. Please check your inbox.');startCooldown();
   };
   if(r)r.onsubmit=async e=>{e.preventDefault();await sendReset()};
-  if(c)c.onsubmit=async e=>{
-    e.preventDefault();
-    const p=document.getElementById('newPass').value,cp=document.getElementById('confirmPass').value;
-    if(!/^(?=.{8}$)(?=.*[A-Z])(?=.*\d)(?=.*[#@?!/]).*$/.test(p))return toast('Use exactly 8 characters with capital, number and # @ ? ! /.');
-    if(p!==cp)return toast('Passwords do not match.');
-    const b=c.querySelector('button');b.disabled=true;b.textContent='Updating Password…';
-    const {error}=await sb.auth.updateUser({password:p,data:{must_change_password:false,temp_password:''}});
-    if(error){toast(error.message);b.disabled=false;b.textContent='Update Password →';return}
-    const success=document.getElementById('resetSuccess'),count=document.getElementById('resetCountdown');
-    c.querySelectorAll('input,button').forEach(x=>x.disabled=true);if(success)success.hidden=false;
-    let n=3;if(count)count.textContent=n;
-    const timer2=setInterval(()=>{n-=1;if(n<=0){clearInterval(timer2);location.href='student-login.html'}else if(count)count.textContent=n},1000)
-  };
+  if(c)c.onsubmit=async e=>{e.preventDefault();const p=document.getElementById('newPass').value,cp=document.getElementById('confirmPass').value;if(!/^(?=.{8}$)(?=.*[A-Z])(?=.*\d)(?=.*[#@?!/]).*$/.test(p))return toast('Use exactly 8 characters with capital, number and # @ ? ! /.');if(p!==cp)return toast('Passwords do not match.');const b=c.querySelector('button');b.disabled=true;b.textContent='Updating Password…';const {error}=await sb.auth.updateUser({password:p,data:{must_change_password:false,temp_password:''}});if(error){toast(error.message);b.disabled=false;b.textContent='Update Password →';return}const success=document.getElementById('resetSuccess'),count=document.getElementById('resetCountdown');c.querySelectorAll('input,button').forEach(x=>x.disabled=true);if(success)success.hidden=false;let n=3;if(count)count.textContent=n;const timer2=setInterval(()=>{n-=1;if(n<=0){clearInterval(timer2);location.href='student-login.html'}else if(count)count.textContent=n},1000)};
 }
 async function getScheduleConfig(){const {data}=await sb.from('sgt_settings').select('value').eq('key','program_schedule').maybeSingle();return data?.value||{task1:{open:0,submit:5,deadline:6,presentation_start:7,presentation_end:8},task2:{open:9,submit:14,deadline:15,presentation_start:16,presentation_end:17},final:{open:18,submit:24,deadline:26,review_end:31}}}
 function timelineState(date,kind){const today=new Date();today.setHours(0,0,0,0);if(!date)return'upcoming';const d=new Date(date+'T00:00:00');if(d<today)return'complete';if(d.getTime()===today.getTime())return'current';return'upcoming'}
@@ -111,7 +104,8 @@ async function initPortal(){
     ['Review & Evaluation',addDays(programStart,27),addDays(programStart,sched.final.review_end)],
     ['Internship Completion',programEnd,programEnd]
   ]:[['Orientation Session',null,null],['Internship Program Start',null,null],['Batch End',null,null]];
-  document.getElementById('schedule').innerHTML=scheduleItems.map(([name,start,end])=>{const state=rangeState(start,end);const status=state==='complete'?'Completed':state==='current'?'In Progress':'Upcoming';return `<div class="timeline-item"><span class="timeline-dot ${state}"></span><div style="flex:1"><strong>${name}</strong><small>${start?rangeLabel(start,end):'Coming Soon'}</small><div style="margin-top:7px"><span class="status ${state==='complete'?'success':state==='current'?'blue':'warn'}">${status}</span></div></div></div>`}).join('');
+  const scheduleStatus=(name,state)=>{if(state==='upcoming'){if(name==='Orientation Session')return'Orientation Upcoming';if(name==='Internship Program Start')return'Program Starts Soon';return name.includes('Task 1')?'Task 1 Upcoming':name.includes('Task 2')?'Task 2 Upcoming':name.includes('Final Project')?'Final Project Upcoming':'Upcoming'}if(state==='complete'){if(name==='Orientation Session')return'Orientation Completed';if(name==='Internship Program Start')return'Program Started';return name.includes('Task 1')?'Task 1 Completed':name.includes('Task 2')?'Task 2 Completed':name.includes('Final Project')?'Final Project Completed':name==='Internship Completion'?'Internship Completed':'Completed'}if(name==='Orientation Session')return'Orientation Today';if(name==='Internship Program Start')return'Program Started';if(name.includes('Work Window'))return'Work In Progress';if(name.includes('Submission'))return'Submission Open';if(name.includes('Presentation'))return'Presentation Live';if(name==='Review & Evaluation')return'Under Review';if(name==='Internship Completion')return'Completion Day';return'In Progress'};
+  document.getElementById('schedule').innerHTML=scheduleItems.map(([name,start,end])=>{const state=rangeState(start,end),status=scheduleStatus(name,state);return `<div class="timeline-item"><span class="timeline-dot ${state}"></span><div style="flex:1"><strong>${name}</strong><small>${start?rangeLabel(start,end):'Coming Soon'}</small><div style="margin-top:7px"><span class="status ${state==='complete'?'success':state==='current'?'blue':'warn'}">${status}</span></div></div></div>`}).join('');
 
   document.getElementById('statusCards').innerHTML=[['Internship Program',programStatus],['Enroll Fee',p.payment_status],['Selection Assessment',p.assessment_status],['Selection',p.selection_status],['Review',p.review_status]].map(x=>`<div class="meta-box"><small>${x[0]}</small><span class="status ${statusClass(x[1])}">${esc(x[1])}</span></div>`).join('');
 
@@ -170,15 +164,12 @@ async function initPortal(){
   const notificationBadge=document.getElementById('studentNotificationBadge');
   let notificationRows=[];
   const getStudentNotes=async()=>{
-    const [{data:noteRows},{data:paymentNotes}]=await Promise.all([
-      sb.from('sgt_student_notes').select('id,category,message,created_at').eq('user_id',u.id).order('created_at',{ascending:false}).limit(50),
-      sb.from('sgt_payments').select('id,admin_note,created_at,submitted_at').eq('user_id',u.id).not('admin_note','is',null).neq('admin_note','').order('created_at',{ascending:false}).limit(20)
-    ]);
+    const {data:noteRows}=await sb.from('sgt_student_notes').select('id,category,message,created_at').eq('user_id',u.id).order('created_at',{ascending:false}).limit(50);
     const reads=await sb.from('sgt_student_notification_reads').select('notification_id,read_at').eq('user_id',u.id);
     const readIds=new Set((reads.data||[]).map(x=>x.notification_id));
     const localRead=JSON.parse(localStorage.getItem(`sgt_note_reads_${u.id}`)||'[]');
     const localSet=new Set(localRead);
-    return [...(noteRows||[]).map(x=>({id:x.id,realId:x.id,category:x.category||'Other',message:x.message,created_at:x.created_at,read:readIds.has(x.id)||localSet.has(x.id)})),...(paymentNotes||[]).map(x=>({id:'payment-'+x.id,realId:null,category:'Payment Related',message:x.admin_note,created_at:x.created_at||x.submitted_at,read:localSet.has('payment-'+x.id)}))].filter(x=>x.message).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    return (noteRows||[]).map(x=>({id:x.id,realId:x.id,category:x.category||'Other',message:x.message,created_at:x.created_at,read:readIds.has(x.id)||localSet.has(x.id)})).filter(x=>x.message);
   };
   const updateBadge=()=>{const unread=notificationRows.filter(x=>!x.read).length;if(notificationBadge){notificationBadge.textContent=unread?String(unread):'';notificationBadge.hidden=!unread}};
   const persistLocalRead=id=>{const key=`sgt_note_reads_${u.id}`,arr=JSON.parse(localStorage.getItem(key)||'[]');if(!arr.includes(id)){arr.push(id);localStorage.setItem(key,JSON.stringify(arr.slice(-200)))}};
@@ -197,8 +188,8 @@ async function initPortal(){
     panel.querySelectorAll('.student-notification-item').forEach(item=>item.onclick=async()=>{const n=notificationRows.find(x=>x.id===item.dataset.noteId);if(n){await markNotificationRead(n);item.classList.remove('unread');item.classList.add('read');const small=panel.querySelector('.student-notification-panel-head small');if(small)small.textContent=`${notificationRows.filter(x=>!x.read).length} unread`}});
     panel.querySelector('#markAllNotifications').onclick=async()=>{for(const n of notificationRows)await markNotificationRead(n);panel.remove();updateBadge()};
   };
-  const showNotification=note=>{if(!note)return;const old=document.querySelector('.admin-note-popup');if(old)old.remove();const pop=document.createElement('div');pop.className='admin-note-popup';pop.innerHTML=`<div class="admin-note-panel"><div class="admin-note-head"><span class="note-icon">🔔</span><div><strong>New Notification</strong><small>${esc(note.category)} • From SoftGrowTech Team</small></div><button type="button" class="close-btn" style="margin-left:auto">×</button></div><p>${esc(note.message)}</p><small class="admin-note-date">${adt(note.created_at)}</small></div>`;document.body.appendChild(pop);pop.querySelector('.close-btn').onclick=()=>pop.remove();setTimeout(()=>pop.remove(),9000)};
-  const updateNotifications=async(showPopup)=>{const before=new Set(notificationRows.filter(x=>!x.read).map(x=>x.id));notificationRows=await getStudentNotes();updateBadge();const newest=notificationRows.find(x=>!x.read);if(showPopup&&newest&&!before.has(newest.id))showNotification(newest)};
+  const showNotification=note=>{if(!note)return;const old=document.querySelector('.admin-note-popup');if(old)old.remove();const pop=document.createElement('div');pop.className='admin-note-popup';pop.innerHTML=`<div class="admin-note-panel is-new"><div class="admin-note-head"><span class="note-icon">🔔</span><div><strong>New Notification</strong><small>${esc(note.category)} • From SoftGrowTech Team</small></div><button type="button" class="close-btn" style="margin-left:auto">×</button></div><p>${esc(note.message)}</p><small class="admin-note-date">${adt(note.created_at)}</small><div style="margin-top:12px"><button type="button" class="portal-btn secondary note-mark-seen" style="width:100%">Mark as Seen</button></div></div>`;document.body.appendChild(pop);pop.querySelector('.close-btn').onclick=()=>pop.remove();pop.querySelector('.note-mark-seen').onclick=async()=>{await markNotificationRead(note);pop.remove()};setTimeout(()=>pop.remove(),12000)};
+  const updateNotifications=async(showPopup)=>{const before=new Set(notificationRows.filter(x=>!x.read).map(x=>x.id));notificationRows=await getStudentNotes();updateBadge();const newest=notificationRows.find(x=>!x.read);if(showPopup&&newest&&!before.has(newest.id)){notificationBell?.classList.add('has-new');setTimeout(()=>notificationBell?.classList.remove('has-new'),1400);showNotification(newest)}};
   await updateNotifications(false);
   notificationBell?.addEventListener('click',openNotificationPanel);
   setInterval(()=>updateNotifications(true),8000);
@@ -222,8 +213,8 @@ async function initPortal(){
     doc.setFontSize(9); doc.text('SoftGrowTech • Practical learning, projects and career-focused development',20,278); return doc;
   }
   const docs=[];
-  const offerEligible=p.selection_status==='Selected';
-  const certificateEligible=p.selection_status==='Selected'&&p.payment_status==='Verified'&&p.status==='Completed';
+  const offerEligible=String(p.selection_status||'').trim().toLowerCase()==='selected';
+  const certificateEligible=String(p.selection_status||'').trim().toLowerCase()==='selected'&&String(p.payment_status||'').trim().toLowerCase()==='verified'&&String(p.status||'').trim().toLowerCase()==='completed';
   const stableId=(prefix,studentId)=>`${prefix}-${String(studentId||'RECORD').replace(/[^0-9A-Z]/gi,'').slice(-10)}`;
   const offerId=p.offer_letter_id||stableId('SGT-OFFER',p.student_id);
   const certificateId=p.certificate_id||stableId('SGT-CERT',p.student_id);
