@@ -61,3 +61,10 @@ V12 adds country-aware enrollment payment display, orientation-gated assessment 
 
 ## Secure Documents
 Offer Letter and Certificate templates are no longer served from the public website. Deploy `supabase/functions/sgt-generate-document/index.ts` and store the two PDFs in the private `private-document-templates` Supabase Storage bucket. See `PRIVATE-DOCUMENT-TEMPLATES-SETUP.md`.
+
+
+### Private Payment QR Storage
+- Payment QR uploads are handled by the `sgt-payment-qr` Supabase Edge Function.
+- QR images are stored in the private `payment-qr-codes` Storage bucket and only short-lived signed URLs are returned to authenticated pages.
+- The public `assets/` folder no longer contains the India/Binance/PayPal QR images.
+- After deploying the new Edge Function, open Admin → Payments → Payment Methods and upload each QR once, then click **Save Payment Methods**.
