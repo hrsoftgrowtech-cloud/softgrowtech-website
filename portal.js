@@ -196,8 +196,11 @@ async function initPortal(){
   let notificationRows=[];
   const getStudentNotes=async()=>{
     const {data:noteRows}=await sb.from('sgt_student_notes').select('id,category,message,created_at').eq('user_id',u.id).order('created_at',{ascending:false}).limit(50);
-    const reads=await sb.from('sgt_student_notification_reads').select('notification_id,read_at').eq('user_id',u.id);
-    const readIds=new Set((reads.data||[]).map(x=>x.notification_id));
+    let readIds=new Set();
+    try{
+      const reads=await sb.from('sgt_student_notification_reads').select('notification_id,read_at').eq('user_id',u.id);
+      readIds=new Set((reads.data||[]).map(x=>x.notification_id));
+    }catch(e){console.warn('Notification read-state load failed.',e)}
     let localRead=[];try{localRead=JSON.parse(localStorage.getItem(`sgt_note_reads_${u.id}`)||'[]')}catch(_){}
     const localSet=new Set(localRead);
     return (noteRows||[]).map(x=>({id:x.id,realId:x.id,category:x.category||'Other',message:x.message,created_at:x.created_at,read:readIds.has(x.id)||localSet.has(x.id)})).filter(x=>x.message).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
@@ -230,9 +233,10 @@ async function initPortal(){
   };
   const showNotification=note=>{if(!note)return;const old=document.querySelector('.admin-note-popup');if(old)old.remove();const pop=document.createElement('div');pop.className='admin-note-popup';pop.innerHTML=`<div class="admin-note-panel is-new"><div class="admin-note-head"><span class="note-icon">🔔</span><div><strong>New Notification</strong><small>${esc(note.category)} • From SoftGrowTech Team</small></div><button type="button" class="close-btn" style="margin-left:auto">×</button></div><p>${esc(note.message)}</p><small class="admin-note-date">${adt(note.created_at)}</small><div class="portal-actions" style="margin-top:12px"><button type="button" class="portal-btn primary" id="popupMarkSeen">Mark as Seen</button></div></div>`;document.body.appendChild(pop);notificationBell?.classList.add('notification-bell-new');setTimeout(()=>notificationBell?.classList.remove('notification-bell-new'),900);pop.querySelector('.close-btn').onclick=()=>pop.remove();pop.querySelector('#popupMarkSeen').onclick=async()=>{await markNotificationRead(note);pop.remove()};setTimeout(()=>{if(pop.isConnected)pop.remove()},9000)};
   const updateNotifications=async(showPopup)=>{const before=new Set(notificationRows.filter(x=>!x.read).map(x=>x.id));notificationRows=await getStudentNotes();updateBadge();const newest=notificationRows.find(x=>!x.read);if(showPopup&&newest&&!before.has(newest.id))showNotification(newest)};
-  await updateNotifications(false);
+  // Notifications must never block the rest of the dashboard. A read-state/RLS/network issue should not prevent Documents or other sections from rendering.
   notificationBell?.addEventListener('click',openNotificationPanel);
-  setInterval(()=>updateNotifications(true),8000);
+  Promise.resolve(updateNotifications(false)).catch(e=>console.warn('Notification initialization failed.',e));
+  setInterval(()=>updateNotifications(true).catch(e=>console.warn('Notification refresh failed.',e)),8000);
 
 
   function makeDocumentPdf(kind){

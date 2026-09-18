@@ -28,7 +28,7 @@
 .notification-bell{position:relative;width:42px;height:42px;border:1px solid var(--portal-border);background:#fff;color:#1d4ed8;border-radius:12px;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 14px rgba(15,23,42,.06)}
 .notification-bell svg{width:21px;height:21px}
 .notification-bell:hover{background:#eff6ff}
-.notification-badge{position:absolute;right:-3px;top:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:900;display:grid;place-items:center;border:2px solid #fff}
+.notification-badge[hidden]{display:none!important}.notification-badge{position:absolute;right:-3px;top:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:10px;font-weight:900;display:grid;place-items:center;border:2px solid #fff}
 /* Final implementation: persistent student notification center */
 .student-notification-panel{position:fixed;top:76px;right:18px;z-index:130;width:min(430px,calc(100vw - 36px));max-height:min(72vh,680px);background:#fff;border:1px solid var(--portal-border);border-radius:16px;box-shadow:0 20px 55px rgba(15,23,42,.22);overflow:hidden}
 .student-notification-panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 17px;border-bottom:1px solid var(--portal-border);background:#f8fafc}
