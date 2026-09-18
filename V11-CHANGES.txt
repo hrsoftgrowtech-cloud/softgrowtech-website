@@ -1,0 +1,17 @@
+SoftGrowTech Dashboard V11
+
+Implemented changes from V10:
+1. Student notification panel: opening the panel automatically marks loaded notifications as Seen; removed the Mark all as seen button.
+2. Admin student note history: opening a student now shows all notes sent to that student with Sent/Seen status and timestamps.
+3. Note categories: Payment Related, Task 1, Task 1 Submission, Task 1 Presentation, Task 2, Task 2 Submission, Task 2 Presentation, Final Project, Important Update, Selection, General Update. Old "Other" records display as General Update on the student dashboard.
+4. Selection: when a student's selection changes to Selected, a dashboard notification is automatically created with the exact requested message; the existing selection email remains.
+5. Program schedule: replaced day-number inputs with calendar date inputs. Saved dates are shown directly on student dashboards. Legacy numeric schedules are converted using the latest batch start when displayed.
+6. Documents: Offer Letter and Certificate now use the supplied original PDFs as templates and overlay only student-specific fields. The original artwork remains the base. PDF-lib is loaded from jsDelivr.
+7. Team access: Founder can set an initial password while adding a Team Member and can reset it later. Team Members have no password-change UI. Activity Log remains Founder-only. Added a Team Terms & Conditions section with access, security, permitted use and misuse consequences.
+
+IMPORTANT FOR TEAM PASSWORDS:
+The ZIP includes Supabase Edge Function source at:
+supabase/functions/sgt-set-team-password/index.ts
+Deploy this function to the same Supabase project before using the Team Member password field. It uses the caller's session to verify Founder role and uses the Supabase service-role key only inside the Edge Function; passwords are not stored in the admin-members table or returned to the browser.
+
+The rest of the V10 functionality was kept as-is as far as possible.

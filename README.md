@@ -55,3 +55,6 @@ The service-role key and Brevo API key belong only on the server-side function. 
 4. Keep the existing Supabase custom SMTP configuration unchanged.
 
 No build command is required for the static website.
+
+## V12
+V12 adds country-aware enrollment payment display, orientation-gated assessment flow, assessment information/refund step, a prominent dashboard assessment action, and a registration email WhatsApp-group reminder using the current registration group setting.

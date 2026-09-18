@@ -10,7 +10,7 @@ async function user(){const {data}=await sb.auth.getUser();return data.user}
 async function profile(){const u=await user();if(!u)return null;const {data,error}=await sb.from('sgt_profiles').select('*').eq('id',u.id).maybeSingle();if(error)throw error;return data}
 function statusClass(s){s=String(s||'').toLowerCase();return s==='selected'||s==='complete'||s==='completed'||s.includes('verified')?'success':s.includes('invalid')||s.includes('not selected')||s.includes('failed')?'danger':s.includes('pending')||s.includes('verification')||s.includes('review')?'warn':'blue'}
 async function logout(){await sb.auth.signOut();location.href='student-login.html'}
-async function initRegister(){const f=document.getElementById('registerForm');if(!f)return;const dom=document.getElementById('domain'),requested=new URLSearchParams(location.search).get('domain');const {data:ds}=await sb.from('sgt_domains').select('name').eq('enabled',true).order('name');if(ds){dom.innerHTML=ds.map(d=>`<option>${esc(d.name)}</option>`).join('');if(requested&&ds.some(d=>d.name===requested))dom.value=requested}const gen=(n,p)=>{let a=n.trim().replace(/\s+/g,'').slice(0,3);a=a.charAt(0).toUpperCase()+a.slice(1).toLowerCase();return`SGT@${a}${p.replace(/\D/g,'').slice(-4)}`};const update=()=>{const el=document.getElementById('tempPreview');if(el)el.value=gen(document.getElementById('name').value,document.getElementById('phone').value)};f.addEventListener('input',update);update();f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;b.textContent='Creating registration…';try{const name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim().toLowerCase(),phone=document.getElementById('phone').value.trim(),country=document.getElementById('country').value.trim(),study_year=document.getElementById('studyYear').value,gender=document.getElementById('gender').value,domain=dom.value,temp=gen(name,phone);if(!name||!email||!phone||!country||!study_year||!gender||!domain)throw Error('Please complete all required fields.');const {error}=await sb.auth.signUp({email,password:temp,options:{emailRedirectTo:location.origin+'/student-login.html',data:{full_name:name,phone,country,study_year,gender,domain,temp_password:temp,must_change_password:true}}});if(error)throw error;sessionStorage.setItem('sgt_new_registration',JSON.stringify({name,email,domain}));location.href='registration-success.html'}catch(err){toast(err.message||'Registration failed.');b.disabled=false;b.textContent='Create Registration →'}}}
+async function initRegister(){const f=document.getElementById('registerForm');if(!f)return;const dom=document.getElementById('domain'),requested=new URLSearchParams(location.search).get('domain');const {data:ds}=await sb.from('sgt_domains').select('name').eq('enabled',true).order('name');if(ds){dom.innerHTML=ds.map(d=>`<option>${esc(d.name)}</option>`).join('');if(requested&&ds.some(d=>d.name===requested))dom.value=requested}const gen=(n,p)=>{let a=n.trim().replace(/\s+/g,'').slice(0,3);a=a.charAt(0).toUpperCase()+a.slice(1).toLowerCase();return`SGT@${a}${p.replace(/\D/g,'').slice(-4)}`};const update=()=>{const el=document.getElementById('tempPreview');if(el)el.value=gen(document.getElementById('name').value,document.getElementById('phone').value)};f.addEventListener('input',update);update();f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;b.textContent='Creating registration…';try{const name=document.getElementById('name').value.trim(),email=document.getElementById('email').value.trim().toLowerCase(),phone=document.getElementById('phone').value.trim(),country=document.getElementById('country').value.trim(),study_year=document.getElementById('studyYear').value,gender=document.getElementById('gender').value,domain=dom.value,temp=gen(name,phone);if(!name||!email||!phone||!country||!study_year||!gender||!domain)throw Error('Please complete all required fields.');const {data:groupSetting}=await sb.from('sgt_settings').select('value').eq('key','registration_group').maybeSingle();const whatsapp_group_url=groupSetting?.value?.url||'';const {error}=await sb.auth.signUp({email,password:temp,options:{emailRedirectTo:location.origin+'/student-login.html',data:{full_name:name,phone,country,study_year,gender,domain,temp_password:temp,must_change_password:true,whatsapp_group_url}}});if(error)throw error;sessionStorage.setItem('sgt_new_registration',JSON.stringify({name,email,domain}));location.href='registration-success.html'}catch(err){toast(err.message||'Registration failed.');b.disabled=false;b.textContent='Create Registration →'}}}
 async function initLogin(){const f=document.getElementById('loginForm');if(!f)return;f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;b.textContent='Signing in…';try{let id=document.getElementById('loginId').value.trim(),email=id;if(/^SGT-/i.test(id)){const {data:lookup,error}=await sb.rpc('sgt_lookup_login_email',{p_student_id:id.toUpperCase()});if(error)throw error;if(!lookup)throw Error('Student ID not found.');email=lookup}const {data:authData,error}=await sb.auth.signInWithPassword({email,password:document.getElementById('password').value});if(error)throw error;const meta=authData?.user?.user_metadata||{};const mustChange=meta.must_change_password===true||Boolean(meta.temp_password);location.href=mustChange?'create-password.html':'portal.html'}catch(err){toast(err.message||'Login failed.');b.disabled=false;b.textContent='Login →'}}}
 async function initFirstPassword(){
   const f=document.getElementById('firstPasswordForm');
@@ -83,7 +83,8 @@ async function initReset(){
     const timer2=setInterval(()=>{n-=1;if(n<=0){clearInterval(timer2);location.href='student-login.html'}else if(count)count.textContent=n},1000)
   };
 }
-async function getScheduleConfig(){const {data}=await sb.from('sgt_settings').select('value').eq('key','program_schedule').maybeSingle();return data?.value||{task1:{open:0,submit:5,deadline:6,presentation_start:7,presentation_end:8},task2:{open:9,submit:14,deadline:15,presentation_start:16,presentation_end:17},final:{open:18,submit:24,deadline:26,review_end:31}}}
+async function getScheduleConfig(){const {data}=await sb.from('sgt_settings').select('value').eq('key','program_schedule').maybeSingle();return data?.value||{task1:{open:0,submit:5,deadline:6,presentation_start:7,presentation_end:8},task2:{open:9,submit:14,deadline:15,presentation_start:16,presentation_end:17},final:{open:18,submit:24,deadline:26,review_start:27,review_end:31}}}
+function scheduleDate(base,value,fallback){if(typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value))return value;return base&&value!=null?addDays(base,Number(value)):base&&fallback!=null?addDays(base,fallback):null}
 function timelineState(date,kind){const today=new Date();today.setHours(0,0,0,0);if(!date)return'upcoming';const d=new Date(date+'T00:00:00');if(d<today)return'complete';if(d.getTime()===today.getTime())return'current';return'upcoming'}
 async function initPortal(){
   const root=document.getElementById('portalRoot');
@@ -109,15 +110,15 @@ async function initPortal(){
   const scheduleItems=programStart?[
     ['Orientation Session',orient,orient],
     ['Internship Program Start',programStart,programStart],
-    ['Task 1 — Work Window',addDays(programStart,sched.task1.open),addDays(programStart,Math.max(sched.task1.open,(sched.task1.submit||sched.task1.open)-1))],
-    ['Task 1 — Submission',addDays(programStart,sched.task1.submit),addDays(programStart,sched.task1.deadline)],
-    ['Task 1 — Presentation',addDays(programStart,sched.task1.presentation_start),addDays(programStart,sched.task1.presentation_end)],
-    ['Task 2 — Work Window',addDays(programStart,sched.task2.open),addDays(programStart,Math.max(sched.task2.open,(sched.task2.submit||sched.task2.open)-1))],
-    ['Task 2 — Submission',addDays(programStart,sched.task2.submit),addDays(programStart,sched.task2.deadline)],
-    ['Task 2 — Presentation',addDays(programStart,sched.task2.presentation_start),addDays(programStart,sched.task2.presentation_end)],
-    ['Final Project — Work Window',addDays(programStart,sched.final.open),addDays(programStart,Math.max(sched.final.open,(sched.final.submit||sched.final.open)-1))],
-    ['Final Project — Submission',addDays(programStart,sched.final.submit),addDays(programStart,sched.final.deadline)],
-    ['Review & Evaluation',addDays(programStart,27),addDays(programStart,sched.final.review_end)],
+    ['Task 1 — Work Window',scheduleDate(programStart,sched.task1.open,0),scheduleDate(programStart,sched.task1.submit!=null?sched.task1.submit-1:sched.task1.open,5)],
+    ['Task 1 — Submission',scheduleDate(programStart,sched.task1.submit,5),scheduleDate(programStart,sched.task1.deadline,6)],
+    ['Task 1 — Presentation',scheduleDate(programStart,sched.task1.presentation_start,7),scheduleDate(programStart,sched.task1.presentation_end,8)],
+    ['Task 2 — Work Window',scheduleDate(programStart,sched.task2.open,9),scheduleDate(programStart,sched.task2.submit!=null?sched.task2.submit-1:sched.task2.open,13)],
+    ['Task 2 — Submission',scheduleDate(programStart,sched.task2.submit,14),scheduleDate(programStart,sched.task2.deadline,15)],
+    ['Task 2 — Presentation',scheduleDate(programStart,sched.task2.presentation_start,16),scheduleDate(programStart,sched.task2.presentation_end,17)],
+    ['Final Project — Work Window',scheduleDate(programStart,sched.final.open,18),scheduleDate(programStart,sched.final.submit!=null?sched.final.submit-1:sched.final.open,23)],
+    ['Final Project — Submission',scheduleDate(programStart,sched.final.submit,24),scheduleDate(programStart,sched.final.deadline,26)],
+    ['Review & Evaluation',scheduleDate(programStart,sched.final.review_start,27),scheduleDate(programStart,sched.final.review_end,31)],
     ['Internship Completion',programEnd,programEnd]
   ]:[['Orientation Session',null,null],['Internship Program Start',null,null],['Batch End',null,null]];
   const scheduleStatus=(name,state)=>{
@@ -165,7 +166,7 @@ async function initPortal(){
   }else{
     action='<div class="portal-actions"><a class="portal-btn primary" href="assessment.html">Start Selection Assessment →</a></div>';
   }
-  document.getElementById('assessmentAction').innerHTML=action;
+  document.getElementById('assessmentAction').innerHTML=`<div class="assessment-action-highlight">${action}</div>`;
   document.getElementById('startReassessment')?.addEventListener('click',async()=>{const b=document.getElementById('startReassessment');b.disabled=true;b.textContent='Preparing…';const {error}=await sb.from('sgt_profiles').update({selection_round:2,assessment_status:'Not Started',review_status:'Pending',updated_at:new Date().toISOString()}).eq('id',u.id);if(error){toast(error.message);b.disabled=false;b.textContent='Re-Assessment →';return}location.href='assessment.html'});
 
   const [{data:tasks},{data:tf}]=await Promise.all([sb.from('sgt_tasks').select('*').eq('enabled',true).or(`domain.eq.${p.domain},domain.is.null`).order('title'),sb.from('sgt_settings').select('value').eq('key','task_forms').maybeSingle()]);
@@ -173,7 +174,7 @@ async function initPortal(){
   const standard=[{task_key:'task1',title:'Task 1',description:'Complete any 2 of the 3 domain projects.',project_url:''},{task_key:'task2',title:'Task 2',description:'Complete the assigned domain project.',project_url:''},{task_key:'final',title:'Final Project',description:'Choose 1 of the 2 final project options.',project_url:''}];
   const taskItems=(tasks&&tasks.length)?tasks:standard;
   const formFor=t=>{const k=String(t.task_key||t.title).toLowerCase();if(k.includes('task1')||k.includes('task-1')||k.includes('task 1'))return forms.task1;if(k.includes('task2')||k.includes('task-2')||k.includes('task 2'))return forms.task2;if(k.includes('final'))return forms.final;return t.submission_url||''};
-  const dateFor=(key,type)=>{const sc=key.includes('task1')||key.includes('task-1')||key.includes('task 1')?sched.task1:key.includes('task2')||key.includes('task-2')||key.includes('task 2')?sched.task2:sched.final;return programStart&&sc[type]!=null?addDays(programStart,sc[type]):null};
+  const dateFor=(key,type)=>{const sc=key.includes('task1')||key.includes('task-1')||key.includes('task 1')?sched.task1:key.includes('task2')||key.includes('task-2')||key.includes('task 2')?sched.task2:sched.final;const fallback={open:key.includes('task1')?0:key.includes('task2')?9:18,submit:key.includes('task1')?5:key.includes('task2')?14:24,deadline:key.includes('task1')?6:key.includes('task2')?15:26,presentation_start:key.includes('task1')?7:16,presentation_end:key.includes('task1')?8:17,review_start:27,review_end:31}[type];return scheduleDate(programStart,sc[type],fallback)};
   const projectAccess=p.selection_status==='Selected'&&(p.payment_status==='Verified'||p.admin_project_override===true);
   if(!projectAccess){
     const reason=p.selection_status!=='Selected'?'Selection is required before project access.':p.payment_status!=='Verified'?'Project access will open after payment verification.':'Project access is currently restricted.';
@@ -204,7 +205,7 @@ async function initPortal(){
     }catch(e){console.warn('Notification read-state load failed.',e)}
     let localRead=[];try{localRead=JSON.parse(localStorage.getItem(`sgt_note_reads_${u.id}`)||'[]')}catch(_){}
     const localSet=new Set(localRead);
-    return (noteRows||[]).map(x=>({id:x.id,realId:x.id,category:x.category||'Other',message:x.message,created_at:x.created_at,read:readIds.has(x.id)||localSet.has(x.id)})).filter(x=>x.message).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+    return (noteRows||[]).map(x=>({id:x.id,realId:x.id,category:(x.category==='Other'?'General Update':(x.category||'General Update')),message:x.message,created_at:x.created_at,read:readIds.has(x.id)||localSet.has(x.id)})).filter(x=>x.message).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   };
   const updateBadge=()=>{const unread=notificationRows.filter(x=>!x.read).length;if(notificationBadge){notificationBadge.textContent=unread?String(unread):'';notificationBadge.hidden=!unread}};
   const persistLocalRead=id=>{const key=`sgt_note_reads_${u.id}`,arr=JSON.parse(localStorage.getItem(key)||'[]');if(!arr.includes(id)){arr.push(id);localStorage.setItem(key,JSON.stringify(arr.slice(-200)))}};
@@ -216,21 +217,15 @@ async function initPortal(){
   const openNotificationPanel=async()=>{
     const old=document.getElementById('studentNotificationPanel');if(old){old.remove();return}
     try{notificationRows=await getStudentNotes()}catch(e){console.warn('Notification load failed',e);notificationRows=[]}
+    // Opening the notification panel means the student has viewed the notification center.
+    // Mark all currently loaded notifications as seen automatically; there is no manual bulk button.
+    for(const n of notificationRows){if(!n.read)await markNotificationRead(n)}
+    notificationRows=notificationRows.map(x=>({...x,read:true}));
     updateBadge();
     const panel=document.createElement('div');panel.id='studentNotificationPanel';panel.className='student-notification-panel';
-    const unreadCount=notificationRows.filter(x=>!x.read).length;
-    panel.innerHTML=`<div class="student-notification-panel-head"><div><strong>Notifications</strong><small>${unreadCount} unread</small></div><button class="close-btn" type="button" aria-label="Close notifications">×</button></div><div class="student-notification-list">${notificationRows.length?notificationRows.map(x=>`<button type="button" class="student-notification-item ${x.read?'read':'unread'}" data-note-id="${esc(x.id)}"><span class="note-icon">🔔</span><span><strong>${esc(x.category)}</strong><small>${esc(x.message)}</small><em>${adt(x.created_at)}${x.read?' • Seen':''}</em></span></button>`).join(''):'<div class="admin-note-empty">No notifications yet.</div>'}</div><div class="student-notification-panel-foot"><button type="button" class="portal-btn secondary" id="markAllNotifications">Mark all as seen</button></div>`;
+    panel.innerHTML=`<div class="student-notification-panel-head"><div><strong>Notifications</strong><small>All caught up</small></div><button class="close-btn" type="button" aria-label="Close notifications">×</button></div><div class="student-notification-list">${notificationRows.length?notificationRows.map(x=>`<button type="button" class="student-notification-item read" data-note-id="${esc(x.id)}"><span class="note-icon">🔔</span><span><strong>${esc(x.category)}</strong><small style="white-space:pre-line">${esc(x.message)}</small><em>${adt(x.created_at)} • Seen</em></span></button>`).join(''):'<div class="admin-note-empty">No notifications yet.</div>'}</div>`;
     document.body.appendChild(panel);requestAnimationFrame(()=>panel.classList.add('open'));
     panel.querySelector('.close-btn').onclick=()=>panel.remove();
-    panel.querySelectorAll('.student-notification-item').forEach(item=>item.onclick=async()=>{
-      const n=notificationRows.find(x=>String(x.id)===String(item.dataset.noteId));
-      if(n){await markNotificationRead(n);item.classList.remove('unread');item.classList.add('read');const em=item.querySelector('em');if(em&&!em.textContent.includes('Seen'))em.textContent+=' • Seen';const small=panel.querySelector('.student-notification-panel-head small');if(small)small.textContent=`${notificationRows.filter(x=>!x.read).length} unread`;}
-    });
-    panel.querySelector('#markAllNotifications').onclick=async()=>{
-      for(const n of notificationRows)await markNotificationRead(n);
-      panel.querySelectorAll('.student-notification-item').forEach(item=>{item.classList.remove('unread');item.classList.add('read');const em=item.querySelector('em');if(em&&!em.textContent.includes('Seen'))em.textContent+=' • Seen';});
-      const small=panel.querySelector('.student-notification-panel-head small');if(small)small.textContent='0 unread';updateBadge();
-    };
   };
   const showNotification=note=>{if(!note)return;const old=document.querySelector('.admin-note-popup');if(old)old.remove();const pop=document.createElement('div');pop.className='admin-note-popup';pop.innerHTML=`<div class="admin-note-panel is-new"><div class="admin-note-head"><span class="note-icon">🔔</span><div><strong>New Notification</strong><small>${esc(note.category)} • From SoftGrowTech Team</small></div><button type="button" class="close-btn" style="margin-left:auto">×</button></div><p>${esc(note.message)}</p><small class="admin-note-date">${adt(note.created_at)}</small><div class="portal-actions" style="margin-top:12px"><button type="button" class="portal-btn primary" id="popupMarkSeen">Mark as Seen</button></div></div>`;document.body.appendChild(pop);notificationBell?.classList.add('notification-bell-new');setTimeout(()=>notificationBell?.classList.remove('notification-bell-new'),900);pop.querySelector('.close-btn').onclick=()=>pop.remove();pop.querySelector('#popupMarkSeen').onclick=async()=>{await markNotificationRead(note);pop.remove()};setTimeout(()=>{if(pop.isConnected)pop.remove()},9000)};
   const updateNotifications=async(showPopup)=>{const before=new Set(notificationRows.filter(x=>!x.read).map(x=>x.id));notificationRows=await getStudentNotes();updateBadge();const newest=notificationRows.find(x=>!x.read);if(showPopup&&newest&&!before.has(newest.id))showNotification(newest)};
@@ -240,22 +235,47 @@ async function initPortal(){
   setInterval(()=>updateNotifications(true).catch(e=>console.warn('Notification refresh failed.',e)),8000);
 
 
-  function makeDocumentPdf(kind){
-    if(!window.jspdf?.jsPDF)return null;
-    const {jsPDF}=window.jspdf, doc=new jsPDF({unit:'mm',format:'a4'}); const W=210;
-    doc.setFillColor(6,26,51); doc.rect(0,0,W,28,'F'); doc.setTextColor(255,255,255); doc.setFontSize(20); doc.setFont(undefined,'bold'); doc.text('SoftGrowTech',20,17); doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.text('Learn • Build • Evolve',20,23);
-    doc.setTextColor(15,23,42); doc.setFontSize(18); doc.setFont(undefined,'bold'); doc.text(kind==='offer'?'INTERNSHIP OFFER LETTER':'CERTIFICATE OF INTERNSHIP',W/2,48,{align:'center'});
-    doc.setFontSize(11); doc.setFont(undefined,'normal');
+  async function makeDocumentPdf(kind){
+    if(!window.PDFLib?.PDFDocument)return null;
+    const {PDFDocument,StandardFonts,rgb}=window.PDFLib;
+    const templateUrl=kind==='offer'?'assets/document-templates/offer-letter-template.pdf':'assets/document-templates/certificate-template.pdf';
+    const response=await fetch(templateUrl,{cache:'no-store'});
+    if(!response.ok)throw new Error('Document template could not be loaded.');
+    const bytes=await response.arrayBuffer();
+    const doc=await PDFDocument.load(bytes);
+    const page=doc.getPages()[0],W=page.getWidth(),H=page.getHeight();
+    const font=await doc.embedFont(StandardFonts.Helvetica);
+    const bold=await doc.embedFont(StandardFonts.HelveticaBold);
+    const white=rgb(1,1,1),black=rgb(0.08,0.12,0.18);
+
+    const cover=(x,yTop,w,h)=>page.drawRectangle({x,y:H-yTop-h,width:w,height:h,color:white});
+    const text=(str,x,yTop,size=10,f=font)=>page.drawText(String(str??''),{x,y:H-yTop-size,size,font:f,color:black});
+    const center=(str,yTop,size=10,f=font)=>{const value=String(str??''),tw=f.widthOfTextAtSize(value,size);text(value,(W-tw)/2,yTop,size,f)};
+
     if(kind==='offer'){
-      doc.text(`Offer Letter ID: ${p.offer_letter_id||'SGT-OFFER-'+String(p.student_id||'RECORD').replace(/[^0-9A-Z]/gi,'').slice(-10)}`,20,63); doc.text(`Issue Date: ${new Date().toLocaleDateString('en-GB')}`,20,72); doc.text(`Student ID: ${p.student_id||''}`,20,81); doc.text(`Domain: ${p.domain||''}`,20,90);
-      doc.setFont(undefined,'bold'); doc.text(`Dear ${p.name||'Student'},`,20,107); doc.setFont(undefined,'normal');
-      const lines=doc.splitTextToSize(`We are pleased to confirm your selection to join the SoftGrowTech Career Training & Internship Program in ${p.domain||'your selected domain'}. This is a one-month online, project-based learning experience with guided tasks, mentor support, project review, presentations and career preparation.`,170); doc.text(lines,20,117);
-      doc.setFont(undefined,'bold'); doc.text('Program Details',20,139); doc.setFont(undefined,'normal'); doc.text(`Domain: ${p.domain||''}`,25,149); doc.text('Duration: 1 Month',25,158); doc.text('Mode: Online',25,167); doc.text('Experience: Project-Based Learning',25,176);
-      doc.text('We look forward to seeing your practical work, participation and professional growth.',20,193);
+      // Replace only the variable fields; the original supplied Offer Letter artwork remains the base.
+      cover(15,192,575,22);
+      text(`Issue Date: ${p.offer_issue_date||p.issue_date||new Date().toLocaleDateString('en-GB')}`,30,196,9.8,font);
+      text(`Student ID: ${p.student_id||''}`,410,196,9.8,font);
+      cover(15,213,300,20);
+      text(`Domain: ${p.domain||''}`,30,216,9.8,font);
+      cover(30,236,220,23);
+      text(`Dear  ${p.name||'Student'} ,`,38,239,10.5,font);
+      cover(30,364,300,20);
+      text(`● Position / Domain: ${p.domain||''}`,38,367,10.5,font);
+      cover(30,441,300,20);
+      text(`● Start Date: ${p.batch_start?dateFmt(p.batch_start):''}`,38,444,10.5,font);
     }else{
-      doc.setFont(undefined,'normal'); doc.text('This certificate is awarded to',W/2,70,{align:'center'}); doc.setFontSize(22); doc.setFont(undefined,'bold'); doc.text(p.name||'Student',W/2,87,{align:'center'}); doc.setFontSize(11); doc.setFont(undefined,'normal'); doc.text('In recognition of successfully completing the Virtual Internship Program at SoftGrowTech',W/2,102,{align:'center'}); doc.setFont(undefined,'bold'); doc.text(p.domain||'',W/2,117,{align:'center'}); doc.setFont(undefined,'normal'); doc.text(`Program Period: ${programStart?dateFmt(programStart):''} – ${programEnd?dateFmt(programEnd):''}`,W/2,133,{align:'center'}); doc.text(`Certificate ID: ${p.certificate_id||'SGT-CERT-'+String(p.student_id||'CERT').replace(/[^0-9A-Z]/gi,'').slice(-10)}`,W/2,146,{align:'center'}); doc.text('Congratulations on your achievement.',W/2,166,{align:'center'});
+      // Certificate is landscape and keeps the exact supplied certificate artwork.
+      cover(150,233,545,38);
+      center(p.name||'Student',241,22,bold);
+      cover(45,289,755,61);
+      center('In recognition of successfully completing the Virtual Internship Program at SoftGrowTech',296,12,font);
+      center(`from ${p.batch_start?dateFmt(p.batch_start):''} to ${programEnd?dateFmt(programEnd):''} in ${p.domain||''},`,315,12,font);
+      cover(565,49,235,30);
+      text(`Certificate ID: ${certificateId}`,573,53,10,bold);
     }
-    doc.setFontSize(9); doc.text('SoftGrowTech • Practical learning, projects and career-focused development',20,278); return doc;
+    return await doc.save();
   }
   const docs=[];
   const selectionOk=String(p.selection_status||'').trim().toLowerCase()==='selected';
@@ -271,15 +291,19 @@ async function initPortal(){
   const docBox=document.getElementById('documentActions');
   if(docBox){
     docBox.innerHTML=docs.join('')||'<span class="help-note">Your documents will appear here when they are issued.</span>';
-    const openDocumentViewer=(kind)=>{
-      const d=makeDocumentPdf(kind);if(!d)return toast('PDF generator is unavailable.');
-      const blob=d.output('blob'),url=URL.createObjectURL(blob),name=kind==='offer'?offerId:certificateId;
-      const modal=document.createElement('div');modal.className='document-viewer-modal';modal.innerHTML=`<div class="document-viewer-card"><div class="document-viewer-head"><div><strong>${kind==='offer'?'Offer Letter':'Certificate'}</strong><small>${esc(name)} • Available</small></div><button type="button" class="close-btn" aria-label="Close document">×</button></div><iframe class="document-viewer-frame" title="${kind==='offer'?'Offer Letter':'Certificate'}" src="${url}"></iframe><div class="document-viewer-actions"><button type="button" class="portal-btn secondary" id="documentViewerClose">Close</button><button type="button" class="portal-btn primary" id="documentViewerDownload">Download PDF</button></div></div>`;
-      document.body.appendChild(modal);document.body.classList.add('document-viewer-open');
-      const close=()=>{URL.revokeObjectURL(url);modal.remove();document.body.classList.remove('document-viewer-open')};
-      modal.querySelector('.close-btn').onclick=close;modal.querySelector('#documentViewerClose').onclick=close;modal.querySelector('#documentViewerDownload').onclick=()=>d.save(`${name}.pdf`);
-      modal.addEventListener('click',e=>{if(e.target===modal)close()});
+    const openDocumentViewer=async(kind)=>{
+      try{
+        const bytes=await makeDocumentPdf(kind);if(!bytes)return toast('PDF generator is unavailable.');
+        const blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),name=kind==='offer'?offerId:certificateId;
+        const modal=document.createElement('div');modal.className='document-viewer-modal';modal.innerHTML=`<div class="document-viewer-card"><div class="document-viewer-head"><div><strong>${kind==='offer'?'Offer Letter':'Certificate'}</strong><small>${esc(name)} • Available</small></div><button type="button" class="close-btn" aria-label="Close document">×</button></div><iframe class="document-viewer-frame" title="${kind==='offer'?'Offer Letter':'Certificate'}" src="${url}"></iframe><div class="document-viewer-actions"><button type="button" class="portal-btn secondary" id="documentViewerClose">Close</button><button type="button" class="portal-btn primary" id="documentViewerDownload">Download PDF</button></div></div>`;
+        document.body.appendChild(modal);document.body.classList.add('document-viewer-open');
+        const close=()=>{URL.revokeObjectURL(url);modal.remove();document.body.classList.remove('document-viewer-open')};
+        modal.querySelector('.close-btn').onclick=close;modal.querySelector('#documentViewerClose').onclick=close;
+        modal.querySelector('#documentViewerDownload').onclick=()=>{const a=document.createElement('a');a.href=url;a.download=`${name}.pdf`;a.click()};
+        modal.addEventListener('click',e=>{if(e.target===modal)close()});
+      }catch(e){console.error(e);toast(e.message||'Unable to generate document.')}
     };
+
     docBox.querySelectorAll('.generated-doc').forEach(b=>b.onclick=()=>openDocumentViewer(b.dataset.doc));
   }
   if(p.selection_status==='Selected'){
@@ -288,7 +312,46 @@ async function initPortal(){
   let lastSelectionStatus=p.selection_status;
   setInterval(async()=>{try{const {data:latestProfile}=await sb.from('sgt_profiles').select('selection_status').eq('id',u.id).maybeSingle();if(latestProfile?.selection_status==='Selected'&&lastSelectionStatus!=='Selected'){lastSelectionStatus='Selected';const session=await sb.auth.getSession();const token=session.data.session?.access_token;if(token)await fetch(`${SGT_URL}/functions/v1/sgt-send-selection-email`,{method:'POST',headers:{Authorization:`Bearer ${token}`,apikey:SGT_KEY,'Content-Type':'application/json'},body:'{}'});location.reload()}}catch(e){}},15000);
 }
-async function initAssessment(){const root=document.getElementById('assessmentRoot');if(!root)return;const u=await user();if(!u){location.href='student-login.html';return}const p=await profile();if(!p)return;const set=p.selection_status==='Not Selected'?'reassessment':'primary';let {data:q}=await sb.from('sgt_assessment_questions').select('*').eq('domain',p.domain).eq('question_set',set).eq('enabled',true).order('question_no');if(!q?.length){root.innerHTML='<div class="portal-card"><h1>Assessment is being prepared</h1><p>Your domain-specific questions have not been published yet.</p><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div>';return}q=q.slice(0,10);if(p.assessment_status==='Complete'&&set==='reassessment'&&Number(p.selection_round||1)>=2){root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Re-Assessment</div><h1>Re-Assessment Under Review</h1><div class="success-panel"><strong>Your re-assessment has already been submitted.</strong><p>Please wait for the management team to update your final selection/refund status.</p></div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;return}if(p.assessment_status==='Complete'&&set==='primary'){root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Selection Assessment</div><h1>Assessment Under Review</h1><div class="success-panel"><strong>Your assessment has already been submitted.</strong><p>Payment: ${esc(p.payment_status)}<br>Assessment: Complete<br>Overall Review: ${esc(p.review_status)}</p></div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;return}let i=0,ans={};const intro=()=>{root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Selection Assessment</div><h1>Before you begin</h1><p>This interview-style assessment helps our team understand your fundamentals, problem-solving approach and readiness for the selected program.</p><div class="portal-meta"><div class="meta-box"><small>Name</small><strong>${esc(p.name)}</strong></div><div class="meta-box"><small>Student ID</small><strong>${esc(p.student_id)}</strong></div><div class="meta-box"><small>Domain</small><strong>${esc(p.domain)}</strong></div><div class="meta-box"><small>Payment</small><strong>${esc(p.payment_status)}</strong></div></div><div class="help-note" style="margin-top:18px">First complete the enrollment payment step. After you submit your payment receipt and transaction ID, you can continue directly to this assessment while payment verification is in progress.</div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a><button class="portal-btn primary" id="continueAssess">Continue →</button></div></div>`;document.getElementById('continueAssess').onclick=()=>{if(p.payment_status==='Pending')location.href='enrollment.html';else renderQuestion()}};const renderQuestion=()=>{root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Selection Assessment</div><h1>Question ${i+1} of ${q.length}</h1><p>${esc(q[i].question)}</p><div class="help-note">${i} completed • ${q.length-i-1} remaining. Scores are not shown to students.</div><div class="field" style="margin-top:15px"><label>Your answer</label><textarea id="answer" rows="7" placeholder="Write your answer clearly…">${esc(ans[q[i].id]||'')}</textarea></div><div class="portal-actions"><button class="portal-btn secondary" id="prev" ${i===0?'disabled':''}>← Previous</button><button class="portal-btn primary" id="next">${i===q.length-1?'Review & Submit →':'Save & Continue →'}</button></div></div>`;document.getElementById('prev').onclick=()=>{ans[q[i].id]=document.getElementById('answer').value;i--;renderQuestion()};document.getElementById('next').onclick=()=>{ans[q[i].id]=document.getElementById('answer').value;if(i<q.length-1){i++;renderQuestion();return}renderReview()}};const renderReview=()=>{root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Final Check</div><h1>Review Your Answers</h1><p>Please carefully check all your answers before final submission. Once submitted, your assessment will be sent for evaluation.</p>${q.map((x,n)=>`<div class="review-answer"><small>Question ${n+1}</small><strong>${esc(x.question)}</strong><p style="margin:7px 0 0;white-space:pre-wrap">${esc(ans[x.id]||'No answer provided')}</p></div>`).join('')}<div class="help-note" style="margin-top:18px">Please make sure your answers are complete and correct before you submit.</div><div class="portal-actions"><button class="portal-btn secondary" id="backCheck">← Back & Check Answers</button><button class="portal-btn primary" id="finalSubmit">Submit Assessment →</button></div></div>`;document.getElementById('backCheck').onclick=()=>renderQuestion();document.getElementById('finalSubmit').onclick=async()=>{const btn=document.getElementById('finalSubmit');btn.disabled=true;btn.textContent='Submitting…';const {data:a,error}=await sb.from('sgt_assessment_attempts').insert({student_id:p.student_id,user_id:u.id,attempt_no:Date.now(),question_set:set,status:'Complete',submitted_at:new Date().toISOString()}).select().single();if(error){toast(error.message);btn.disabled=false;btn.textContent='Submit Assessment →';return}const {error:ae}=await sb.from('sgt_assessment_answers').insert(q.map(x=>({attempt_id:a.id,question_id:x.id,answer:ans[x.id]||''})));if(ae){toast(ae.message);return}const mark=await sb.rpc('sgt_mark_assessment_review');if(mark.error)return toast(mark.error.message);root.innerHTML='<div class="portal-card"><div class="success-panel"><h1>Submission Received ✓</h1><p><strong>Payment and Selection Assessment are now Under Review.</strong></p><p>Our team will review your submitted payment details and assessment. Your selection status will be updated after the review is completed.</p></div><div class="portal-actions"><a class="portal-btn primary" href="portal.html">Back to Dashboard →</a></div></div>'}};intro()}
+async function initAssessment(){
+  const root=document.getElementById('assessmentRoot');
+  if(!root)return;
+  const u=await user();
+  if(!u){location.href='student-login.html';return}
+  const p=await profile();
+  if(!p)return;
+  const today=new Date();today.setHours(0,0,0,0);
+  const orientationDate=p.batch_start?addDays(p.batch_start,-2):null;
+  const orientationComplete=Boolean(orientationDate)&&today>=new Date(orientationDate+'T00:00:00');
+  const set=p.selection_status==='Not Selected'?'reassessment':'primary';
+
+  if(!orientationComplete){
+    root.innerHTML=`<div class="portal-card assessment-gate-card"><div class="portal-kicker">Selection Assessment</div><h1>Orientation Required</h1><p>You can start the assessment after completing the orientation.</p><div class="help-note"><strong>Orientation meeting is mandatory.</strong><br>Orientation details and meeting information will be shared in the official WhatsApp group.</div><div class="success-panel" style="margin-top:16px"><strong>All the best for your assessment and selection! 🎉</strong></div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;
+    return;
+  }
+
+  let {data:q}=await sb.from('sgt_assessment_questions').select('*').eq('domain',p.domain).eq('question_set',set).eq('enabled',true).order('question_no');
+  const questionsReady=Boolean(q?.length);
+  q=(q||[]).slice(0,10);
+
+  if(p.assessment_status==='Complete'&&set==='reassessment'&&Number(p.selection_round||1)>=2){root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Re-Assessment</div><h1>Re-Assessment Under Review</h1><div class="success-panel"><strong>Your re-assessment has already been submitted.</strong><p>Please wait for the management team to update your final selection/refund status.</p></div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;return}
+  if(p.assessment_status==='Complete'&&set==='primary'){root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Selection Assessment</div><h1>Assessment Under Review</h1><div class="success-panel"><strong>Your assessment has already been submitted.</strong><p>Payment: ${esc(p.payment_status)}<br>Assessment: Complete<br>Overall Review: ${esc(p.review_status)}</p></div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;return}
+
+  const feePolicy=`<div class="help-note"><strong>Enrollment Fee</strong><br>The applicable one-time nominal Enrollment Fee is shown before payment. It supports assessment/enrollment processing, participant record handling, verification, program coordination and related support.<br><br><strong>Refund if not selected:</strong> The applicable Enrollment Fee is eligible for refund under the refund process. Refund processing is initiated after the selection decision and is processed within 3 working days, subject to payment verification and the stated program terms.</div>`;
+  let i=0,ans={};
+  const intro=()=>{
+    root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Selection Assessment</div><h1>Before you begin</h1><p>This interview-style assessment helps our team understand your fundamentals, problem-solving approach and readiness for the selected program.</p><div class="portal-meta"><div class="meta-box"><small>Name</small><strong>${esc(p.name)}</strong></div><div class="meta-box"><small>Student ID</small><strong>${esc(p.student_id)}</strong></div><div class="meta-box"><small>Domain</small><strong>${esc(p.domain)}</strong></div><div class="meta-box"><small>Orientation</small><strong>Completed</strong></div></div>${feePolicy}<div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a><button class="portal-btn primary" id="nextAssessInfo">Next →</button></div></div>`;
+    document.getElementById('nextAssessInfo').onclick=showPaymentInfo;
+  };
+  const showPaymentInfo=()=>{
+    const alreadyPaid=!['Pending','Refunded',''].includes(String(p.payment_status||''));
+    root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Enrollment & Selection</div><h1>Assessment Information</h1><p>Before starting the questions, please review the enrollment and selection terms carefully.</p>${feePolicy}<div class="help-note" style="margin-top:16px"><strong>Selection Process</strong><br>After you submit the assessment, your application and payment details will be reviewed. If you are selected, your selection status will be updated on your dashboard and the selected notification will be sent to you.</div><div class="help-note" style="margin-top:16px"><strong>Important</strong><br>The Enrollment Fee is not an initial registration fee. The applicable amount and payment methods are displayed clearly on the payment page before you submit payment.</div>${alreadyPaid?`<div class="success-panel" style="margin-top:16px"><strong>Payment Submitted</strong><p style="margin:6px 0 0">Your payment status is <strong>${esc(p.payment_status)}</strong>. You can continue to the assessment.</p></div>`:''}<div class="portal-actions"><button class="portal-btn secondary" id="backIntro">← Back</button><button class="portal-btn primary" id="nextToPayment">${alreadyPaid?'Continue Assessment →':'Next →'}</button></div></div>`;
+    document.getElementById('backIntro').onclick=intro;
+    document.getElementById('nextToPayment').onclick=()=>{if(!alreadyPaid){location.href='enrollment.html';return}if(!questionsReady){root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Selection Assessment</div><h1>Assessment Questions Not Published</h1><p>Your orientation is complete and your payment has been submitted, but the domain-specific assessment questions are not published yet.</p><div class="help-note">Please check your dashboard or official WhatsApp group for updates.</div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;return}renderQuestion()};
+  };
+  const renderQuestion=()=>{root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Selection Assessment</div><h1>Question ${i+1} of ${q.length}</h1><p>${esc(q[i].question)}</p><div class="help-note">${i} completed • ${q.length-i-1} remaining. Scores are not shown to students.</div><div class="field" style="margin-top:15px"><label>Your answer</label><textarea id="answer" rows="7" placeholder="Write your answer clearly…">${esc(ans[q[i].id]||'')}</textarea></div><div class="portal-actions"><button class="portal-btn secondary" id="prev" ${i===0?'disabled':''}>← Previous</button><button class="portal-btn primary" id="next">${i===q.length-1?'Review & Submit →':'Save & Continue →'}</button></div></div>`;document.getElementById('prev').onclick=()=>{ans[q[i].id]=document.getElementById('answer').value;i--;renderQuestion()};document.getElementById('next').onclick=()=>{ans[q[i].id]=document.getElementById('answer').value;if(i<q.length-1){i++;renderQuestion();return}renderReview()}};
+  const renderReview=()=>{root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Final Check</div><h1>Review Your Answers</h1><p>Please carefully check all your answers before final submission. Once submitted, your assessment will be sent for evaluation.</p>${q.map((x,n)=>`<div class="review-answer"><small>Question ${n+1}</small><strong>${esc(x.question)}</strong><p style="margin:7px 0 0;white-space:pre-wrap">${esc(ans[x.id]||'No answer provided')}</p></div>`).join('')}<div class="help-note" style="margin-top:18px">Please make sure your answers are complete and correct before you submit.</div><div class="portal-actions"><button class="portal-btn secondary" id="backCheck">← Back & Check Answers</button><button class="portal-btn primary" id="finalSubmit">Submit Assessment →</button></div></div>`;document.getElementById('backCheck').onclick=()=>renderQuestion();document.getElementById('finalSubmit').onclick=async()=>{const btn=document.getElementById('finalSubmit');btn.disabled=true;btn.textContent='Submitting…';const {data:a,error}=await sb.from('sgt_assessment_attempts').insert({student_id:p.student_id,user_id:u.id,attempt_no:Date.now(),question_set:set,status:'Complete',submitted_at:new Date().toISOString()}).select().single();if(error){toast(error.message);btn.disabled=false;btn.textContent='Submit Assessment →';return}const {error:ae}=await sb.from('sgt_assessment_answers').insert(q.map(x=>({attempt_id:a.id,question_id:x.id,answer:ans[x.id]||''})));if(ae){toast(ae.message);return}const mark=await sb.rpc('sgt_mark_assessment_review');if(mark.error)return toast(mark.error.message);root.innerHTML='<div class="portal-card"><div class="success-panel"><h1>Submission Received ✓</h1><p><strong>Payment and Selection Assessment are now Under Review.</strong></p><p>Our team will review your submitted payment details and assessment. Your selection status will be updated after the review is completed.</p></div><div class="portal-actions"><a class="portal-btn primary" href="portal.html">Back to Dashboard →</a></div></div>'}};
+  intro();
+}
 async function initEnrollment(){
   const root=document.getElementById('enrollmentRoot');
   if(!root)return;
@@ -299,13 +362,21 @@ async function initEnrollment(){
   const {data:s}=await sb.from('sgt_settings').select('value').eq('key','payment').maybeSingle();
   const cfg=s?.value||{};
   const methods=[];
-  if(cfg.india?.enabled)methods.push({key:'india',name:'India — UPI',fee:`${cfg.india.fee||'149'} ${cfg.india.currency||'INR'}`,details:cfg.india.details||'',qr:cfg.india.qr_url||''});
-  if(cfg.pakistan?.enabled)methods.push({key:'pakistan',name:'Pakistan — JazzCash / Easypaisa',fee:`${cfg.pakistan.fee||'499'} ${cfg.pakistan.currency||'PKR'}`,details:cfg.pakistan.details||'',qr:cfg.pakistan.qr_url||''});
-  const intl=cfg.international||{};
-  ['binance','paypal','wise'].forEach(k=>{
-    const x=intl[k]||{};
-    if(x.enabled!==false)methods.push({key:k,name:k==='binance'?'Binance':k==='paypal'?'PayPal':'Wise',fee:`${x.fee||intl.fee||'5'} ${x.currency||intl.currency||'USD'}`,details:x.details||'',qr:x.qr_url||''});
-  });
+  const country=String(p.country||'').trim().toLowerCase();
+  const isIndia=['india','in','bharat'].includes(country);
+  const isPakistan=['pakistan','pk'].includes(country);
+  if(isIndia){
+    if(cfg.india?.enabled)methods.push({key:'india',name:'India — UPI',fee:`${cfg.india.fee||'149'} ${cfg.india.currency||'INR'}`,details:cfg.india.details||'',qr:cfg.india.qr_url||''});
+  }else if(isPakistan){
+    if(cfg.pakistan?.enabled)methods.push({key:'pakistan',name:'Pakistan — JazzCash / Easypaisa',fee:`${cfg.pakistan.fee||'499'} ${cfg.pakistan.currency||'PKR'}`,details:cfg.pakistan.details||'',qr:cfg.pakistan.qr_url||''});
+  }else{
+    const intl=cfg.international||{};
+    ['binance','paypal','wise'].forEach(k=>{
+      const x=intl[k]||{};
+      if(x.enabled!==false)methods.push({key:k,name:k==='binance'?'Binance':k==='paypal'?'PayPal':'Wise',fee:`${x.fee||intl.fee||'5'} ${x.currency||intl.currency||'USD'}`,details:x.details||'',qr:x.qr_url||''});
+    });
+  }
+  if(!methods.length){root.innerHTML=`<div class="portal-card"><h1>Payment Method Unavailable</h1><p>No payment method is currently configured for your registered country. Please contact SoftGrowTech support.</p><div class="portal-actions"><a class="portal-btn secondary" href="assessment.html">Back to Assessment</a><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;return;}
   root.innerHTML=`<div class="portal-card"><div class="portal-kicker">Enrollment</div><h1>Enroll Fee & Payment</h1><p>Choose your payment method, review the complete payment details, then submit your transaction ID and receipt. You can continue to the selection assessment while payment verification is in progress.</p><div class="help-note">🔐 <strong>Payment Verification in Progress</strong><br>Your payment details will be reviewed by our team. You may continue with the interview-based assessment while your payment is being verified.</div><h3 style="margin-top:22px">Choose Payment Method</h3><div id="methodList">${methods.map((x,n)=>`<div class="method-card ${n===0?'open':''}" data-key="${esc(x.key)}"><button class="method-toggle" type="button"><span>${esc(x.name)}</span><span>${esc(x.fee)} ▾</span></button><div class="method-body"><p><strong>Payment Details</strong>\n${esc(x.details||'Payment details are configured by SoftGrowTech.')}</p>${x.qr?`<img class="receipt-preview" src="${esc(x.qr)}" alt="${esc(x.name)} QR">`:''}</div></div>`).join('')}</div><form id="paymentForm" class="form-grid" style="margin-top:22px"><div class="field"><label>Payment Method</label><select id="payMethod" required>${methods.map(x=>`<option value="${esc(x.key)}">${esc(x.name)}</option>`).join('')}</select></div><div class="field"><label>Transaction ID</label><input id="txn" required></div><div class="field"><label>Receipt</label><input id="receipt" type="file" accept="image/*,.pdf" required></div><div class="field"><label>Student ID</label><input value="${esc(p.student_id)}" disabled></div><div class="field"><label>Registered Gmail</label><input value="${esc(p.email)}" disabled></div><div class="field full"><button class="portal-btn primary" type="submit">Submit Payment for Verification →</button></div></form><div class="portal-actions"><a class="portal-btn secondary" href="assessment.html">Continue Selection Assessment →</a><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;
   document.querySelectorAll('.method-toggle').forEach(btn=>btn.onclick=()=>{const card=btn.closest('.method-card');document.querySelectorAll('.method-card').forEach(c=>{if(c!==card)c.classList.remove('open')});card.classList.toggle('open');document.getElementById('payMethod').value=card.dataset.key});
   document.getElementById('paymentForm').onsubmit=async e=>{

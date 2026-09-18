@@ -1,0 +1,13 @@
+V12 Email Update
+
+The existing registration confirmation flow is intentionally unchanged.
+Only the requested WhatsApp group section was added to the registration email template.
+
+Required behavior:
+- Keep the existing confirmation URL/button exactly as before.
+- Keep the existing email confirmation -> dashboard flow.
+- WhatsApp group URL must continue to come from the existing Admin Panel registration_group setting.
+- The added section text is exactly the requested wording.
+
+Before deploying the email template, connect the "Join Official WhatsApp Group" href
+to the existing Admin Panel-controlled registration_group value used by the project.

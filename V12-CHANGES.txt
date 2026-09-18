@@ -1,0 +1,19 @@
+SoftGrowTech Dashboard V12
+
+Base: V11
+
+Implemented changes:
+1. Registration welcome email now asks the student to confirm email first, then join the official WhatsApp group. The group link is passed from the current registration_group setting at registration time, and the email explains that internship updates, announcements, tasks and presentation schedules are shared in the group.
+2. Assessment page is now gated by orientation. Before the orientation date (batch start minus 2 days), clicking Start Assessment shows the mandatory-orientation message and the requested all-the-best message instead of the old "Assessment is being prepared" screen.
+3. Assessment button on the student dashboard is visually highlighted for better visibility.
+4. After orientation, assessment opens an information flow first: assessment overview, enrollment-fee purpose, non-selection refund policy, and selection-review information. The student proceeds to the enrollment/payment page before starting questions.
+5. If payment has already been submitted, the assessment information page offers Continue Assessment instead of sending the student back to payment. If questions are not yet published, a clear questions-not-published message is shown after the information/payment stage.
+6. Enrollment/payment options are now filtered by registered country: India -> India UPI settings only; Pakistan -> Pakistan JazzCash/Easypaisa settings only; other countries -> configured international methods (Binance/PayPal/Wise) only. No country-irrelevant methods are displayed.
+7. Existing notification behavior from V11 remains: opening the notification center automatically marks loaded notifications as seen and there is no Mark All as Seen button.
+8. Existing note history, professional categories, selection notification, date-picker scheduling, template-based documents, Founder-only Activity Log, Team Terms & Conditions, and Founder-controlled team passwords remain intact from V11.
+
+Deployment notes:
+- The registration email template file is REGISTRATION-WELCOME-EMAIL-TEMPLATE.html. Paste/update the corresponding Supabase Auth Confirm signup email template so the new WhatsApp group section is used.
+- The group URL is read from the public-readable sgt_settings row with key registration_group and stored in signup user metadata as whatsapp_group_url for the confirmation email.
+- Payment country filtering is based on the country stored in sgt_profiles. Keep the country values consistent (India/Pakistan or common abbreviations).
+- No Supabase schema migration is included because V12 uses the existing V11 tables/settings.
