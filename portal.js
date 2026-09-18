@@ -142,7 +142,8 @@ async function initPortal(){
 
   const {data:grp}=await sb.from('sgt_settings').select('value').eq('key','registration_group').maybeSingle();
   const groupUrl=p.whatsapp_group_url||grp?.value?.url||'';
-  document.getElementById('groupAction').innerHTML=groupUrl?`<a class="portal-btn secondary" href="${esc(groupUrl)}" target="_blank" rel="noopener">Join Official WhatsApp Group →</a>`:'';
+  const groupAction=document.getElementById('groupAction');
+  if(groupAction) groupAction.innerHTML=groupUrl?`<a class="portal-btn secondary" href="${esc(groupUrl)}" target="_blank" rel="noopener">Join Official WhatsApp Group →</a>`:'';
 
   let action='';
   const hasPaid=p.payment_status && !['Pending','Refunded'].includes(p.payment_status);
