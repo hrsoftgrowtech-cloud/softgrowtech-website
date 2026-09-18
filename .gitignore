@@ -1,0 +1,4 @@
+# Private document templates must never be committed to a public/static website repo.
+_PRIVATE_UPLOAD_ONLY/
+**/offer-letter-template.pdf
+**/certificate-template.pdf

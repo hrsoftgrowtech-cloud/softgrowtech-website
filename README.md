@@ -58,3 +58,6 @@ No build command is required for the static website.
 
 ## V12
 V12 adds country-aware enrollment payment display, orientation-gated assessment flow, assessment information/refund step, a prominent dashboard assessment action, and a registration email WhatsApp-group reminder using the current registration group setting.
+
+## Secure Documents
+Offer Letter and Certificate templates are no longer served from the public website. Deploy `supabase/functions/sgt-generate-document/index.ts` and store the two PDFs in the private `private-document-templates` Supabase Storage bucket. See `PRIVATE-DOCUMENT-TEMPLATES-SETUP.md`.

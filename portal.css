@@ -47,3 +47,8 @@
 
 .note-history-list{display:grid;gap:10px}.note-history-item{border:1px solid var(--portal-border);border-radius:13px;padding:13px;background:#fbfdff}.note-history-item p{margin:9px 0 5px;white-space:pre-line;color:#1e293b}.note-history-item small{color:var(--portal-muted);font-size:11px}.team-terms-card ul{margin:10px 0 22px;padding-left:20px;color:#475569;line-height:1.8}.team-terms-card li{margin:3px 0}.team-terms-card h3{margin-top:20px}.team-terms-card h3:first-child{margin-top:0}
 .assessment-gate-card{max-width:760px;margin:25px auto}.assessment-gate-card h1{font-size:clamp(32px,7vw,48px);margin-bottom:10px}.assessment-gate-card .portal-actions .portal-btn.primary{min-height:52px;padding:14px 20px}.assessment-action-highlight{margin-top:18px;padding:18px;border:2px solid #bfdbfe;background:#eff6ff;border-radius:16px}.assessment-action-highlight .portal-btn{min-height:50px;font-size:15px}
+
+/* Payment method layout remains two-column on desktop and stacks cleanly on small screens. */
+.payment-method-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,340px);gap:18px;align-items:start}
+@media (max-width:760px){.payment-method-layout{grid-template-columns:1fr}.payment-method-layout .payment-qr-panel{grid-column:1;grid-row:auto}.payment-qr-panel img{max-width:260px!important}}
+.inline-icon{display:inline-flex;vertical-align:middle;margin-left:5px;align-items:center;justify-content:center}
