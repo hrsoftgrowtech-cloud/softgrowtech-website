@@ -427,7 +427,7 @@ async function initAssessment(){
     root.querySelectorAll('button,input').forEach(x=>x.disabled=true);
     const btn=document.getElementById('submitAssessment');if(btn)btn.textContent='Submitting…';
     const restoreSubmit=()=>{submitting=false;root.querySelectorAll('button,input').forEach(x=>x.disabled=false);const b=document.getElementById('submitAssessment');if(b)b.textContent='Submit Assessment →';if(startAt)timerHandle=setInterval(()=>{const elapsed=Date.now()-startAt,left=Math.max(0,30*60*1000-elapsed),el=document.getElementById('assessmentTimer');if(el){const m=Math.floor(left/60000),ss=Math.floor(left/1000)%60;el.textContent=`${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`};if(left<=0&&!expired){expired=true;submitAssessment(true)}},250)};
-    const {data:a,error}=await sb.from('sgt_assessment_attempts').insert({student_id:p.student_id,user_id:u.id,attempt_no:Date.now(),question_set:set,status:'Complete',submitted_at:new Date().toISOString()}).select().single();
+    const {data:a,error}=await sb.from('sgt_assessment_attempts').insert({student_id:p.student_id,user_id:u.id,attempt_no:1,question_set:set,status:'Complete',submitted_at:new Date().toISOString()}).select().single();
     if(error){restoreSubmit();toast(error.message||'Unable to submit assessment. Please try again.');return}
     const {error:ae}=await sb.from('sgt_assessment_answers').insert(q.map(x=>({attempt_id:a.id,question_id:x.id,answer:answers[x.id]||''})));
     if(ae){restoreSubmit();toast(ae.message||'Unable to save your answers. Please try again.');return}
