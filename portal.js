@@ -399,10 +399,10 @@ async function initPortal(){
 async function initAssessment(){
   const root=document.getElementById('assessmentRoot');if(!root)return;
   const u=await user();if(!u){location.href='student-login.html';return}const p=await profile();if(!p)return;
-  const today=new Date();today.setHours(0,0,0,0);const orientationDate=p.batch_start?addDays(p.batch_start,-2):null;const orientationComplete=Boolean(orientationDate)&&today>=new Date(orientationDate+'T00:00:00');
+  const today=new Date();today.setHours(0,0,0,0);const orientationDate=p.batch_start?addDays(p.batch_start,-2):null;const {data:assessmentBatch}=p.batch_start?await sb.from('sgt_batches').select('orientation_date,orientation_status,orientation_completed').eq('start_date',p.batch_start).maybeSingle():{data:null};const assessmentOrientationComplete=assessmentBatch?.orientation_status==='Complete'||assessmentBatch?.orientation_completed===true;
   const set=p.selection_status==='Not Selected'?'reassessment-v2':'primary-v2';const forceStart=new URLSearchParams(location.search).get('start')==='1';
   const paymentSubmitted=['Under Verification','Verified'].includes(String(p.payment_status||''));if(forceStart&&set==='primary-v2'&&!paymentSubmitted){location.replace('enrollment.html');return}
-  if(!orientationComplete){root.innerHTML=`<div class="portal-card assessment-gate-card"><div class="portal-kicker">Selection Assessment</div><h1>Orientation Required</h1><p>You can start the assessment after completing the orientation.</p><div class="help-note"><strong>Orientation meeting is mandatory.</strong><br>Orientation details and meeting information will be shared in the official batch WhatsApp group.</div><div class="success-panel" style="margin-top:16px"><strong>All the best for your assessment and selection!</strong><span class="inline-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-2.2-.8L16 18l2.2-.8L19 15Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;return}
+  if(!assessmentOrientationComplete){root.innerHTML=`<div class="portal-card assessment-gate-card"><div class="portal-kicker">Selection Assessment</div><h1>Orientation Required</h1><p>You can start the assessment after completing the orientation.</p><div class="help-note"><strong>Orientation meeting is mandatory.</strong><br>Orientation details and meeting information will be shared in the official batch WhatsApp group.</div><div class="success-panel" style="margin-top:16px"><strong>All the best for your assessment and selection!</strong><span class="inline-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-2.2-.8L16 18l2.2-.8L19 15Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span></div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;return}
   if(p.assessment_status==='Complete'){const re=set==='reassessment-v2';root.innerHTML=`<div class="portal-card"><div class="portal-kicker">${re?'Re-Assessment':'Selection Assessment'}</div><h1>Assessment Already Submitted</h1><div class="success-panel"><strong>Your ${re?'re-assessment':'selection assessment'} has already been submitted and is currently under review. Please wait for the result.</strong><p style="margin:8px 0 0">Status: Under Review</p></div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a></div></div>`;return}
   let {data:rows}=await sb.from('sgt_assessment_questions').select('id,domain,question_set,question_no,question').eq('domain',p.domain).eq('question_set',set).eq('enabled',true).order('question_no');
   const parseRow=r=>{try{const x=JSON.parse(r.question);return {id:r.id,question:String(x.question||''),options:Array.isArray(x.options)?x.options.map(String):[]}}catch(_){return {id:r.id,question:String(r.question||''),options:[]}}};
@@ -422,12 +422,19 @@ async function initAssessment(){
   const persist=()=>localStorage.setItem(storageKey+'_answers',JSON.stringify(answers));
   const answeredCount=()=>q.filter(x=>String(answers[x.id]||'').trim()!=='').length;
   const submitAssessment=async(auto=false)=>{
-    if(submitting)return;submitting=true;clearInterval(timerHandle);root.querySelectorAll('button,input').forEach(x=>x.disabled=true);const btn=document.getElementById('submitAssessment');if(btn)btn.textContent='Submitting…';
+    if(submitting)return;
+    submitting=true;clearInterval(timerHandle);
+    root.querySelectorAll('button,input').forEach(x=>x.disabled=true);
+    const btn=document.getElementById('submitAssessment');if(btn)btn.textContent='Submitting…';
+    const restoreSubmit=()=>{submitting=false;root.querySelectorAll('button,input').forEach(x=>x.disabled=false);const b=document.getElementById('submitAssessment');if(b)b.textContent='Submit Assessment →';if(startAt)timerHandle=setInterval(()=>{const elapsed=Date.now()-startAt,left=Math.max(0,30*60*1000-elapsed),el=document.getElementById('assessmentTimer');if(el){const m=Math.floor(left/60000),ss=Math.floor(left/1000)%60;el.textContent=`${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`};if(left<=0&&!expired){expired=true;submitAssessment(true)}},250)};
     const {data:a,error}=await sb.from('sgt_assessment_attempts').insert({student_id:p.student_id,user_id:u.id,attempt_no:Date.now(),question_set:set,status:'Complete',submitted_at:new Date().toISOString()}).select().single();
-    if(error){submitting=false;toast(error.message);return}
+    if(error){restoreSubmit();toast(error.message||'Unable to submit assessment. Please try again.');return}
     const {error:ae}=await sb.from('sgt_assessment_answers').insert(q.map(x=>({attempt_id:a.id,question_id:x.id,answer:answers[x.id]||''})));
-    if(ae){toast(ae.message);return}
-    const mark=await sb.rpc('sgt_mark_assessment_review');if(mark.error){toast(mark.error.message);return}await sb.from('sgt_profiles').update({assessment_status:'Complete',review_status:'Under Review',updated_at:new Date().toISOString()}).eq('id',u.id);
+    if(ae){restoreSubmit();toast(ae.message||'Unable to save your answers. Please try again.');return}
+    const mark=await sb.rpc('sgt_mark_assessment_review');
+    if(mark.error){restoreSubmit();toast(mark.error.message||'Assessment review could not be updated. Please try again.');return}
+    const profileUpdate=await sb.from('sgt_profiles').update({assessment_status:'Complete',review_status:'Under Review',updated_at:new Date().toISOString()}).eq('id',u.id);
+    if(profileUpdate.error){restoreSubmit();toast(profileUpdate.error.message||'Assessment status could not be updated. Please try again.');return}
     localStorage.removeItem(storageKey+'_start');localStorage.removeItem(storageKey+'_answers');
     if(auto){alert('Assessment Time Expired\nYour assessment has been automatically submitted.');location.href='portal.html';return}
     root.innerHTML='<div class="portal-card"><div class="success-panel"><h1>Assessment Submitted ✓</h1><p><strong>Your selection assessment has been submitted and is now under review.</strong></p><p>Please wait for the result. You cannot start another attempt while this assessment is under review.</p></div><div class="portal-actions"><a class="portal-btn primary" href="portal.html">Go to Dashboard →</a></div></div>';
@@ -440,7 +447,7 @@ async function initAssessment(){
     root.querySelectorAll('input[type=radio]').forEach(inp=>inp.onchange=()=>{answers[inp.name.replace('q_','')]=inp.value;persist();renderPage()});
     document.getElementById('examPrev').onclick=()=>{if(page>0){page--;renderPage()}};
     document.getElementById('examNext')?.addEventListener('click',()=>{if(page<pageCount-1){page++;renderPage()}});
-    document.getElementById('submitAssessment')?.addEventListener('click',()=>{persist();submitAssessment(false)});
+    document.getElementById('submitAssessment')?.addEventListener('click',()=>{if(submitting)return;persist();if(!confirm('Submit your assessment now? You will not be able to change your answers or submit another attempt after submission.'))return;submitAssessment(false)});
   };
   if(forceStart)renderPage();
 }
