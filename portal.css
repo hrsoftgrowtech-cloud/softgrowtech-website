@@ -57,14 +57,14 @@
 
 /* Student registration phone control */
 .phone-input-wrap{width:100%;display:block}
-.phone-input-row{display:grid;grid-template-columns:minmax(190px,220px) minmax(0,1fr);gap:10px;align-items:stretch;width:100%}
+.phone-input-row{display:grid;grid-template-columns:minmax(108px,126px) minmax(0,1fr);gap:10px;align-items:stretch;width:100%}
 .phone-input-row .calling-code-control{min-width:0;width:100%;height:48px;display:flex;align-items:center;border:1px solid #cbd5e1;border-radius:11px;background:#fff;overflow:hidden}
-.phone-input-row .calling-code-control>span{display:flex;align-items:center;justify-content:center;width:44px;min-width:44px;height:48px;background:#f8fafc;border-right:1px solid #e2e8f0}
+.phone-input-row .calling-code-control>span{display:flex;align-items:center;justify-content:center;width:38px;min-width:38px;height:48px;background:#f8fafc;border-right:1px solid #e2e8f0}
 .phone-input-row .calling-code-control img{width:24px;height:18px;object-fit:cover;border-radius:2px}
 .phone-input-row #callingCode{width:100%;min-width:0;height:48px;border:0;outline:0;background:#fff;padding:0 10px;font:inherit;color:#0f172a}
 .phone-input-row #phone{width:100%;min-width:0;height:48px;margin:0;border:1px solid #cbd5e1;border-radius:11px;padding:11px 14px;font:inherit;background:#fff;outline:none}
 .phone-input-row #phone:disabled{background:#f8fafc;color:#94a3b8;cursor:not-allowed}
 .phone-input-row #phone:not(:disabled):focus{border-color:var(--portal-blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
 .phone-help{display:block;margin-top:7px;color:#64748b;font-size:12px;line-height:1.45}
-.phone-help.error{color:#b91c1c}
+.phone-help.error{color:#b91c1c;font-weight:600}
 @media(max-width:520px){.phone-input-row{grid-template-columns:1fr;gap:9px}.phone-input-row .calling-code-control{width:100%}}

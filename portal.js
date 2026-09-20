@@ -12,11 +12,12 @@ function statusClass(s){s=String(s||'').toLowerCase();return s==='selected'||s==
 async function logout(){await sb.auth.signOut();location.href='student-login.html'}
 async function initRegister(){
   const f=document.getElementById('registerForm');if(!f)return;
-  const dom=document.getElementById('domain'),requested=new URLSearchParams(location.search).get('domain'),code=document.getElementById('callingCode'),countryEl=document.getElementById('country'),regError=document.getElementById('registrationError'),phoneEl=document.getElementById('phone');
+  const dom=document.getElementById('domain'),requested=new URLSearchParams(location.search).get('domain'),code=document.getElementById('callingCode'),countryEl=document.getElementById('country'),countryHelp=document.getElementById('countryHelp'),regError=document.getElementById('registrationError'),phoneEl=document.getElementById('phone');
   const {data:ds}=await sb.from('sgt_domains').select('name').eq('enabled',true).order('name');
   if(ds){dom.innerHTML=ds.map(d=>`<option>${esc(d.name)}</option>`).join('');if(requested&&ds.some(d=>d.name===requested))dom.value=requested}
-  const showPhoneError=(message='',isError=false)=>{const help=document.getElementById('phoneHelp');if(!help)return;help.textContent=message||'Please select your country calling code first.';help.classList.toggle('error',isError)};
-  const syncCountry=()=>{const opt=code?.selectedOptions?.[0],c=opt?.dataset?.country,iso=opt?.dataset?.iso,flag=document.getElementById('callingFlag'),selected=Boolean(code?.value);if(countryEl)countryEl.value=c||'';if(flag)flag.innerHTML=iso?`<img src="https://flagcdn.com/w40/${iso}.png" width="24" height="18" alt="${esc(c||'Country')}" loading="eager" referrerpolicy="no-referrer">`:'<span class="calling-flag-placeholder">🌐</span>';if(phoneEl){phoneEl.disabled=!selected;phoneEl.placeholder=selected?'Enter mobile number':'Select calling code first';if(!selected){phoneEl.value='';showPhoneError('Please select your country calling code first.',true)}else{showPhoneError(`Enter your ${c||'valid'} mobile number.`);setTimeout(()=>phoneEl.focus(),0)}}};
+  const showPhoneError=(message='',isError=false)=>{const help=document.getElementById('phoneHelp');if(!help)return;help.textContent=message;help.classList.toggle('error',isError)};
+  const showCountryError=(message='',isError=false)=>{if(!countryHelp)return;countryHelp.textContent=message;countryHelp.classList.toggle('error',isError)};
+  const syncCountry=()=>{const opt=code?.selectedOptions?.[0],c=opt?.dataset?.country,iso=opt?.dataset?.iso,flag=document.getElementById('callingFlag'),selected=Boolean(code?.value);if(countryEl)countryEl.value=c||'';if(flag)flag.innerHTML=iso?`<img src="https://flagcdn.com/w40/${iso}.png" width="24" height="18" alt="${esc(c||'Country')}" loading="eager" referrerpolicy="no-referrer">`:'<span class="calling-flag-placeholder">🌐</span>';showCountryError(selected?'':'Please select your country calling code first.',!selected);if(phoneEl){phoneEl.disabled=!selected;phoneEl.placeholder='';if(!selected){phoneEl.value='';showPhoneError('Please select your country calling code first.',true)}else{showPhoneError('');setTimeout(()=>phoneEl.focus(),0)}}};
   code?.addEventListener('change',syncCountry);syncCountry();
   const gen=(n,p)=>{let a=n.trim().replace(/\s+/g,'').slice(0,3);a=a.charAt(0).toUpperCase()+a.slice(1).toLowerCase();return`SGT@${a}${p.replace(/\D/g,'').slice(-4)}`};
   const update=()=>{const el=document.getElementById('tempPreview');if(el)el.value=gen(document.getElementById('name').value,phoneEl.value)};f.addEventListener('input',update);update();
@@ -24,7 +25,7 @@ async function initRegister(){
   const allCodes=[...new Set([...code.options].map(o=>o.value).filter(Boolean))].map(x=>x.replace('+',''));
   const validatePhone=()=>{
     const opt=code.selectedOptions?.[0],iso=opt?.dataset?.iso||'',cc=(code.value||'').replace('+',''),raw=phoneEl.value.trim();
-    if(!cc||!iso||!raw)return {ok:false,msg:'Select your country calling code first, then enter your mobile number.'};
+    if(!cc||!iso||!raw)return {ok:false,msg:!cc||!iso?'Please select your country calling code first.':'Please enter your mobile number.'};
     if(/[a-z]/i.test(raw))return {ok:false,msg:'Please enter a valid mobile number.'};
     const phoneLib=window.libphonenumber;
     if(phoneLib?.parsePhoneNumberFromString){try{const parsed=phoneLib.parsePhoneNumberFromString(raw,iso.toUpperCase());if(!parsed||!parsed.isValid()||parsed.country!==iso.toUpperCase()||parsed.countryCallingCode!==cc)return {ok:false,msg:`The mobile number does not match the selected country (${opt.dataset.country}).`};return {ok:true,digits:parsed.nationalNumber};}catch(_){}}
@@ -314,12 +315,14 @@ async function initPortal(){
     const openDocumentViewer=async(kind)=>{
       try{
         const bytes=await makeDocumentPdf(kind);if(!bytes)return toast('PDF generator is unavailable.');
-        const blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob),name=kind==='offer'?offerId:certificateId;
-        const modal=document.createElement('div');modal.className='document-viewer-modal';modal.innerHTML=`<div class="document-viewer-card"><div class="document-viewer-head"><div><strong>${kind==='offer'?'Offer Letter':'Certificate'}</strong><small>${esc(name)} • Available</small></div><button type="button" class="close-btn" aria-label="Close document">×</button></div><iframe class="document-viewer-frame" title="${kind==='offer'?'Offer Letter':'Certificate'}" src="${url}"></iframe><div class="document-viewer-actions"><button type="button" class="portal-btn secondary" id="documentViewerClose">Close</button><button type="button" class="portal-btn primary" id="documentViewerDownload">Download PDF</button></div></div>`;
+        const blob=new Blob([bytes],{type:'application/pdf'}),url=URL.createObjectURL(blob);
+        const documentTitle=kind==='offer'?'Offer Letter':'Certificate';
+        const cleanStudentName=String(p.name||'Student').trim().replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'Student'; const cleanStudentId=String(p.student_id||p.studentId||p.id||'StudentID').trim().replace(/[^a-zA-Z0-9-]+/g,'_').replace(/^_+|_+$/g,'')||'StudentID'; const downloadFilename=`${cleanStudentName}_${kind==='offer'?'OfferLetter':'Certificate'}_${cleanStudentId}_SoftGrowTech.pdf`;
+        const modal=document.createElement('div');modal.className='document-viewer-modal';modal.innerHTML=`<div class="document-viewer-card"><div class="document-viewer-head"><div><strong>${documentTitle}</strong><small>${esc(kind==='offer'?offerId:certificateId)} • Available</small></div><button type="button" class="close-btn" aria-label="Close document">×</button></div><iframe class="document-viewer-frame" title="${documentTitle}" src="${url}"></iframe><div class="document-viewer-actions"><button type="button" class="portal-btn secondary" id="documentViewerClose">Close</button><button type="button" class="portal-btn primary" id="documentViewerDownload">Download PDF</button></div></div>`;
         document.body.appendChild(modal);document.body.classList.add('document-viewer-open');
         const close=()=>{URL.revokeObjectURL(url);modal.remove();document.body.classList.remove('document-viewer-open')};
         modal.querySelector('.close-btn').onclick=close;modal.querySelector('#documentViewerClose').onclick=close;
-        modal.querySelector('#documentViewerDownload').onclick=()=>{const a=document.createElement('a');a.href=url;a.download=`${name}.pdf`;a.click()};
+        modal.querySelector('#documentViewerDownload').onclick=()=>{const a=document.createElement('a');a.href=url;a.download=downloadFilename;a.click()};
         modal.addEventListener('click',e=>{if(e.target===modal)close()});
       }catch(e){console.error(e);toast(e.message||'Unable to generate document.')}
     };
