@@ -17,7 +17,7 @@ async function initRegister(){
   if(ds){dom.innerHTML=ds.map(d=>`<option>${esc(d.name)}</option>`).join('');if(requested&&ds.some(d=>d.name===requested))dom.value=requested}
   const showPhoneError=(message='',isError=false)=>{const help=document.getElementById('phoneHelp');if(!help)return;help.textContent=message;help.classList.toggle('error',isError)};
   const showCountryError=(message='',isError=false)=>{if(!countryHelp)return;countryHelp.textContent=message;countryHelp.classList.toggle('error',isError)};
-  const syncCountry=()=>{const opt=code?.selectedOptions?.[0],c=opt?.dataset?.country,iso=opt?.dataset?.iso,flag=document.getElementById('callingFlag'),selected=Boolean(code?.value);if(countryEl)countryEl.value=c||'';if(flag)flag.innerHTML=iso?`<img src="https://flagcdn.com/w40/${iso}.png" width="24" height="18" alt="${esc(c||'Country')}" loading="eager" referrerpolicy="no-referrer">`:'<span class="calling-flag-placeholder">🌐</span>';showCountryError(selected?'':'Please select your country calling code first.',!selected);if(phoneEl){phoneEl.disabled=!selected;phoneEl.placeholder='';if(!selected){phoneEl.value='';showPhoneError('Please select your country calling code first.',true)}else{showPhoneError('');setTimeout(()=>phoneEl.focus(),0)}}};
+  const syncCountry=()=>{const opt=code?.selectedOptions?.[0],c=opt?.dataset?.country,iso=opt?.dataset?.iso,flag=document.getElementById('callingFlag'),selected=Boolean(code?.value);if(countryEl)countryEl.value=c||'';if(flag)flag.innerHTML=iso?`<img src="https://flagcdn.com/w40/${iso}.png" width="24" height="18" alt="${esc(c||'Country')}" loading="eager" referrerpolicy="no-referrer">`:'<span class="calling-flag-placeholder">🌐</span>';showCountryError('',false);if(phoneEl){phoneEl.disabled=!selected;phoneEl.placeholder='';if(!selected){phoneEl.value='';showPhoneError('Please select your country calling code first.',true)}else{showPhoneError('');setTimeout(()=>phoneEl.focus(),0)}}};
   code?.addEventListener('change',syncCountry);syncCountry();
   const gen=(n,p)=>{let a=n.trim().replace(/\s+/g,'').slice(0,3);a=a.charAt(0).toUpperCase()+a.slice(1).toLowerCase();return`SGT@${a}${p.replace(/\D/g,'').slice(-4)}`};
   const update=()=>{const el=document.getElementById('tempPreview');if(el)el.value=gen(document.getElementById('name').value,phoneEl.value)};f.addEventListener('input',update);update();
@@ -150,9 +150,11 @@ async function initPortal(){
   const profileMeta=[['Student ID',p.student_id],['Gmail',p.email],['Phone / WhatsApp',p.phone],['Country',p.country],['Gender',p.gender],['Domain',p.domain],['Status',p.status]];
   document.getElementById('profileMeta').innerHTML=profileMeta.map(x=>`<div class="meta-box"><small>${x[0]}</small><strong>${esc(x[1]||'—')}</strong></div>`).join('');
 
-  const sched=await getScheduleConfig();
+  const [sched,batchScheduleInfo]=await Promise.all([getScheduleConfig(),programStart?sb.from('sgt_batches').select('*').eq('start_date',programStart).maybeSingle():Promise.resolve({data:null})]);
+  const orientationScheduleDate=sched.orientation?.date||batchScheduleInfo?.data?.orientation_date||orient;
+  const orientationScheduleStateComplete=Boolean(sched.orientation?.completed||batchScheduleInfo?.data?.orientation_completed||batchScheduleInfo?.data?.orientation_status==='Complete');
   const scheduleItems=programStart?[
-    ['Orientation Session',orient,orient],
+    ['Orientation Session',orientationScheduleDate,orientationScheduleDate],
     ['Internship Program Start',programStart,programStart],
     ['Task 1 — Work Window',scheduleDate(programStart,sched.task1.open,0),scheduleDate(programStart,sched.task1.submit!=null?sched.task1.submit-1:sched.task1.open,5)],
     ['Task 1 — Submission',scheduleDate(programStart,sched.task1.submit,5),scheduleDate(programStart,sched.task1.deadline,6)],
@@ -167,7 +169,7 @@ async function initPortal(){
   ]:[['Orientation Session',null,null],['Internship Program Start',null,null],['Batch End',null,null]];
   const scheduleStatus=(name,state)=>{
     const n=String(name||'');
-    if(n==='Orientation Session')return state==='complete'?'Orientation Completed':state==='current'?'Orientation Today':'Orientation Upcoming';
+    if(n==='Orientation Session')return orientationScheduleStateComplete?'Orientation Complete':state==='current'?'Orientation Today':state==='complete'?'Orientation Pending':'Orientation Upcoming';
     if(n==='Internship Program Start')return state==='complete'?'Batch Started':state==='current'?'Batch Started Today':'Batch Starts Soon';
     if(n.includes('Task 1 — Work Window'))return state==='complete'?'Task 1 Work Completed':state==='current'?'Task 1 In Progress':'Task 1 Starts Soon';
     if(n.includes('Task 1 — Submission'))return state==='complete'?'Task 1 Submission Closed':state==='current'?'Task 1 Submission Open':'Task 1 Submission Upcoming';
@@ -189,8 +191,8 @@ async function initPortal(){
   const {data:batchRow}=p.batch_start?await sb.from('sgt_batches').select('whatsapp_group_url').eq('start_date',p.batch_start).maybeSingle():{data:null};
   const registrationGroupFromAuth=u.user_metadata?.whatsapp_group_url||'';const groupUrl=p.whatsapp_group_url||registrationGroupFromAuth||batchRow?.whatsapp_group_url||(!p.batch_start?(grp?.value?.url||''):'');
   const groupAction=document.getElementById('groupAction');
-  const groupLabel=p.batch_start?`SoftGrowTech ${dateFmt(p.batch_start).replace(/\d{1,2} /,'')} Batch`:'SoftGrowTech Current Batch';
-  if(groupAction) groupAction.innerHTML=`<div class="portal-card" style="margin-top:18px;border-color:#dbeafe;background:linear-gradient(180deg,#f8fbff,#fff)"><div class="portal-section-title"><div><div class="portal-kicker">Official Batch Group</div><h2 style="margin-bottom:4px">${esc(groupLabel)}</h2><p style="margin:0">Please join your official SoftGrowTech batch group. Important updates, schedules, tasks and program information will be shared there. Joining the group is required.</p></div></div>${groupUrl?`<div class="portal-actions"><a class="portal-btn primary" href="${esc(groupUrl)}" target="_blank" rel="noopener">Join ${esc(groupLabel)} →</a></div>`:'<div class="help-note" style="margin-top:12px">Your batch group link will appear here once it is assigned.</div>'}</div>`;
+  const groupLabel=p.batch_start?`SoftGrowTech ${dateFmt(p.batch_start)} Batch`:'SoftGrowTech Current Batch';
+  if(groupAction) groupAction.innerHTML=`<div class="portal-card" style="margin-top:18px;border-color:#dbeafe;background:linear-gradient(180deg,#f8fbff,#fff)"><div class="portal-section-title"><div><div class="portal-kicker">Official Batch Group</div><h2 style="margin-bottom:4px">${esc(groupLabel)}</h2><p style="margin:0">Important updates, schedules, tasks and program information will be shared there. Joining the group is required.</p></div></div>${groupUrl?`<div class="portal-actions"><a class="portal-btn primary" href="${esc(groupUrl)}" target="_blank" rel="noopener">Join ${esc(groupLabel)} →</a></div>`:'<div class="help-note" style="margin-top:12px">Your batch group link will appear here once it is assigned.</div>'}</div>`;
 
   let action='';
   const hasPaid=['Under Verification','Verified'].includes(String(p.payment_status||''));
@@ -216,28 +218,87 @@ async function initPortal(){
   document.getElementById('assessmentAction').innerHTML=`<div class="assessment-action-highlight">${action}</div>`;
   document.getElementById('startReassessment')?.addEventListener('click',async()=>{const b=document.getElementById('startReassessment');b.disabled=true;b.textContent='Preparing…';const {error}=await sb.from('sgt_profiles').update({selection_round:2,assessment_status:'Not Started',review_status:'Pending',updated_at:new Date().toISOString()}).eq('id',u.id);if(error){toast(error.message);b.disabled=false;b.textContent='Re-Assessment →';return}location.href='assessment.html'});
 
-  const [{data:tasks},{data:tf}]=await Promise.all([sb.from('sgt_tasks').select('*').eq('enabled',true).or(`domain.eq.${p.domain},domain.is.null`).order('title'),sb.from('sgt_settings').select('value').eq('key','task_forms').maybeSingle()]);
+  const [{data:tasks},{data:tf}]=await Promise.all([
+    sb.from('sgt_tasks').select('*').eq('enabled',true).or(`domain.eq.${p.domain},domain.is.null`).order('title'),
+    sb.from('sgt_settings').select('value').eq('key','task_forms').maybeSingle()
+  ]);
+  const batchInfo=batchScheduleInfo?.data||null;
   const forms=tf?.value||{};
-  const standard=[{task_key:'task1',title:'Task 1',description:'Complete any 2 of the 3 domain projects.',project_url:''},{task_key:'task2',title:'Task 2',description:'Complete the assigned domain project.',project_url:''},{task_key:'final',title:'Final Project',description:'Choose 1 of the 2 final project options.',project_url:''}];
-  const taskItems=(tasks&&tasks.length)?tasks:standard;
-  const formFor=t=>{const k=String(t.task_key||t.title).toLowerCase();if(k.includes('task1')||k.includes('task-1')||k.includes('task 1'))return forms.task1;if(k.includes('task2')||k.includes('task-2')||k.includes('task 2'))return forms.task2;if(k.includes('final'))return forms.final;return t.submission_url||''};
-  const dateFor=(key,type)=>{const sc=key.includes('task1')||key.includes('task-1')||key.includes('task 1')?sched.task1:key.includes('task2')||key.includes('task-2')||key.includes('task 2')?sched.task2:sched.final;const fallback={open:key.includes('task1')?0:key.includes('task2')?9:18,submit:key.includes('task1')?5:key.includes('task2')?14:24,deadline:key.includes('task1')?6:key.includes('task2')?15:26,presentation_start:key.includes('task1')?7:16,presentation_end:key.includes('task1')?8:17,review_start:27,review_end:31}[type];return scheduleDate(programStart,sc[type],fallback)};
+  const standard=[
+    {task_key:'task1',title:'Task 1',description:'Complete the assigned domain work.',project_url:''},
+    {task_key:'task2',title:'Task 2',description:'Complete the assigned domain work.',project_url:''}
+  ];
+  const domainKey=String(p.domain||'').trim().toLowerCase();
+  const finalProjects={
+    'web development':'https://drive.google.com/file/d/1PotEI7mytZ7cWo_vSu0CoOyH_EF1vCP8/view?usp=drivesdk',
+    'android app development':'https://drive.google.com/file/d/1Ppbx8qG0aygPdI38eg0EBPIJPxpSbpeI/view?usp=drivesdk',
+    'java programming':'https://drive.google.com/file/d/1PXzP7tdjzlNHFM4rDhX_MDjq2du9NUMM/view?usp=drivesdk',
+    'python programming':'https://drive.google.com/file/d/1PV_Om7Z7hgdgB4btkcaGyNvsCGc6U38u/view?usp=drivesdk',
+    'artificial intelligence':'https://drive.google.com/file/d/1PPdwxVi45DZ7ikrZ5e--jseIop0Sqce-/view?usp=drivesdk',
+    'machine learning':'https://drive.google.com/file/d/1PZSYX0IhC3ZXwBjGznPKlwZCzp9ljlmL/view?usp=drivesdk',
+    'data science':'https://drive.google.com/file/d/1Pkt8LwnLiOFf9pFYQ111ADX6ihDI9qqH/view?usp=drivesdk',
+    'c++ programming':'https://drive.google.com/file/d/1POrWfEcgP_yjD7xEXH3AcfiE7eFVULzE/view?usp=drivesdk',
+    'internet of things':'https://drive.google.com/file/d/1PAQz83topBcJwqvcYLyxtyq3JSJwkmb2/view?usp=drivesdk',
+    'c programming':'https://drive.google.com/file/d/1PJO3fkmyIOyq5M7Qf1h-7dnUpY13WPBo/view?usp=drivesdk',
+    'ui/ux design':'https://drive.google.com/file/d/1z-rT6WDMtisiq8R6NKbAN1dlrDGsdR9B/view?usp=drivesdk',
+    'data analysis':'https://drive.google.com/file/d/1yrswsfj4EcBYBvs4F79EO-6yLokxdEvF/view?usp=drivesdk',
+    'graphic designing':'https://drive.google.com/file/d/1yy-bwmxiSQbZMiybOnwa3XAOd3XT20FL/view?usp=drivesdk',
+    'frontend development':'https://drive.google.com/file/d/1yufYIbFdUGcCIGsqb5fNSs4g9YX4iL8m/view?usp=drivesdk',
+    'backend development':'https://drive.google.com/file/d/1ytYpfHHeweGhs--V7pqRFH1jnKR9al-u/view?usp=drivesdk',
+    'flutter development':'https://drive.google.com/file/d/1yiRwfOoD8T04d0_kspX_m_JKZDepLGFK/view?usp=drivesdk'
+  };
+  const finalProjectUrl=finalProjects[domainKey]||'';
+  const taskItems=(tasks&&tasks.length)?tasks.filter(t=>!String(t.task_key||t.title).toLowerCase().includes('final')):standard;
+  const formFor=t=>{const k=String(t.task_key||t.title).toLowerCase();if(k.includes('task1')||k.includes('task-1')||k.includes('task 1'))return forms.task1;if(k.includes('task2')||k.includes('task-2')||k.includes('task 2'))return forms.task2;return t.submission_url||''};
+  const dateFor=(key,type)=>{const sc=key.includes('task1')||key.includes('task-1')||key.includes('task 1')?sched.task1:key.includes('task2')||key.includes('task-2')||key.includes('task 2')?sched.task2:sched.final;const fallback={open:key.includes('task1')?0:key.includes('task2')?9:18,submit:key.includes('task1')?5:key.includes('task2')?14:24,deadline:key.includes('task1')?6:key.includes('task2')?15:26,presentation_start:key.includes('task1')?7:16,presentation_end:key.includes('task1')?8:17,review_start:27,review_end:31}[type];return scheduleDate(programStart,sc?.[type],fallback)};
   const projectAccess=p.selection_status==='Selected'&&(p.payment_status==='Verified'||p.admin_project_override===true);
+  const orientationDate=batchInfo?.orientation_date||orient;
+  const orientationComplete=Boolean(batchInfo?.orientation_completed||batchInfo?.orientation_status==='Complete');
   if(!projectAccess){
     const reason=p.selection_status!=='Selected'?'Selection is required before project access.':p.payment_status!=='Verified'?'Project access will open after payment verification.':'Project access is currently restricted.';
-    document.getElementById('taskList').innerHTML=`<div class="help-note"><strong>Projects are not live yet.</strong><br>${esc(reason)}${p.admin_project_override===false?'':''}</div>`;
+    document.getElementById('taskList').innerHTML=`<div class="help-note"><strong>Projects are not live yet.</strong><br>${esc(reason)}</div>`;
   }else{
-    document.getElementById('taskList').innerHTML=taskItems.map(t=>{
-      const key=String(t.task_key||t.title).toLowerCase(),open=dateFor(key,'open'),live=dateFor(key,'submit'),deadline=dateFor(key,'deadline');
-      const openD=escDate(open),liveD=escDate(live),deadD=deadline?new Date(deadline+'T23:59:59'):null;
-      let state='Coming Soon',button='';
-      if(deadD&&new Date()>deadD){state='Submission Closed';button='<a class="portal-btn secondary" href="contact.html#support">Couldn’t submit on time? 💬 Get Help</a>'}
-      else if(liveD&&today>=liveD){state='Submission Form Live';button=formFor(t)?`<a class="portal-btn primary" target="_blank" rel="noopener" href="${esc(formFor(t))}">Submit ${esc(t.title)} →</a>`:'<span class="help-note">Submission form link will be added by the management team.</span>'}
-      else if(openD&&today>=openD){state='In Progress'}
-      const range=open&&deadline?rangeLabel(open,deadline):open?dateFmt(open):'Coming Soon';
-      return `<div class="timeline-item"><span class="timeline-dot ${state==='Submission Form Live'?'current':state==='Submission Closed'?'complete':state==='In Progress'?'current':'upcoming'}"></span><div style="flex:1"><strong>${esc(t.title)}</strong><small>${esc(t.description||'')} • ${range}</small><div style="margin-top:10px"><span class="status ${statusClass(state)}">${esc(state)}</span></div><div class="portal-actions">${openD&&today>=openD&&t.project_url?`<a class="portal-btn secondary" target="_blank" rel="noopener" href="${esc(t.project_url)}">Open Project Instructions</a>`:''}${button}</div></div></div>`
-    }).join('')||'<div class="empty">Tasks will appear according to your assigned batch.</div>';
+    const task1=taskItems.filter(t=>{const k=String(t.task_key||t.title).toLowerCase();return k.includes('task1')||k.includes('task-1')||k.includes('task 1')});
+    const task2=taskItems.filter(t=>{const k=String(t.task_key||t.title).toLowerCase();return k.includes('task2')||k.includes('task-2')||k.includes('task 2')});
+    const renderStage=(title,description,start,end,kind,extra='')=>{
+      const state=rangeState(start,end);
+      const deadline=(kind==='task1-submit'||kind==='task2-submit'||kind==='final-submit')?end:null;
+      const isClosed=Boolean(deadline&&today>escDate(deadline));
+      let status='Upcoming',dot='upcoming',actions='';
+      if(kind==='orientation'){
+        if(orientationComplete)status='Orientation Complete'; else if(start&&today>=escDate(start))status='Orientation Pending'; else status=start?'Starts on '+dateFmt(start):'Coming Soon';
+        dot=orientationComplete?'complete':today>=escDate(start)?'current':'upcoming';
+      } else if(isClosed){status='Closed';dot='complete';actions='<a class="portal-btn secondary" href="https://wa.me/917839686310" target="_blank" rel="noopener">Couldn’t submit on time? 💬 Get Help</a>'}
+      else if(start&&today<escDate(start)){status='Starts on '+dateFmt(start);dot='upcoming'}
+      else if(end&&today<=escDate(end)){status=kind.endsWith('-submit')?'Submission Open':kind==='task1-work'||kind==='task2-work'||kind==='final-work'?'In Progress':kind.includes('presentation')?'Presentation Live':'In Progress';dot='current'}
+      else {status=kind.includes('presentation')?'Completed':kind.endsWith('-submit')?'Closed':'Completed';dot='complete'}
+      return `<div class="timeline-item"><span class="timeline-dot ${dot}"></span><div style="flex:1"><strong>${esc(title)}</strong><small>${esc(description)}${start?' • '+esc(rangeLabel(start,end)):' • Coming Soon'}</small><div style="margin-top:10px"><span class="status ${status==='Closed'?'danger':dot==='complete'?'success':dot==='current'?'blue':'warn'}">${esc(status)}</span></div><div class="portal-actions">${actions}${extra}</div></div></div>`;
+    };
+    const task1Open=dateFor('task1','open'),task1Submit=dateFor('task1','submit'),task1Deadline=dateFor('task1','deadline'),task1PresStart=dateFor('task1','presentation_start'),task1PresEnd=dateFor('task1','presentation_end');
+    const task2Open=dateFor('task2','open'),task2Submit=dateFor('task2','submit'),task2Deadline=dateFor('task2','deadline'),task2PresStart=dateFor('task2','presentation_start'),task2PresEnd=dateFor('task2','presentation_end');
+    const finalOpen=dateFor('final','open'),finalSubmit=dateFor('final','submit'),finalDeadline=dateFor('final','deadline');
+    const taskProjectLinks=(arr)=>arr.map(t=>t.project_url?`<a class="portal-btn secondary" target="_blank" rel="noopener" href="${esc(t.project_url)}">Open Project Instructions</a>`:'').join('');
+    const task1Extra=taskProjectLinks(task1),task2Extra=taskProjectLinks(task2);
+    const finalExtra=finalProjectUrl?`<a class="portal-btn secondary" target="_blank" rel="noopener" href="${esc(finalProjectUrl)}">Open Final Project</a>`:'';
+    const finalWorkEnd=finalSubmit?addDays(finalSubmit,-1):addDays(finalOpen,5);
+    const activityStartRaw=sched.activities?.start||batchInfo?.activities_start||null;
+    const activityEndRaw=sched.activities?.end||batchInfo?.activities_end||null;
+    const activityStart=activityStartRaw||(finalDeadline?addDays(finalDeadline,1):finalOpen);
+    const activityEnd=activityEndRaw||programEnd;
+    const stages=[];
+    stages.push(renderStage('Orientation','Batch orientation session',orientationDate,orientationDate,'orientation'));
+    stages.push(renderStage('Task 1','Complete the assigned Task 1 domain work.',task1Open,task1Submit?addDays(task1Submit,-1):task1Open,'task1-work',task1Extra));
+    stages.push(renderStage('Task 1 Submission','Submit your Task 1 work using the configured submission form.',task1Submit,task1Deadline,'task1-submit',task1Submit&&today>=escDate(task1Submit)&&!(task1Deadline&&today>escDate(task1Deadline))&&forms.task1?`<a class="portal-btn primary" target="_blank" rel="noopener" href="${esc(forms.task1)}">Submit Task 1 →</a>`:''));
+    stages.push(renderStage('Task 1 Presentation','Task 1 presentation session.',task1PresStart,task1PresEnd,'task1-presentation'));
+    stages.push(renderStage('Task 2','Complete the assigned Task 2 domain work.',task2Open,task2Submit?addDays(task2Submit,-1):task2Open,'task2-work',task2Extra));
+    stages.push(renderStage('Task 2 Submission','Submit your Task 2 work using the configured submission form.',task2Submit,task2Deadline,'task2-submit',task2Submit&&today>=escDate(task2Submit)&&!(task2Deadline&&today>escDate(task2Deadline))&&forms.task2?`<a class="portal-btn primary" target="_blank" rel="noopener" href="${esc(forms.task2)}">Submit Task 2 →</a>`:''));
+    stages.push(renderStage('Task 2 Presentation','Task 2 presentation session.',task2PresStart,task2PresEnd,'task2-presentation'));
+    stages.push(renderStage('Final Project','Complete the Final Project for your registered domain.',finalOpen,finalWorkEnd,'final-work',finalExtra));
+    stages.push(renderStage('Final Project Submission','Submit your Final Project using the configured submission form.',finalSubmit,finalDeadline,'final-submit',finalSubmit&&today>=escDate(finalSubmit)&&!(finalDeadline&&today>escDate(finalDeadline))&&forms.final?`<a class="portal-btn primary" target="_blank" rel="noopener" href="${esc(forms.final)}">Submit Final Project →</a>`:''));
+    stages.push(renderStage('Activities','Post-project activities and career preparation until the batch end date.',activityStart,activityEnd,'activities'));
+    document.getElementById('taskList').innerHTML=stages.join('');
   }
+
 
 
   const notificationBell=document.getElementById('studentNotificationBell');
