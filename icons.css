@@ -1,0 +1,10 @@
+.sgt-icon{width:18px;height:18px;display:inline-block;vertical-align:-3px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.icon-heading{display:flex;align-items:center;gap:9px}
+.icon-inline,.icon-btn{display:inline-flex;align-items:center;gap:8px}
+.admin-nav button{display:flex;align-items:center;gap:10px}
+.admin-nav button .sgt-icon{width:17px;height:17px;opacity:.9}
+.portal-tab{display:inline-flex;align-items:center;gap:7px}
+.note-icon{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:#eef5ff;color:#1d4ed8;flex:0 0 auto}
+.note-icon .sgt-icon{width:19px;height:19px}
+.sgt-icon-box{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#eff6ff;color:#2563eb;margin-bottom:10px}
+.sgt-icon-box .sgt-icon{width:22px;height:22px}
