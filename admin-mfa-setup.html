@@ -8,25 +8,60 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 function showError(text){state.innerHTML='<p class="status danger">'+esc(text)+'</p><p style="margin-top:12px"><a class="portal-btn secondary" href="admin-login.html">Return to Admin Login</a></p>';verifyBtn.disabled=true;}
 async function prepare(){
   try{
-    let {data:{session},error:sessionError}=await sb.auth.getSession();
-    if(!session){
-      try{
-        const raw=sessionStorage.getItem('sgt_admin_mfa_handoff');
-        if(raw){
-          const handoff=JSON.parse(raw);
-          if(handoff?.access_token&&handoff?.refresh_token){
-            const restored=await sb.auth.setSession({access_token:handoff.access_token,refresh_token:handoff.refresh_token});
-            if(!restored.error) session=restored.data.session;
-          }
-        }
-      }catch(e){}
+    let handoff=null;
+    try{
+      const raw=sessionStorage.getItem('sgt_admin_mfa_handoff');
+      if(raw){const parsed=JSON.parse(raw);if(parsed?.access_token&&parsed?.refresh_token)handoff=parsed;}
+    }catch(e){}
+
+    // Prefer the fresh login handoff over a possibly stale persisted browser session.
+    let session=null;
+    if(handoff){
+      const restored=await sb.auth.setSession({access_token:handoff.access_token,refresh_token:handoff.refresh_token});
+      if(!restored.error&&restored.data?.session)session=restored.data.session;
     }
-    if(!session){showError(sessionError?.message||'Your admin login session is missing or has expired. Please return to Admin Login and sign in again.');return;}
+    if(!session){
+      const got=await sb.auth.getSession();
+      if(got.error)throw got.error;
+      session=got.data?.session||null;
+    }
+    if(!session){showError('Your admin login session is missing or has expired. Please return to Admin Login and sign in again.');return;}
+
+    // Give the Supabase client a moment to commit the restored session before asking the Auth server for the user.
+    await new Promise(r=>setTimeout(r,150));
+    let user=null;
+    let userError=null;
+    const firstUser=await sb.auth.getUser(session.access_token);
+    user=firstUser.data?.user||null;
+    userError=firstUser.error||null;
+
+    // If the access token is stale, refresh it and retry with the new token.
+    if(!user){
+      const refreshed=await sb.auth.refreshSession();
+      if(!refreshed.error&&refreshed.data?.session){
+        session=refreshed.data.session;
+        const retry=await sb.auth.getUser(session.access_token);
+        user=retry.data?.user||null;
+        userError=retry.error||null;
+      }
+    }
+
+    // One final retry from the fresh login handoff prevents a stale local-storage session from blocking first-time MFA setup.
+    if(!user&&handoff){
+      const restoredAgain=await sb.auth.setSession({access_token:handoff.access_token,refresh_token:handoff.refresh_token});
+      if(!restoredAgain.error&&restoredAgain.data?.session){
+        session=restoredAgain.data.session;
+        const retry=await sb.auth.getUser(session.access_token);
+        user=retry.data?.user||null;
+        userError=retry.error||null;
+      }
+    }
+    if(!user)throw Error(userError?.message||'Your admin login session is no longer valid. Please sign in again.');
+
     try{sessionStorage.removeItem('sgt_admin_mfa_handoff')}catch(e){}
-    const {data:{user},error:ue}=await sb.auth.getUser();
-    if(ue||!user)throw Error('Your admin login session is no longer valid. Please sign in again.');
-    const {data:member,error:me}=await sb.from('sgt_admin_members').select('role,active').eq('user_id',user.id).eq('active',true).maybeSingle();
-    if(me)throw me;
+    let memberResult=await sb.from('sgt_admin_members').select('role,active').eq('user_id',user.id).eq('active',true).maybeSingle();
+    if(memberResult.error)throw memberResult.error;
+    const member=memberResult.data;
     if(!member||!['founder','team_admin'].includes(String(member.role).toLowerCase()))throw Error('This account is not authorized for management access.');
     const lf=await sb.auth.mfa.listFactors();
     if(lf.error)throw lf.error;

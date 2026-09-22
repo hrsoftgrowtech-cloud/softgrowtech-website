@@ -428,7 +428,26 @@ async function initPortal(){
       }catch(e){console.error(e);toast(e.message||'Unable to generate document.')}
     };
 
-    docBox.querySelectorAll('.generated-doc').forEach(b=>b.onclick=()=>openDocumentViewer(b.dataset.doc));
+    docBox.querySelectorAll('.generated-doc').forEach(b=>{
+      b.onclick=async()=>{
+        if(b.dataset.loading==='1')return;
+        b.dataset.loading='1';
+        b.disabled=true;
+        b.setAttribute('aria-busy','true');
+        b.dataset.originalHtml=b.innerHTML;
+        b.innerHTML='<span class="sgt-doc-spinner" aria-hidden="true"></span><span>Opening PDF…</span>';
+        try{
+          await openDocumentViewer(b.dataset.doc);
+        }finally{
+          if(b.isConnected){
+            b.disabled=false;
+            b.removeAttribute('aria-busy');
+            b.dataset.loading='';
+            b.innerHTML=b.dataset.originalHtml||'View';
+          }
+        }
+      };
+    });
   }
   if(p.selection_status==='Selected'){
     try{const session=await sb.auth.getSession();const token=session.data.session?.access_token;if(token)await fetch(`${SGT_URL}/functions/v1/sgt-send-selection-email`,{method:'POST',headers:{Authorization:`Bearer ${token}`,apikey:SGT_KEY,'Content-Type':'application/json'},body:'{}'});}catch(e){console.warn('Selection email service unavailable.',e)}

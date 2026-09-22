@@ -8,3 +8,6 @@
 .note-icon .sgt-icon{width:19px;height:19px}
 .sgt-icon-box{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#eff6ff;color:#2563eb;margin-bottom:10px}
 .sgt-icon-box .sgt-icon{width:22px;height:22px}
+
+.sgt-doc-spinner{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:inline-block;animation:sgt-doc-spin .7s linear infinite;vertical-align:-2px}@keyframes sgt-doc-spin{to{transform:rotate(360deg)}}
+.generated-doc[aria-busy="true"]{cursor:wait;opacity:.78}
