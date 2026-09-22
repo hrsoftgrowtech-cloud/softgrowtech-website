@@ -1,5 +1,20 @@
 const SGT_URL='https://syoqukavgvrdhwxatdav.supabase.co',SGT_KEY='sb_publishable_yUuacAdfZy3k-_Zve5QOZA_6eLh9FeZ';
 const sb=window.supabase.createClient(SGT_URL,SGT_KEY);
+function captureSoftGrowReferral(){
+  try{
+    const params=new URLSearchParams(location.search);
+    const code=(params.get('invite')||params.get('ref')||'').trim();
+    if(code && /^SGT-REF-[A-Z0-9-]+$/i.test(code)){
+      localStorage.setItem('sgt_referral_code',code.toUpperCase());
+      localStorage.setItem('sgt_referral_captured_at',String(Date.now()));
+    }else{
+      const at=Number(localStorage.getItem('sgt_referral_captured_at')||0);
+      if(at && Date.now()-at>30*24*60*60*1000){localStorage.removeItem('sgt_referral_code');localStorage.removeItem('sgt_referral_captured_at')}
+    }
+  }catch(_){}
+}
+function getCapturedReferralCode(){try{const at=Number(localStorage.getItem('sgt_referral_captured_at')||0);if(at&&Date.now()-at>30*24*60*60*1000)return '';return localStorage.getItem('sgt_referral_code')||''}catch(_){return ''}}
+
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const dateFmt=v=>v?new Date(v+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}):'Coming Soon';
 const adt=v=>v?new Date(v).toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
@@ -11,6 +26,7 @@ async function profile(){const u=await user();if(!u)return null;const {data,erro
 function statusClass(s){s=String(s||'').toLowerCase();return s==='selected'||s==='complete'||s==='completed'||s.includes('verified')?'success':s.includes('invalid')||s.includes('not selected')||s.includes('failed')?'danger':s.includes('pending')||s.includes('verification')||s.includes('review')?'warn':'blue'}
 async function logout(){await sb.auth.signOut();location.href='student-login.html'}
 async function initRegister(){
+  captureSoftGrowReferral();
   const f=document.getElementById('registerForm');if(!f)return;
   const dom=document.getElementById('domain'),requested=new URLSearchParams(location.search).get('domain'),code=document.getElementById('callingCode'),countryEl=document.getElementById('country'),countryHelp=document.getElementById('countryHelp'),regError=document.getElementById('registrationError'),phoneEl=document.getElementById('phone');
   const {data:ds}=await sb.from('sgt_domains').select('name').eq('enabled',true).order('name');
@@ -51,8 +67,8 @@ async function initRegister(){
     if(!checkError&&isRegistered===true){if(regError){regError.innerHTML='<strong>Registration Already Exists</strong><br>This Gmail address is already registered with SoftGrowTech. Please use your existing registration instead of creating a new one.';regError.hidden=false}b.disabled=false;b.textContent='Create Registration →';return}
     const validationResponse=await fetch(`${SGT_URL}/functions/v1/sgt-validate-registration`,{method:'POST',headers:{apikey:SGT_KEY,'Content-Type':'application/json'},body:JSON.stringify({calling_code:callingCode,country,iso:code.selectedOptions?.[0]?.dataset?.iso||'',phone:phoneCheck.digits})});const validationResult=await validationResponse.json().catch(()=>({}));if(!validationResponse.ok)throw Error(validationResult.error||'Unable to validate the mobile number. Please try again.');
     const {data:groupSetting}=await sb.from('sgt_settings').select('value').eq('key','registration_group').maybeSingle();const whatsapp_group_url=groupSetting?.value?.current_url||groupSetting?.value?.url||'';
-    const {error}=await sb.auth.signUp({email,password:temp,options:{emailRedirectTo:location.origin+'/student-login.html',data:{full_name:name,phone,country,calling_code:callingCode,study_year,gender,domain,address,temp_password:temp,must_change_password:true,whatsapp_group_url}}});
-    if(error)throw error;sessionStorage.setItem('sgt_new_registration',JSON.stringify({name,email,domain}));location.href='registration-success.html'
+    const referral_code=getCapturedReferralCode();const {error}=await sb.auth.signUp({email,password:temp,options:{emailRedirectTo:location.origin+'/student-login.html',data:{full_name:name,phone,country,calling_code:callingCode,study_year,gender,domain,address,temp_password:temp,must_change_password:true,whatsapp_group_url,referral_code}}});
+    if(error)throw error;try{localStorage.removeItem('sgt_referral_code');localStorage.removeItem('sgt_referral_captured_at')}catch(_){}sessionStorage.setItem('sgt_new_registration',JSON.stringify({name,email,domain}));location.href='registration-success.html'
   }catch(err){if(regError&&/already|registered|exists/i.test(err.message||'')){regError.innerHTML='<strong>Registration Already Exists</strong><br>This Gmail address is already registered with SoftGrowTech. Please use your existing registration instead of creating a new one.';regError.hidden=false}else{if(regError){regError.textContent=err.message||'Registration failed.';regError.hidden=false}else toast(err.message||'Registration failed.')}b.disabled=false;b.textContent='Create Registration →'}}}
 
 async function initLogin(){const f=document.getElementById('loginForm');if(!f)return;f.onsubmit=async e=>{e.preventDefault();const b=f.querySelector('button');b.disabled=true;b.textContent='Signing in…';try{let id=document.getElementById('loginId').value.trim(),email=id;if(/^SGT-/i.test(id)){if(id!==id.toUpperCase())throw Error('Invalid Student ID. Please enter your Student ID exactly as issued, including uppercase and lowercase characters.');const {data:lookup,error}=await sb.rpc('sgt_lookup_login_email',{p_student_id:id});if(error)throw error;if(!lookup)throw Error('Invalid Student ID. Please enter your Student ID exactly as issued, including uppercase and lowercase characters.');email=lookup}const {data:authData,error}=await sb.auth.signInWithPassword({email,password:document.getElementById('password').value});if(error)throw error;const meta=authData?.user?.user_metadata||{};const mustChange=meta.must_change_password===true||Boolean(meta.temp_password);location.href=mustChange?'create-password.html':'portal.html'}catch(err){toast(err.message||'Login failed.');b.disabled=false;b.textContent='Login →'}}}
@@ -191,6 +207,24 @@ async function initPortal(){
   const groupAction=document.getElementById('groupAction');
   const groupLabel=p.batch_start?`SoftGrowTech ${dateFmt(p.batch_start)} Batch`:'SoftGrowTech Current Batch';
   if(groupAction) groupAction.innerHTML=`<div class="portal-card" style="margin-top:18px;border-color:#dbeafe;background:linear-gradient(180deg,#f8fbff,#fff)"><div class="portal-section-title"><div><div class="portal-kicker">Official Batch Group</div><h2 style="margin-bottom:4px">${esc(groupLabel)}</h2><p style="margin:0">Important updates, schedules, tasks and program information will be shared there. Joining the group is required.</p></div></div>${groupUrl?`<div class="portal-actions"><a class="portal-btn primary" href="${esc(groupUrl)}" target="_blank" rel="noopener">Join ${esc(groupLabel)} →</a></div>`:'<div class="help-note" style="margin-top:12px">Your batch group link will appear here once it is assigned.</div>'}</div>`;
+
+  // Ambassador Program is intentionally invisible until the student is selected and payment is verified.
+  const ambassadorAction=document.getElementById('ambassadorAction');
+  if(ambassadorAction){
+    ambassadorAction.innerHTML='';
+    if(p.selection_status==='Selected'&&p.payment_status==='Verified'){
+      try{
+        const {data:amb}=await sb.from('sgt_ambassador_profiles').select('id,referral_code,is_active').eq('student_id',u.id).maybeSingle();
+        if(amb?.is_active){
+          const [{data:refs},{data:ledger}]=await Promise.all([sb.from('sgt_ambassador_referrals').select('status').eq('referrer_student_id',u.id),sb.from('sgt_ambassador_point_ledger').select('points').eq('ambassador_id',amb.id)]);
+          const successful=(refs||[]).filter(x=>x.status==='Successful').length;
+          const points=(ledger||[]).reduce((sum,x)=>sum+Number(x.points||0),0);
+          const milestones=[5,10,15,20,30],nextMilestone=milestones.find(x=>successful<x)||null;
+          ambassadorAction.innerHTML=`<div class="portal-card" style="margin-top:18px;border-color:#e9d5ff;background:linear-gradient(180deg,#fcfaff,#fff)"><div class="portal-section-title"><div><div class="portal-kicker">🌟 Student Ambassador</div><h2 style="margin-bottom:4px">Refer &amp; Reward</h2><p style="margin:0">Share the SoftGrowTech opportunity with genuine students and unlock milestone rewards.</p></div><span class="pill">${nextMilestone?`${nextMilestone-successful} more needed`:'All milestones completed'}</span></div><div class="portal-meta" style="margin-top:14px"><div class="meta-box"><small>Successful Referrals</small><strong>${successful}</strong></div><div class="meta-box"><small>Reward Points</small><strong>${points.toLocaleString('en-IN')}</strong></div><div class="meta-box"><small>Referral Code</small><strong>${esc(amb.referral_code)}</strong></div></div><div class="portal-actions" style="margin-top:14px"><a class="portal-btn primary" href="ambassador.html">Open Ambassador Dashboard →</a></div></div>`;
+        }
+      }catch(e){console.warn('Ambassador summary unavailable.',e.message)}
+    }
+  }
 
   let action='';
   const hasPaid=['Under Verification','Verified'].includes(String(p.payment_status||''));const paymentRejected=String(p.payment_status||'')==='Invalid';const rejectionAt=p.payment_rejected_at||null;const assessmentCompletedAt=p.assessment_completed_at||null;const dayDeadline=stamp=>{if(!stamp)return null;const d=new Date(stamp);d.setHours(23,59,59,999);d.setDate(d.getDate()+7);return d};const sevenDayDeadline=rejectionAt?dayDeadline(rejectionAt):(assessmentCompletedAt?dayDeadline(assessmentCompletedAt):null);const formatRemaining=deadline=>{if(!deadline)return '';const now=new Date(),ms=deadline-now;if(ms<=0)return 'Deadline passed';const d=Math.floor(ms/86400000);if(d>=1)return `${d} Day${d===1?'':'s'} Left`;const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);return `Today — ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} remaining (11:59 PM deadline)`;};

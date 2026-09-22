@@ -11,6 +11,20 @@ function escapeHtml(value) {
   }[c]));
 }
 
+
+function captureSoftGrowReferral(){
+  try{
+    const params=new URLSearchParams(location.search);
+    const code=(params.get('invite')||params.get('ref')||'').trim();
+    if(code && /^SGT-REF-[A-Z0-9-]+$/i.test(code)){
+      localStorage.setItem('sgt_referral_code',code.toUpperCase());
+      localStorage.setItem('sgt_referral_captured_at',String(Date.now()));
+    }else{
+      const at=Number(localStorage.getItem('sgt_referral_captured_at')||0);
+      if(at && Date.now()-at>30*24*60*60*1000){localStorage.removeItem('sgt_referral_code');localStorage.removeItem('sgt_referral_captured_at')}
+    }
+  }catch(_){}
+}
 function formatDate(value) {
   if (!value) return "Not Available";
   const d = new Date(value);
@@ -1568,6 +1582,7 @@ function waIcon() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  captureSoftGrowReferral();
   addVerificationSecurityStyles();
   initCommonUI();
   initVerificationPage();
