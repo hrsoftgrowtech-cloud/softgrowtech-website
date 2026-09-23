@@ -1,18 +1,27 @@
 const SGT_URL='https://syoqukavgvrdhwxatdav.supabase.co',SGT_KEY='sb_publishable_yUuacAdfZy3k-_Zve5QOZA_6eLh9FeZ';
 const sb=window.supabase.createClient(SGT_URL,SGT_KEY);
-function captureSoftGrowReferral(){
+async function captureSoftGrowReferral(){
   try{
+    const at=Number(localStorage.getItem('sgt_referral_captured_at')||0);
+    if(at && Date.now()-at>30*24*60*60*1000){localStorage.removeItem('sgt_referral_code');localStorage.removeItem('sgt_referral_captured_at');}
+    const existing=(localStorage.getItem('sgt_referral_code')||'').trim().toUpperCase();
+    if(existing){
+      const check=await sb.rpc('sgt_validate_referral_code',{p_code:existing});
+      if(!check.error && check.data===true) return;
+      localStorage.removeItem('sgt_referral_code');
+      localStorage.removeItem('sgt_referral_captured_at');
+    }
     const params=new URLSearchParams(location.search);
-    const code=(params.get('invite')||params.get('ref')||'').trim();
-    if(code && /^SGT-REF-[A-Z0-9-]+$/i.test(code)){
-      localStorage.setItem('sgt_referral_code',code.toUpperCase());
+    const code=(params.get('invite')||params.get('ref')||'').trim().toUpperCase();
+    if(!code || !/^SGT-REF-[A-Z0-9-]+$/i.test(code)) return;
+    const {data, error}=await sb.rpc('sgt_validate_referral_code',{p_code:code});
+    if(!error && data===true){
+      localStorage.setItem('sgt_referral_code',code);
       localStorage.setItem('sgt_referral_captured_at',String(Date.now()));
-    }else{
-      const at=Number(localStorage.getItem('sgt_referral_captured_at')||0);
-      if(at && Date.now()-at>30*24*60*60*1000){localStorage.removeItem('sgt_referral_code');localStorage.removeItem('sgt_referral_captured_at')}
     }
   }catch(_){}
 }
+
 function getCapturedReferralCode(){try{const at=Number(localStorage.getItem('sgt_referral_captured_at')||0);if(at&&Date.now()-at>30*24*60*60*1000)return '';return localStorage.getItem('sgt_referral_code')||''}catch(_){return ''}}
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -26,7 +35,7 @@ async function profile(){const u=await user();if(!u)return null;const {data,erro
 function statusClass(s){s=String(s||'').toLowerCase();return s==='selected'||s==='complete'||s==='completed'||s.includes('verified')?'success':s.includes('invalid')||s.includes('not selected')||s.includes('failed')?'danger':s.includes('pending')||s.includes('verification')||s.includes('review')?'warn':'blue'}
 async function logout(){await sb.auth.signOut();location.href='student-login.html'}
 async function initRegister(){
-  captureSoftGrowReferral();
+  await captureSoftGrowReferral();
   const f=document.getElementById('registerForm');if(!f)return;
   const dom=document.getElementById('domain'),requested=new URLSearchParams(location.search).get('domain'),code=document.getElementById('callingCode'),countryEl=document.getElementById('country'),countryHelp=document.getElementById('countryHelp'),regError=document.getElementById('registrationError'),phoneEl=document.getElementById('phone');
   const {data:ds}=await sb.from('sgt_domains').select('name').eq('enabled',true).order('name');
@@ -208,23 +217,7 @@ async function initPortal(){
   const groupLabel=p.batch_start?`SoftGrowTech ${dateFmt(p.batch_start)} Batch`:'SoftGrowTech Current Batch';
   if(groupAction) groupAction.innerHTML=`<div class="portal-card" style="margin-top:18px;border-color:#dbeafe;background:linear-gradient(180deg,#f8fbff,#fff)"><div class="portal-section-title"><div><div class="portal-kicker">Official Batch Group</div><h2 style="margin-bottom:4px">${esc(groupLabel)}</h2><p style="margin:0">Important updates, schedules, tasks and program information will be shared there. Joining the group is required.</p></div></div>${groupUrl?`<div class="portal-actions"><a class="portal-btn primary" href="${esc(groupUrl)}" target="_blank" rel="noopener">Join ${esc(groupLabel)} →</a></div>`:'<div class="help-note" style="margin-top:12px">Your batch group link will appear here once it is assigned.</div>'}</div>`;
 
-  // Ambassador Program is intentionally invisible until the student is selected and payment is verified.
-  const ambassadorAction=document.getElementById('ambassadorAction');
-  if(ambassadorAction){
-    ambassadorAction.innerHTML='';
-    if(p.selection_status==='Selected'&&p.payment_status==='Verified'){
-      try{
-        const {data:amb}=await sb.from('sgt_ambassador_profiles').select('id,referral_code,is_active').eq('student_id',u.id).maybeSingle();
-        if(amb?.is_active){
-          const [{data:refs},{data:ledger}]=await Promise.all([sb.from('sgt_ambassador_referrals').select('status').eq('referrer_student_id',u.id),sb.from('sgt_ambassador_point_ledger').select('points').eq('ambassador_id',amb.id)]);
-          const successful=(refs||[]).filter(x=>x.status==='Successful').length;
-          const points=(ledger||[]).reduce((sum,x)=>sum+Number(x.points||0),0);
-          const milestones=[5,10,15,20,30],nextMilestone=milestones.find(x=>successful<x)||null;
-          ambassadorAction.innerHTML=`<div class="portal-card" style="margin-top:18px;border-color:#e9d5ff;background:linear-gradient(180deg,#fcfaff,#fff)"><div class="portal-section-title"><div><div class="portal-kicker icon-inline">${window.sgtIcon?window.sgtIcon('ambassador'):''}Student Ambassador</div><h2 style="margin-bottom:4px">Refer &amp; Reward</h2><p style="margin:0">Share the SoftGrowTech opportunity with genuine students and unlock milestone rewards.</p></div><span class="pill">${nextMilestone?`${nextMilestone-successful} more needed`:'All milestones completed'}</span></div><div class="portal-meta" style="margin-top:14px"><div class="meta-box"><small>Successful Referrals</small><strong>${successful}</strong></div><div class="meta-box"><small>Reward Points</small><strong>${points.toLocaleString('en-IN')}</strong></div><div class="meta-box"><small>Referral Code</small><strong>${esc(amb.referral_code)}</strong></div></div><div class="portal-actions" style="margin-top:14px"><a class="portal-btn primary" href="ambassador.html">Open Ambassador Dashboard →</a></div></div>`;
-        }
-      }catch(e){console.warn('Ambassador summary unavailable.',e.message)}
-    }
-  }
+  const ambassadorAction=document.getElementById('ambassadorAction'); if(ambassadorAction) ambassadorAction.innerHTML='';
 
   let action='';
   const hasPaid=['Under Verification','Verified'].includes(String(p.payment_status||''));const paymentRejected=String(p.payment_status||'')==='Invalid';const rejectionAt=p.payment_rejected_at||null;const assessmentCompletedAt=p.assessment_completed_at||null;const dayDeadline=stamp=>{if(!stamp)return null;const d=new Date(stamp);d.setHours(23,59,59,999);d.setDate(d.getDate()+7);return d};const sevenDayDeadline=rejectionAt?dayDeadline(rejectionAt):(assessmentCompletedAt?dayDeadline(assessmentCompletedAt):null);const formatRemaining=deadline=>{if(!deadline)return '';const now=new Date(),ms=deadline-now;if(ms<=0)return 'Deadline passed';const d=Math.floor(ms/86400000);if(d>=1)return `${d} Day${d===1?'':'s'} Left`;const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);return `Today — ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} remaining (11:59 PM deadline)`;};
