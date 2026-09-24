@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/sgt-control-ce2494e173738869b5b6f7c2",
-      "destination": "/admin-login.html"
+      "destination": "/sgt-control-ce2494e173738869b5b6f7c2/index.html"
     },
     {
       "source": "/sgt-control-ce2494e173738869b5b6f7c2/",
-      "destination": "/admin-login.html"
+      "destination": "/sgt-control-ce2494e173738869b5b6f7c2/index.html"
     }
   ]
 }
