@@ -8,13 +8,26 @@ function getSupabaseClient(){
 }
 
 function ensureSupabase(){
-  const existing=getSupabaseClient();
-  if(existing) return Promise.resolve(existing);
-  return new Promise(resolve=>{
-    const old=document.querySelector('script[data-sgt-supabase-loader]');
-    if(old){old.addEventListener('load',()=>resolve(getSupabaseClient()),{once:true});old.addEventListener('error',()=>resolve(null),{once:true});return;}
-    const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';sc.async=true;sc.dataset.sgtSupabaseLoader='1';
-    sc.onload=()=>resolve(getSupabaseClient());sc.onerror=()=>resolve(null);document.head.appendChild(sc);
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    return Promise.resolve();
+  }
+  return new Promise((resolve,reject)=>{
+    const existing = document.querySelector('script[data-sgt-supabase-sdk="1"]');
+    if (existing) {
+      existing.addEventListener('load', resolve, {once:true});
+      existing.addEventListener('error', ()=>reject(new Error('Supabase SDK failed to load')), {once:true});
+      return;
+    }
+    const s=document.createElement('script');
+    s.dataset.sgtSupabaseSdk='1';
+    s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    s.async=true;
+    s.onload=()=>{
+      if (window.supabase && typeof window.supabase.createClient === 'function') resolve();
+      else reject(new Error('Supabase SDK loaded but createClient is unavailable'));
+    };
+    s.onerror=()=>reject(new Error('Supabase SDK failed to load'));
+    document.head.appendChild(s);
   });
 }
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -26,7 +39,7 @@ const REFERRAL_ICON_FALLBACK={
   bulb:'<path d="M9 18h6M10 21h4"/><path d="M8.2 14.5A6 6 0 1 1 15.8 14c-.8.7-1.2 1.3-1.4 2H9.6c-.2-.6-.6-1.1-1.4-1.5z"/><path d="M12 3v1"/>',
   copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/>'
 };
-const icon=k=>window.sgtIcon?window.sgtIcon(k):`<svg class="sgt-icon" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${REFERRAL_ICON_FALLBACK[k]||''}</g></svg>`;
+const icon=k=>window.sgtIcon?window.sgtIcon(k):`<svg xmlns="http://www.w3.org/2000/svg" class="sgt-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${REFERRAL_ICON_FALLBACK[k]||''}</g></svg>`;
 const badges=[{at:1,title:'First Referral',icon:'🌱',text:'Your first successful referral is the start of your contribution.'},{at:3,title:'Referral Contributor',icon:'🏅',text:'Three successful referrals completed. Keep the momentum going.'},{at:5,title:'Active Contributor',icon:'⭐',text:'Five successful referrals completed. Your reach is growing.'},{at:10,title:'Referral Champion',icon:'🏆',text:'Ten successful referrals completed. A strong contribution.'},{at:20,title:'Referral Leader',icon:'👑',text:'Twenty successful referrals completed. A major milestone.'}];
 function badgeFor(n){let b={at:0,title:'Getting Started',icon:'✨',text:'Complete your first genuine referral to unlock your first badge.'};for(const x of badges)if(n>=x.at)b=x;return b}
 function nextBadge(n){return badges.find(x=>n<x.at)||null}
