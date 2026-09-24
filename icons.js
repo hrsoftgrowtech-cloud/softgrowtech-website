@@ -33,6 +33,8 @@
     link:'<path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1"/>',
     help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 1 1 4.3 2c-1.2.9-1.8 1.3-1.8 2.7M12 17h.01"/>',
     logout:'<path d="M10 17l5-5-5-5M15 12H3M21 19V5a2 2 0 0 0-2-2h-5"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>',
+    inbox:'<path d="M4 5h16v14H4z"/><path d="M4 14h4l1.5 3h5L16 14h4"/>',
     menu:'<path d="M4 7h16M4 12h16M4 17h16"/>'
   };
   function icon(name,cls){const p=paths[name]||paths.help;return `<svg class="sgt-icon ${cls||''}" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</g></svg>`}
