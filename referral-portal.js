@@ -1,4 +1,4 @@
-const SGT_URL='https://syoqukavgvrdhwxatdav.supabase.co',SGT_KEY='sb_publishable_yUuacAdfZy3k-_Zve5QOZA_6eLh9Fe';
+const SGT_URL='https://syoqukavgvrdhwxatdav.supabase.co',SGT_KEY='sb_publishable_yUuacAdfZy3k-_Zve5QOZA_6eLh9FeZ';
 let sb=null;
 function getSupabaseClient(){
   if(sb) return sb;
