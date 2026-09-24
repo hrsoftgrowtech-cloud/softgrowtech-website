@@ -19,7 +19,14 @@ function ensureSupabase(){
 }
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const toast=m=>{const t=document.getElementById('toast');if(t){t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}};
-const icon=k=>window.sgtIcon?window.sgtIcon(k):'';
+const REFERRAL_ICON_FALLBACK={
+  linkedin:'<path d="M6 8v11"/><circle cx="6" cy="5" r="1"/><path d="M10 19v-7a3 3 0 0 1 6 0v7M10 15h6"/>',
+  instagram:'<rect x="4" y="4" width="16" height="16" rx="4"/><circle cx="12" cy="12" r="3.5"/><circle cx="17.3" cy="6.8" r="1"/>',
+  whatsapp:'<path d="M20 11.5a8 8 0 0 1-11.8 7L4 20l1.5-4.1A8 8 0 1 1 20 11.5z"/><path d="M9 8.5c.3 2 1.8 3.8 3.7 4.7l1.3-1c.3-.2.7-.2 1 0l1.2.6c.4.2.5.7.3 1.1-.4.7-1.1 1.1-1.9 1.1-3.8-.3-6.7-3.1-7-6.7-.1-.8.4-1.5 1.1-1.8.4-.2.9 0 1.1.4l.6 1.2c.2.3.2.7 0 1z"/>',
+  bulb:'<path d="M9 18h6M10 21h4"/><path d="M8.2 14.5A6 6 0 1 1 15.8 14c-.8.7-1.2 1.3-1.4 2H9.6c-.2-.6-.6-1.1-1.4-1.5z"/><path d="M12 3v1"/>',
+  copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/>'
+};
+const icon=k=>window.sgtIcon?window.sgtIcon(k):`<svg class="sgt-icon" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${REFERRAL_ICON_FALLBACK[k]||''}</g></svg>`;
 const badges=[{at:1,title:'First Referral',icon:'🌱',text:'Your first successful referral is the start of your contribution.'},{at:3,title:'Referral Contributor',icon:'🏅',text:'Three successful referrals completed. Keep the momentum going.'},{at:5,title:'Active Contributor',icon:'⭐',text:'Five successful referrals completed. Your reach is growing.'},{at:10,title:'Referral Champion',icon:'🏆',text:'Ten successful referrals completed. A strong contribution.'},{at:20,title:'Referral Leader',icon:'👑',text:'Twenty successful referrals completed. A major milestone.'}];
 function badgeFor(n){let b={at:0,title:'Getting Started',icon:'✨',text:'Complete your first genuine referral to unlock your first badge.'};for(const x of badges)if(n>=x.at)b=x;return b}
 function nextBadge(n){return badges.find(x=>n<x.at)||null}
