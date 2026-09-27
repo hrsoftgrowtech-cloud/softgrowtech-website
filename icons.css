@@ -11,5 +11,3 @@
 
 .sgt-doc-spinner{width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:inline-block;animation:sgt-doc-spin .7s linear infinite;vertical-align:-2px}@keyframes sgt-doc-spin{to{transform:rotate(360deg)}}
 .generated-doc[aria-busy="true"]{cursor:wait;opacity:.78}
-
-.sgt-icon,.sg-icon,[data-sgt-icon] svg{display:inline-block;width:1.2em;height:1.2em;vertical-align:middle;overflow:visible}.icon-box{display:flex;align-items:center;justify-content:center}.icon-box svg{width:24px;height:24px}

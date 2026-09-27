@@ -168,15 +168,21 @@ async function initPortal(){
   const rangeLabel=(start,end)=>start&&end&&start!==end?`${dateFmt(start)} – ${dateFmt(end)}`:dateFmt(start);
   document.getElementById('studentName').textContent=p.name||'Student';
   document.getElementById('logoutBtn').onclick=logout;
+  const queryBtn=document.getElementById('studentSendQuery'),queryForm=document.getElementById('studentSupportForm'),cancelQuery=document.getElementById('cancelStudentQuery');
+  if(queryBtn&&queryForm){
+    const nameInput=document.getElementById('studentQueryName'),idInput=document.getElementById('studentQueryId');
+    if(nameInput)nameInput.value=p.name||'';
+    if(idInput)idInput.value=p.student_id||'';
+    queryBtn.onclick=()=>{queryForm.hidden=false;queryBtn.style.display='none';document.getElementById('studentQueryText')?.focus()};
+    cancelQuery?.addEventListener('click',()=>{queryForm.reset();if(nameInput)nameInput.value=p.name||'';if(idInput)idInput.value=p.student_id||'';queryForm.hidden=true;queryBtn.style.display='inline-flex'});
+    queryForm.onsubmit=async e=>{e.preventDefault();const text=document.getElementById('studentQueryText')?.value.trim();if(!text)return toast('Please describe your query.');const btn=e.submitter||queryForm.querySelector('button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Sending…'}const {error}=await sb.from('sgt_support_queries').insert({user_id:u.id,student_id:p.student_id||null,name:p.name||'',email:p.email||'',category:document.getElementById('studentQueryCategory')?.value||'Other',query_text:text});if(btn){btn.disabled=false;btn.textContent='Send Query →'}if(error)return toast(error.message);toast('Query submitted successfully.');queryForm.reset();if(nameInput)nameInput.value=p.name||'';if(idInput)idInput.value=p.student_id||'';queryForm.hidden=true;queryBtn.style.display='inline-flex'};
+  }
   document.querySelectorAll('.portal-tab').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.portal-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.portal-section-view').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelector(`[data-portal-view=\"${btn.dataset.portalTab}\"]`)?.classList.add('active');window.scrollTo({top:0,behavior:'smooth'})});
+  const dashboardStickyUpdate=()=>document.body.classList.toggle('dashboard-scrolled',window.scrollY>36); window.addEventListener('scroll',dashboardStickyUpdate,{passive:true}); dashboardStickyUpdate();
 
   const programStart=p.batch_start||null, programEnd=programStart?monthEnd(programStart):null, orient=programStart?addDays(programStart,-2):null;
-  const selected=String(p.selection_status||'').trim().toLowerCase()==='selected';
-  const programPaymentVerified=String(p.payment_status||'').trim().toLowerCase()==='verified';
-  const activeEligible=selected&&programPaymentVerified;
-  const programStatus=!activeEligible?'Applicant':(p.status==='Completed'||(programEnd&&today>escDate(programEnd))?'Internship Completed':(programStart&&today>=escDate(programStart)?'Internship Running':'Active'));
-  const profileStatus=programStatus;
-  const profileMeta=[['Student ID',p.student_id],['Gmail',p.email],['Phone / WhatsApp',p.phone],['Country',p.country],['Gender',p.gender],['Domain',p.domain],['Status',profileStatus]];
+  const programStatus=!programStart?'Batch Assignment Pending':today<escDate(programStart)?'Internship Upcoming':(p.status==='Completed'||today>escDate(programEnd))?'Internship Completed':'Internship Running';
+  const profileMeta=[['Student ID',p.student_id],['Gmail',p.email],['Phone / WhatsApp',p.phone],['Country',p.country],['Gender',p.gender],['Domain',p.domain],['Status',p.status]];
   document.getElementById('profileMeta').innerHTML=profileMeta.map(x=>`<div class="meta-box"><small>${x[0]}</small><strong>${esc(x[1]||'—')}</strong></div>`).join('');
 
   const [legacySched,batchScheduleInfo]=await Promise.all([getScheduleConfig(),programStart?sb.from('sgt_batches').select('*').eq('start_date',programStart).maybeSingle():Promise.resolve({data:null})]); const sched=batchScheduleInfo?.data?.schedule||legacySched;

@@ -1153,9 +1153,15 @@ function renderOrientationRecord(student) {
 }
 
 function renderNewStudentRecord(student) {
-  ensurePublicRecordPolishStyles();
   const root=document.getElementById('verificationResult');
   if(!root)return;
+  const icons = {
+    verified:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m8 12 2.5 2.5L16.5 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    shield:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M12 3 20 6v5.5c0 4.6-3.1 7.9-8 9.5-4.9-1.6-8-4.9-8-9.5V6l8-3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8.5 12 2.2 2.2 4.8-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    celebration:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><path d="M5 19 8 9l7 7-10 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8 9 7-4M12 13l7-3M16 4l1-2M20 8l2-1M5 5 3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+    group:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="9" cy="9" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16.5" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 19c.6-3 2.4-4.5 5.5-4.5s4.9 1.5 5.5 4.5M14 15.2c2.9-.2 4.9 1.1 5.5 3.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+    profile:`<svg viewBox="0 0 24 24" aria-hidden="true" class="record-svg"><circle cx="12" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.8-3.4 3-5 7-5s6.2 1.6 7 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`
+  };
   const id=student['Student Id']||student['Student ID']||'Not Available';
   const name=student['Name']||'Not Available';
   const email=student['Student Email']||student['Email']||'Not Available';
@@ -1168,16 +1174,23 @@ function renderNewStudentRecord(student) {
   const now=new Date();
   const start=batchStart?new Date(batchStart+'T00:00:00'):null;
   const end=batchEnd?new Date(batchEnd+'T23:59:59'):null;
-  const running=statusRaw.includes('running')||(start&&!Number.isNaN(start.getTime())&&end&&!Number.isNaN(end.getTime())&&now>=start&&now<=end);
-  const complete=statusRaw.includes('complete')||(end&&!Number.isNaN(end.getTime())&&now>end);
+  const selectionRaw=String(student['Selection Status']||student['Selection']||'').toLowerCase();
+  const paymentRaw=String(student['Payment Status']||student['Payment Verification']||student['Enrollment Status']||'').toLowerCase();
+  const activeByFlow=statusRaw.includes('active')||statusRaw.includes('selected')||(selectionRaw.includes('selected')&&/verified|paid|confirmed|complete/.test(paymentRaw));
+  const runningByDate=activeByFlow&&start&&!Number.isNaN(start.getTime())&&now>=start&&(!end||Number.isNaN(end.getTime())||now<=end);
+  const running=statusRaw.includes('running')||runningByDate;
+  const complete=statusRaw.includes('complete')||(end&&!Number.isNaN(end.getTime())&&now>end&&activeByFlow);
   const offerVerified=offer.includes('verified')||offer.includes('received')||offer.includes('issued')||student['Offer Letter URL'];
   const certVerified=certificate.includes('verified')||certificate.includes('received')||certificate.includes('issued')||student['Certificate URL'];
-  const selected=String(student['Selection Status']||student['selection_status']||student['Selection']||'').toLowerCase()==='selected';
-  const paymentVerified=String(student['Payment Status']||student['payment_status']||'').toLowerCase()==='verified';
-  const activeEligible=selected&&paymentVerified;
-  const internshipStatus=complete?'Internship Complete':(activeEligible?(batchStart && now>=start?'Internship Running':'Active'):'Applicant');
+  const internshipStatus=complete?'Internship Complete':running?'Internship Running':activeByFlow?'Active':'Applicant';
+  const statusDescription=complete?'The internship program has been successfully completed.':running?'The internship program is currently running according to the assigned batch schedule.':activeByFlow?'The candidate is active in the SoftGrowTech program and is awaiting the scheduled batch start.':'The student has registered with SoftGrowTech and the application is currently at the applicant stage.';
   const offerText=offerVerified?'Received / Verified':'Coming Soon';
   const certText=certVerified?'Received / Verified':'Coming Soon';
+  const officialRecordMessage=certVerified
+    ? `<div class="official-record-message success"><div class="official-record-icon">${icons.celebration}</div><div><strong>Congratulations!</strong><span>The student has successfully completed the SoftGrowTech internship program and the certificate has been issued.</span></div></div>`
+    : offerVerified
+      ? `<div class="official-record-message confirmed"><div class="official-record-icon">${icons.verified}</div><div><strong>Selection Confirmed</strong><span>The student's selection has been confirmed and the official offer letter has been issued.</span></div></div>`
+      : `<div class="official-record-message private"><div class="official-record-icon">${icons.shield}</div><div><strong>Official Record</strong><span>This public verification page shows only essential verification information. Internal assessment, payment and personal contact details are not displayed.</span></div></div>`;
   const batchStartText=batchStart?formatDate(batchStart):'Coming Soon';
   const batchEndText=batchEnd?formatDate(batchEnd):'Coming Soon';
   const badge=(text,kind)=>`<span class="badge ${kind}">${text}</span>`;
@@ -1196,19 +1209,18 @@ function renderNewStudentRecord(student) {
       </div>
       <section class="status-section new-clean-status" style="--status:#2563eb;--status-bg:#f8fbff">
         <div class="status-label">PROGRAM STATUS</div>
-        <div class="status-content"><div class="overall-circle"><div class="overall-check">${complete?'✓':running?'↻':'○'}</div><small>Internship Status</small><strong>${escapeHtml(internshipStatus)}</strong><p>${complete?'The program journey is complete.':running?'The internship program is currently running.':'The program schedule will appear after batch assignment.'}</p></div>
+        <div class="status-content"><div class="overall-circle"><div class="overall-check">${complete?icons.verified:running?icons.group:activeByFlow?icons.profile:icons.profile}</div><small>Program Status</small><strong>${escapeHtml(internshipStatus)}</strong><p>${escapeHtml(statusDescription)}</p></div>
         <div class="document-status"><h2>Document Status</h2>
-          <div class="doc-row"><div><strong>Offer Letter</strong><small>${offerVerified?'The offer letter has been received and verified.':'The offer letter will appear after the applicable selection and onboarding stage.'}</small></div>${badge(offerText,offerVerified?'green':'yellow')}</div>
-          <div class="doc-row"><div><strong>Certificate</strong><small>${certVerified?'The certificate has been received and verified.':'The certificate status will update after successful completion and applicable evaluation.'}</small></div>${badge(certText,certVerified?'green':'yellow')}</div>
+          <div class="doc-row"><div><strong>Offer Letter</strong><small>${offerVerified?'The official offer letter has been issued and verified.':'The offer letter will appear here once it has been officially issued.'}</small></div>${badge(offerText,offerVerified?'green':'yellow')}</div>
+          <div class="doc-row"><div><strong>Certificate</strong><small>${certVerified?'The certificate has been issued and verified.':'The certificate will appear here after successful program completion and applicable evaluation.'}</small></div>${badge(certText,certVerified?'green':'yellow')}</div>
         </div></div>
       </section>
-      <div class="running-note public-record-message"><strong>${offerVerified || certVerified ? (certVerified ? "Congratulations!" : "Selection Confirmed") : "Program Status"}</strong><span>${certVerified ? "Your internship certificate has been issued and the official record has been updated." : offerVerified ? "Selection is confirmed and the Offer Letter has been officially issued." : `Current program status: ${escapeHtml(internshipStatus)}.`}</span></div>
-      <footer class="record-footer"><section class="verification-trust-strip"><div class="trust-item"><div class="trust-icon">✓</div><div><strong>Authentic Record</strong><span>Student details are matched with the official record.</span></div></div><div class="trust-item"><div class="trust-icon">⌁</div><div><strong>Privacy Protected</strong><span>Personal contact details are masked on this page.</span></div></div><div class="trust-item"><div class="trust-icon">◉</div><div><strong>Official Verification</strong><span>Use the Student ID to verify the record.</span></div></div><div class="trust-item"><div class="trust-icon">?</div><div><strong>Need Support?</strong><span>Contact SoftGrowTech for verification help.</span></div></div></section><div class="record-footer-actions"><a class="result-button verify-another" href="documents-verification.html">Verify Another ID <span>←</span></a></div><div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div></footer>
+      ${officialRecordMessage}
+      <footer class="record-footer"><section class="verification-trust-strip"><div class="trust-item"><div class="trust-icon">${icons.verified}</div><div><strong>Authentic Record</strong><span>Student details are matched with the official record.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.shield}</div><div><strong>Privacy Protected</strong><span>Personal contact details are protected on this page.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.profile}</div><div><strong>Official Verification</strong><span>Use the Student ID to verify the official record.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.group}</div><div><strong>Need Support?</strong><span>Contact SoftGrowTech for verification assistance.</span></div></div></section><div class="record-footer-actions"><a class="result-button verify-another" href="documents-verification.html">Verify Another ID</a></div><div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div></footer>
     </div></div>`;
 }
 
 function renderVerified(student) {
-  ensurePublicRecordPolishStyles();
   ensureRecordFooterStyles();
   ensureDownloadAndBadgeStyles();
   const root = document.getElementById("verificationResult");
@@ -1221,37 +1233,31 @@ function renderVerified(student) {
   const offer = String(student["Offer Letter"] || "Not Available");
   const certificate = String(student["Certificate"] || "Not Available");
   const status = String(student["Status"] || "Not Available").toUpperCase();
-  const selectionStatus=String(student['Selection Status']||student['selection_status']||student['Selection']||'').toUpperCase();
-  const paymentStatus=String(student['Payment Status']||student['payment_status']||'').toUpperCase();
-  const batchStartRaw=student['Batch Start']||student['Batch date']||'';
-  const batchStartDate=batchStartRaw?new Date(batchStartRaw+'T00:00:00'):null;
-  const now=new Date();
-  const activeByFlow=selectionStatus==='SELECTED'&&paymentStatus==='VERIFIED';
+
   const completed = /COMPLETE|COMPLETED/.test(status);
-  const running = /RUNNING|ONGOING/.test(status)||(activeByFlow&&batchStartDate&&!Number.isNaN(batchStartDate.getTime())&&now>=batchStartDate);
+  const running = /RUNNING|ONGOING|ACTIVE/.test(status);
   const notVerifiedStatus = /NOT\s*VERIFIED|NOT\s*ISSUED|INVALID|REJECTED/.test(status);
   const offerVerified = /RECEIVED|VERIFIED|ISSUED/.test(offer.toUpperCase());
   const certificateVerified = /RECEIVED|VERIFIED|ISSUED/.test(certificate.toUpperCase());
 
-  let mode = "applicant";
+  let mode = "running";
   if (completed && certificateVerified) mode = "completed";
   else if (completed) mode = "certificate-missing";
   else if (notVerifiedStatus) mode = "certificate-missing";
   else if (running) mode = "running";
-  else if (activeByFlow) mode = "active";
 
-  let statusTitle = mode === "completed" ? "INTERNSHIP COMPLETED" : mode === "certificate-missing" ? "CERTIFICATE NOT ISSUED" : mode === "running" ? "INTERNSHIP RUNNING" : mode === "active" ? "ACTIVE" : "APPLICANT";
-  let statusColor = mode === "completed" ? "#2563eb" : mode === "certificate-missing" ? "#d97706" : mode === "running" ? "#16a34a" : "#2563eb";
+  let statusTitle = mode === "completed" ? "INTERNSHIP COMPLETED" : mode === "certificate-missing" ? "CERTIFICATE NOT ISSUED" : "INTERNSHIP RUNNING";
+  let statusColor = mode === "completed" ? "#2563eb" : mode === "certificate-missing" ? "#d97706" : "#16a34a";
   let statusBg = mode === "completed" ? "#eff6ff" : mode === "certificate-missing" ? "#fffbeb" : "#f0fdf4";
-  let overall = mode === "completed" ? "COMPLETE VERIFIED" : mode === "certificate-missing" ? "NOT VERIFIED" : mode === "running" ? "RUNNING" : mode === "active" ? "ACTIVE" : "APPLICANT";
-  let overallText = mode === "completed" ? "All required documents have been verified successfully." : mode === "certificate-missing" ? "Your internship is complete, but the certificate has not been issued." : mode === "running" ? "Your internship is currently in progress." : mode === "active" ? "Selection and payment verification are complete. Your program is active." : "Your application is recorded and is awaiting the applicable selection and enrollment stages.";
+  let overall = mode === "completed" ? "COMPLETE VERIFIED" : mode === "certificate-missing" ? "NOT VERIFIED" : "RUNNING";
+  let overallText = mode === "completed" ? "All required documents have been verified successfully." : mode === "certificate-missing" ? "Your internship is complete, but the certificate has not been issued." : "Your internship is currently in progress.";
 
   const whatsapp = "https://wa.me/917839686310";
   const certificateAction = `<a class="mini-action certificate-action" href="${whatsapp}" target="_blank" rel="noopener noreferrer">Get Your Certificate <span class="click-indicator certificate-icon" aria-hidden="true">▣</span></a>`;
   const helpAction = `<span class="help-inline">Need Help? Contact Us <a class="whatsapp-icon" href="${whatsapp}" target="_blank" rel="noopener noreferrer" aria-label="Contact SoftGrowTech on WhatsApp" title="WhatsApp">${waIcon()}</a></span>`;
 
   let documentRows = `
-    <div class="doc-row"><div><strong>Offer Letter</strong><small>${escapeHtml(offerVerified ? "Offer letter has been issued." : "Offer Letter will appear after it is officially issued.")}</small></div><span class="badge ${offerVerified?"green":"yellow"}">${offerVerified?"✓ Received / Verified":"⌛ Coming Soon"}</span></div>`;
+    <div class="doc-row"><div><strong>Offer Letter</strong><small>${escapeHtml(offerVerified ? "Offer letter has been issued." : offer)}</small></div><span class="badge green">✓ Received &amp; Verified</span></div>`;
 
   if (mode === "running") {
     documentRows += `<div class="doc-row"><div><strong>Certificate</strong><small>Certificate will be issued after successful completion of the internship.</small></div><span class="badge yellow">⌛ Coming Soon</span></div>`;
@@ -1296,7 +1302,6 @@ function renderVerified(student) {
           </div>
         </section>
         ${bottomMessage}
-        <div class="running-note public-record-message"><strong>${certificateVerified ? "Congratulations!" : offerVerified ? "Selection Confirmed" : "Program Status"}</strong><span>${certificateVerified ? "Your certificate has been issued and the official record has been updated." : offerVerified ? "Selection is confirmed and the Offer Letter has been officially issued." : `Current program status: ${escapeHtml(overall)}.`}</span></div>
 
         <!-- Complete record footer: assurance + actions + copyright.
              This stays INSIDE the downloadable result shell. -->
@@ -1371,7 +1376,12 @@ function ensureDownloadAndBadgeStyles() {
   document.head.appendChild(style);
 }
 
-function ensurePublicRecordPolishStyles(){if(document.getElementById("softgrow-public-record-polish"))return;const style=document.createElement("style");style.id="softgrow-public-record-polish";style.textContent=`.public-record-message{display:flex;flex-direction:column;gap:5px;margin:16px 0;padding:14px 16px;background:#f8fbff;border:1px solid #dbe7f5;border-radius:12px;color:#0f172a;line-height:1.45}.public-record-message strong{color:#1d4ed8;font-size:14px}.public-record-message span{color:#64748b;font-size:13px}.record-footer .verification-copyright{background:#061a33!important;color:#fff!important;border-radius:0 0 14px 14px!important}@media(max-width:760px){.public-record-message{padding:13px}}`;document.head.appendChild(style)}
+function ensureImprovedVerificationStyles(){
+  if(document.getElementById("sgtImprovedVerificationStyles"))return;
+  const style=document.createElement("style");style.id="sgtImprovedVerificationStyles";style.textContent=`
+    .official-record-message{display:flex;align-items:flex-start;gap:12px;padding:15px 16px;border-radius:14px;margin:18px 0;border:1px solid #dbeafe;background:#f8fbff}.official-record-message.confirmed{border-color:#bfdbfe;background:#eff6ff}.official-record-message.success{border-color:#bbf7d0;background:#f0fdf4}.official-record-message.private{border-color:#e2e8f0;background:#f8fafc}.official-record-icon{width:38px;height:38px;min-width:38px;border-radius:11px;background:#dbeafe;color:#1d4ed8;display:grid;place-items:center}.official-record-message.success .official-record-icon{background:#dcfce7;color:#15803d}.official-record-message.private .official-record-icon{background:#e2e8f0;color:#475569}.official-record-icon svg{width:21px;height:21px;display:block}.official-record-message strong,.official-record-message span{display:block}.official-record-message strong{font-size:13px;color:#0f172a;margin-bottom:3px}.official-record-message span{font-size:12px;line-height:1.55;color:#64748b}.new-clean-verification .trust-icon{font-size:0}.new-clean-verification .trust-icon svg{width:20px;height:20px;display:block}.new-clean-verification .result-button{max-width:330px}.new-clean-verification .verification-copyright{background:#f8fafc;color:#64748b;border-top:1px solid #e2e8f0;box-shadow:none;border-radius:0 0 10px 10px}
+    @media(max-width:700px){.new-clean-verification .result-main{padding:20px 15px}.new-clean-verification .status-content{grid-template-columns:1fr;gap:16px}.new-clean-verification .overall-circle{width:145px;height:145px}.new-clean-verification .doc-row{align-items:flex-start;flex-direction:column}.new-clean-verification .doc-row .badge{align-self:flex-start}.new-clean-verification .verification-trust-strip{grid-template-columns:1fr;gap:9px;padding:14px}.new-clean-verification .trust-item{padding:9px 0}.new-clean-verification .verified-title{align-items:flex-start}.new-clean-verification .verified-title h1{font-size:22px}}`;document.head.appendChild(style);
+}
 
 function ensureRecordFooterStyles() {
   if (document.getElementById("softgrow-record-footer-styles")) return;
@@ -1596,13 +1606,10 @@ function waIcon() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  try { captureSoftGrowReferral(); } catch(e) { console.warn(e); }
-  try { addVerificationSecurityStyles(); } catch(e) { console.warn(e); }
-  try { initCommonUI(); } catch(e) { console.warn("Common UI init failed", e); }
-  try { initVerificationPage(); } catch(e) { console.warn("Verification form init failed", e); }
-  try { initResultPage(); } catch(e) {
-    console.error("Verification result init failed", e);
-    const root=document.getElementById("verificationResult");
-    if(root && !root.innerHTML.trim()) root.innerHTML='<div class="invalid-only-page"><div class="invalid-result"><div class="invalid-icon">!</div><h1>Verification Service Unavailable</h1><p>Please return to the official verification page and try again.</p><a class="result-button" href="documents-verification.html">Verify Another ID <span>→</span></a></div></div>';
-  }
+  captureSoftGrowReferral();
+  addVerificationSecurityStyles();
+  ensureImprovedVerificationStyles();
+  initCommonUI();
+  initVerificationPage();
+  initResultPage();
 });
