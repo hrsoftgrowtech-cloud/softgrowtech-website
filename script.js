@@ -1167,13 +1167,23 @@ function renderNewStudentRecord(student) {
   const now=new Date();
   const start=batchStart?new Date(batchStart+'T00:00:00'):null;
   const end=batchEnd?new Date(batchEnd+'T23:59:59'):null;
-  const running=statusRaw.includes('running')||(start&&!Number.isNaN(start.getTime())&&end&&!Number.isNaN(end.getTime())&&now>=start&&now<=end);
-  const complete=statusRaw.includes('complete')||(end&&!Number.isNaN(end.getTime())&&now>end);
+  const selectionRaw=String(student['Selection Status']||student['Selection']||'').toLowerCase();
+  const paymentRaw=String(student['Payment Status']||student['Payment Verification']||student['Enrollment Status']||'').toLowerCase();
+  const activeByFlow=statusRaw.includes('active')||statusRaw.includes('selected')||(selectionRaw.includes('selected')&&/verified|paid|confirmed|complete/.test(paymentRaw));
+  const runningByDate=activeByFlow&&start&&!Number.isNaN(start.getTime())&&now>=start&&(!end||Number.isNaN(end.getTime())||now<=end);
+  const running=statusRaw.includes('running')||runningByDate;
+  const complete=statusRaw.includes('complete')||(end&&!Number.isNaN(end.getTime())&&now>end&&activeByFlow);
   const offerVerified=offer.includes('verified')||offer.includes('received')||offer.includes('issued')||student['Offer Letter URL'];
   const certVerified=certificate.includes('verified')||certificate.includes('received')||certificate.includes('issued')||student['Certificate URL'];
-  const internshipStatus=complete?'Internship Complete':running?'Internship Running':batchStart?'Internship Upcoming':'Batch Assignment Pending';
+  const internshipStatus=complete?'Internship Complete':running?'Internship Running':activeByFlow?'Active':'Applicant';
+  const statusDescription=complete?'The internship program has been successfully completed.':running?'The internship program is currently running according to the assigned batch schedule.':activeByFlow?'The candidate is active in the SoftGrowTech program and is awaiting the scheduled batch start.':'The student has registered with SoftGrowTech and the application is currently at the applicant stage.';
   const offerText=offerVerified?'Received / Verified':'Coming Soon';
   const certText=certVerified?'Received / Verified':'Coming Soon';
+  const officialRecordMessage=certVerified
+    ? `<div class="official-record-message success"><div class="official-record-icon">${icons.celebration}</div><div><strong>Congratulations!</strong><span>The student has successfully completed the SoftGrowTech internship program and the certificate has been issued.</span></div></div>`
+    : offerVerified
+      ? `<div class="official-record-message confirmed"><div class="official-record-icon">${icons.verified}</div><div><strong>Selection Confirmed</strong><span>The student's selection has been confirmed and the official offer letter has been issued.</span></div></div>`
+      : `<div class="official-record-message private"><div class="official-record-icon">${icons.shield}</div><div><strong>Official Record</strong><span>This public verification page shows only essential verification information. Internal assessment, payment and personal contact details are not displayed.</span></div></div>`;
   const batchStartText=batchStart?formatDate(batchStart):'Coming Soon';
   const batchEndText=batchEnd?formatDate(batchEnd):'Coming Soon';
   const badge=(text,kind)=>`<span class="badge ${kind}">${text}</span>`;
@@ -1192,14 +1202,14 @@ function renderNewStudentRecord(student) {
       </div>
       <section class="status-section new-clean-status" style="--status:#2563eb;--status-bg:#f8fbff">
         <div class="status-label">PROGRAM STATUS</div>
-        <div class="status-content"><div class="overall-circle"><div class="overall-check">${complete?'✓':running?'↻':'○'}</div><small>Internship Status</small><strong>${escapeHtml(internshipStatus)}</strong><p>${complete?'The program journey is complete.':running?'The internship program is currently running.':'The program schedule will appear after batch assignment.'}</p></div>
+        <div class="status-content"><div class="overall-circle"><div class="overall-check">${complete?icons.verified:running?icons.group:activeByFlow?icons.profile:icons.profile}</div><small>Program Status</small><strong>${escapeHtml(internshipStatus)}</strong><p>${escapeHtml(statusDescription)}</p></div>
         <div class="document-status"><h2>Document Status</h2>
-          <div class="doc-row"><div><strong>Offer Letter</strong><small>${offerVerified?'The offer letter has been received and verified.':'The offer letter will appear after the applicable selection and onboarding stage.'}</small></div>${badge(offerText,offerVerified?'green':'yellow')}</div>
-          <div class="doc-row"><div><strong>Certificate</strong><small>${certVerified?'The certificate has been received and verified.':'The certificate status will update after successful completion and applicable evaluation.'}</small></div>${badge(certText,certVerified?'green':'yellow')}</div>
+          <div class="doc-row"><div><strong>Offer Letter</strong><small>${offerVerified?'The official offer letter has been issued and verified.':'The offer letter will appear here once it has been officially issued.'}</small></div>${badge(offerText,offerVerified?'green':'yellow')}</div>
+          <div class="doc-row"><div><strong>Certificate</strong><small>${certVerified?'The certificate has been issued and verified.':'The certificate will appear here after successful program completion and applicable evaluation.'}</small></div>${badge(certText,'yellow')}</div>
         </div></div>
       </section>
-      <div class="running-note"><strong>Official record:</strong> This public verification page displays only essential student and document status information. Internal confirmation, payment and assessment details are not shown.</div>
-      <footer class="record-footer"><section class="verification-trust-strip"><div class="trust-item"><div class="trust-icon">✓</div><div><strong>Authentic Record</strong><span>Student details are matched with the official record.</span></div></div><div class="trust-item"><div class="trust-icon">⌁</div><div><strong>Privacy Protected</strong><span>Personal contact details are masked on this page.</span></div></div><div class="trust-item"><div class="trust-icon">◉</div><div><strong>Official Verification</strong><span>Use the Student ID to verify the record.</span></div></div><div class="trust-item"><div class="trust-icon">?</div><div><strong>Need Support?</strong><span>Contact SoftGrowTech for verification help.</span></div></div></section><div class="record-footer-actions"><a class="result-button verify-another" href="documents-verification.html">Verify Another ID <span>←</span></a></div><div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div></footer>
+      ${officialRecordMessage}
+      <footer class="record-footer"><section class="verification-trust-strip"><div class="trust-item"><div class="trust-icon">${icons.verified}</div><div><strong>Authentic Record</strong><span>Student details are matched with the official record.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.shield}</div><div><strong>Privacy Protected</strong><span>Personal contact details are protected on this page.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.profile}</div><div><strong>Official Verification</strong><span>Use the Student ID to verify the official record.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.group}</div><div><strong>Need Support?</strong><span>Contact SoftGrowTech for verification assistance.</span></div></div></section><div class="record-footer-actions"><a class="result-button verify-another" href="documents-verification.html">Verify Another ID</a></div><div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div></footer>
     </div></div>`;
 }
 
@@ -1357,6 +1367,13 @@ function ensureDownloadAndBadgeStyles() {
     }
   `;
   document.head.appendChild(style);
+}
+
+function ensureImprovedVerificationStyles(){
+  if(document.getElementById("sgtImprovedVerificationStyles"))return;
+  const style=document.createElement("style");style.id="sgtImprovedVerificationStyles";style.textContent=`
+    .official-record-message{display:flex;align-items:flex-start;gap:12px;padding:15px 16px;border-radius:14px;margin:18px 0;border:1px solid #dbeafe;background:#f8fbff}.official-record-message.confirmed{border-color:#bfdbfe;background:#eff6ff}.official-record-message.success{border-color:#bbf7d0;background:#f0fdf4}.official-record-message.private{border-color:#e2e8f0;background:#f8fafc}.official-record-icon{width:38px;height:38px;min-width:38px;border-radius:11px;background:#dbeafe;color:#1d4ed8;display:grid;place-items:center}.official-record-message.success .official-record-icon{background:#dcfce7;color:#15803d}.official-record-message.private .official-record-icon{background:#e2e8f0;color:#475569}.official-record-icon svg{width:21px;height:21px;display:block}.official-record-message strong,.official-record-message span{display:block}.official-record-message strong{font-size:13px;color:#0f172a;margin-bottom:3px}.official-record-message span{font-size:12px;line-height:1.55;color:#64748b}.new-clean-verification .trust-icon{font-size:0}.new-clean-verification .trust-icon svg{width:20px;height:20px;display:block}.new-clean-verification .result-button{max-width:330px}.new-clean-verification .verification-copyright{background:#f8fafc;color:#64748b;border-top:1px solid #e2e8f0;box-shadow:none;border-radius:0 0 10px 10px}
+    @media(max-width:700px){.new-clean-verification .result-main{padding:20px 15px}.new-clean-verification .status-content{grid-template-columns:1fr;gap:16px}.new-clean-verification .overall-circle{width:145px;height:145px}.new-clean-verification .doc-row{align-items:flex-start;flex-direction:column}.new-clean-verification .doc-row .badge{align-self:flex-start}.new-clean-verification .verification-trust-strip{grid-template-columns:1fr;gap:9px;padding:14px}.new-clean-verification .trust-item{padding:9px 0}.new-clean-verification .verified-title{align-items:flex-start}.new-clean-verification .verified-title h1{font-size:22px}}`;document.head.appendChild(style);
 }
 
 function ensureRecordFooterStyles() {
@@ -1584,6 +1601,7 @@ function waIcon() {
 document.addEventListener("DOMContentLoaded", () => {
   captureSoftGrowReferral();
   addVerificationSecurityStyles();
+  ensureImprovedVerificationStyles();
   initCommonUI();
   initVerificationPage();
   initResultPage();
