@@ -73,7 +73,7 @@ async function init(){
 }
 $('verify').onclick=async()=>{
  const code=$('code').value.trim();
- if(!/^\\d{6}$/.test(code))return fail('Enter the 6-digit authenticator code.');
+ if(!/^\d{6}$/.test(code))return fail('Enter the 6-digit authenticator code.');
  $('verify').disabled=true;$('verify').textContent='Verifying…';$('error').textContent='';
  try{
   const ch=await sb.auth.mfa.challenge({factorId});if(ch.error)throw ch.error;
@@ -83,7 +83,7 @@ $('verify').onclick=async()=>{
  }catch(e){fail(e.message||'Invalid authenticator code.');}
 };
 $('logout').onclick=async()=>{await sb.auth.signOut();location.href='./admin-login.html'};
-$('code').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\\D/g,'').slice(0,6)});
+$('code').addEventListener('input',e=>{e.target.value=e.target.value.replace(/\D/g,'').slice(0,6)});
 init();
 </script>
 </body></html>
