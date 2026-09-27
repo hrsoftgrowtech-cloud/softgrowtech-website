@@ -45,13 +45,21 @@ async function init(){
   if(me||!member) throw Error('This account is not authorized for the Management Console.');
   const {data:factors,error:fe}=await sb.auth.mfa.listFactors();
   if(fe) throw fe;
-  const verified=(factors?.totp||[]).find(f=>f.status==='verified');
+  const totps=factors?.totp||[];
+  const verified=totps.find(f=>f.status==='verified');
   if(verified){
     factorId=verified.id;
     $('title').textContent='Authenticator Verification';
     $('intro').textContent='Enter the 6-digit code from the authenticator app on your phone.';
     $('setup').hidden=true;
     return;
+  }
+  // A previous setup attempt can leave an unverified factor behind. Supabase
+  // will then reject a new enrollment with a friendly-name conflict. Remove
+  // only stale/unverified TOTP factors and create one fresh setup factor.
+  for(const pending of totps.filter(f=>f.status!=='verified')){
+    const removed=await sb.auth.mfa.unenroll({factorId:pending.id});
+    if(removed.error) throw removed.error;
   }
   const {data,error}=await sb.auth.mfa.enroll({factorType:'totp',friendlyName:'SoftGrowTech Admin'});
   if(error) throw error;
