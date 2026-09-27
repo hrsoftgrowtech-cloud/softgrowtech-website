@@ -631,6 +631,75 @@ function initVerificationPage() {
   resetVerificationPageState();
 }
 
+
+function renderVerificationFallback(student) {
+  const root = document.getElementById("verificationResult");
+  if (!root) return;
+  const id = student?.["Student Id"] || student?.["Student ID"] || "Not Available";
+  const name = student?.["Name"] || "Not Available";
+  const email = student?.["Student Email"] || student?.["Email"] || "Not Available";
+  const domain = student?.["Domain"] || "Not Available";
+  const batchStart = student?.["Batch Start"] || student?.["Batch date"] || "";
+  const statusRaw = String(student?.["Internship Status"] || student?.["Status"] || "").toLowerCase();
+  const selectionRaw = String(student?.["Selection Status"] || student?.["Selection"] || "").toLowerCase();
+  const paymentRaw = String(student?.["Payment Status"] || student?.["Payment Verification"] || student?.["Enrollment Status"] || "").toLowerCase();
+  const offerRaw = String(student?.["Offer Letter"] || "").toLowerCase();
+  const certRaw = String(student?.["Certificate"] || "").toLowerCase();
+  const active = statusRaw.includes("active") || statusRaw.includes("selected") ||
+    (selectionRaw.includes("selected") && /verified|paid|confirmed|complete/.test(paymentRaw));
+  const start = batchStart ? new Date(String(batchStart).slice(0,10) + "T00:00:00") : null;
+  const running = statusRaw.includes("running") ||
+    (active && start && !Number.isNaN(start.getTime()) && new Date() >= start);
+  const complete = statusRaw.includes("complete");
+  const offerIssued = /issued|received|verified/.test(offerRaw) || Boolean(student?.["Offer Letter URL"]);
+  const certIssued = /issued|received|verified/.test(certRaw) || Boolean(student?.["Certificate URL"]);
+  const programStatus = complete ? "Internship Complete" : running ? "Internship Running" : active ? "Active" : "Applicant";
+  const recordMessage = certIssued
+    ? "<strong>Congratulations!</strong><span>The certificate has been issued and the internship record is complete.</span>"
+    : offerIssued
+      ? "<strong>Selection Confirmed</strong><span>The student's selection is confirmed and the official offer letter has been issued.</span>"
+      : "<strong>Official Record</strong><span>This public verification page shows essential verification information only.</span>";
+  root.innerHTML = `
+    <div class="result-shell new-clean-verification">
+      <div class="result-header">
+        <div class="result-brand"><img src="assets/softgrowtech-logo.png" alt="SoftGrowTech"><div><strong>SoftGrowTech</strong><span>Learn • Build • Evolve</span></div></div>
+        <div class="result-official"><span class="verified-shield">✓</span><div><strong>Official Verification</strong><small>Secure student record verification</small></div></div>
+      </div>
+      <div class="result-main">
+        <div class="verified-title"><div class="verified-icon">✓</div><div><h1>Student Record Verified</h1><p>The record associated with this Student ID has been successfully verified.</p></div></div>
+        <div class="mobile-last4-privacy-note">Verification was completed using the Student ID and the last 4 digits of the registered mobile number. Personal contact details remain protected.</div>
+        <div class="student-grid new-clean-grid">
+          <div><small>Student ID</small><strong>${escapeHtml(id)}</strong></div>
+          <div><small>Full Name</small><strong>${escapeHtml(name)}</strong></div>
+          <div><small>Gmail</small><strong>${escapeHtml(maskPublicEmail(email))}</strong></div>
+          <div><small>Domain</small><strong>${escapeHtml(domain)}</strong></div>
+          <div><small>Batch Start</small><strong>${escapeHtml(batchStart ? formatDate(batchStart) : "Coming Soon")}</strong></div>
+        </div>
+        <section class="status-section new-clean-status" style="--status:#2563eb;--status-bg:#f8fbff">
+          <div class="status-label">PROGRAM STATUS</div>
+          <div class="status-content">
+            <div class="overall-circle"><div class="overall-check">✓</div><small>Program Status</small><strong>${escapeHtml(programStatus)}</strong><p>${escapeHtml(complete ? "The internship program has been successfully completed." : running ? "The internship program is currently running." : active ? "The candidate is active in the SoftGrowTech program and is awaiting the scheduled batch start." : "The student has registered with SoftGrowTech and is currently at the applicant stage.")}</p></div>
+            <div class="document-status"><h2>Document Status</h2>
+              <div class="doc-row"><div><strong>Offer Letter</strong><small>${offerIssued ? "The official offer letter has been issued and verified." : "The offer letter will appear here once it has been officially issued."}</small></div><span class="badge ${offerIssued?'green':'yellow'}">${offerIssued?'Received / Verified':'Coming Soon'}</span></div>
+              <div class="doc-row"><div><strong>Certificate</strong><small>${certIssued ? "The certificate has been issued and verified." : "The certificate will appear here after successful program completion and applicable evaluation."}</small></div><span class="badge ${certIssued?'green':'yellow'}">${certIssued?'Received / Verified':'Coming Soon'}</span></div>
+            </div>
+          </div>
+        </section>
+        <div class="official-record-message ${certIssued?'success':offerIssued?'confirmed':'private'}">${recordMessage}</div>
+        <footer class="record-footer">
+          <section class="verification-trust-strip">
+            <div class="trust-item"><div class="trust-icon">✓</div><div><strong>Authentic Record</strong><span>Student details are matched with the official record.</span></div></div>
+            <div class="trust-item"><div class="trust-icon">✓</div><div><strong>Privacy Protected</strong><span>Personal contact details are protected on this page.</span></div></div>
+            <div class="trust-item"><div class="trust-icon">✓</div><div><strong>Official Verification</strong><span>Use the Student ID to verify the official record.</span></div></div>
+            <div class="trust-item"><div class="trust-icon">?</div><div><strong>Need Support?</strong><span>Contact SoftGrowTech for verification assistance.</span></div></div>
+          </section>
+          <div class="record-footer-actions"><a class="result-button verify-another" href="documents-verification.html">Verify Another ID</a></div>
+          <div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div>
+        </footer>
+      </div>
+    </div>`;
+}
+
 function initResultPage() {
   const root = document.getElementById("verificationResult");
   if (!root) return;
@@ -687,16 +756,22 @@ function initResultPage() {
   }
 
   if (savedRecord && savedRecord.student) {
-    if (savedRecord.type === "orientation") {
-      renderOrientationRecord(savedRecord.student);
-      return;
-    }
-    if (savedRecord.type === "new" || savedRecord.type === "registered") {
-      renderNewStudentRecord(savedRecord.student);
-      return;
-    }
-    if (savedRecord.type === "valid") {
-      renderVerified(savedRecord.student);
+    try {
+      if (savedRecord.type === "orientation") {
+        renderOrientationRecord(savedRecord.student);
+        return;
+      }
+      if (savedRecord.type === "new" || savedRecord.type === "registered") {
+        renderNewStudentRecord(savedRecord.student);
+        return;
+      }
+      if (savedRecord.type === "valid") {
+        renderVerified(savedRecord.student);
+        return;
+      }
+    } catch (renderError) {
+      console.error("Verification record render failed:", renderError);
+      renderVerificationFallback(savedRecord.student);
       return;
     }
   }

@@ -84,3 +84,25 @@ body.dashboard-scrolled .portal-hero .portal-kicker{font-size:10px}
 body.dashboard-scrolled .portal-tabs{top:104px}
 .student-dashboard-query-form[hidden]{display:none!important}
 @media(max-width:700px){.portal-body .portal-hero{top:58px;padding:8px 0 9px}.portal-body .portal-tabs{top:116px}.portal-body.dashboard-scrolled .portal-tabs,body.dashboard-scrolled .portal-tabs{top:96px}.portal-body.dashboard-scrolled .portal-hero,body.dashboard-scrolled .portal-hero{padding:6px 0}.portal-body.dashboard-scrolled .portal-hero h1,body.dashboard-scrolled .portal-hero h1{font-size:22px}.portal-body .portal-tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.portal-body .portal-tabs::-webkit-scrollbar{display:none}.portal-body .portal-tab{flex:0 0 auto;white-space:nowrap}}
+
+/* Dashboard sticky navigation: keep the header sharp while page content scrolls.
+   Opaque surfaces avoid mobile Chrome compositor blur/dimming behind sticky layers. */
+.portal-body .portal-top,
+.portal-body .portal-body,
+.portal-body .portal-hero,
+.portal-body .portal-tabs{
+  -webkit-backdrop-filter:none !important;
+  backdrop-filter:none !important;
+}
+.portal-body .portal-top{
+  background:#fff !important;
+  isolation:isolate;
+}
+.portal-body .portal-hero{
+  background:var(--portal-bg) !important;
+  isolation:isolate;
+}
+.portal-body .portal-tabs{
+  background:#eef2f7 !important;
+  isolation:isolate;
+}
