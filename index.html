@@ -8,7 +8,7 @@
 <link rel="icon" href="assets/softgrowtech-logo.png">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="icons.css">
-</head>
+<style>.sgt-live-ticker{position:sticky;top:72px;z-index:20;overflow:hidden;background:#0f3c9e;color:#fff;box-shadow:0 8px 22px rgba(15,60,158,.14);display:none}.sgt-live-ticker>div{white-space:nowrap;padding:10px 0;font-weight:800;animation:sgtTicker 22s linear infinite}.sgt-live-ticker span{opacity:.65;margin:0 10px}@keyframes sgtTicker{from{transform:translateX(100%)}to{transform:translateX(-100%)}}@media(max-width:700px){.sgt-live-ticker{top:64px}.sgt-live-ticker>div{font-size:13px;animation-duration:18s}}</style></head>
 <body>
 
 <div class="welcome-screen" id="welcomeScreen">
@@ -34,10 +34,10 @@
       <li><a href="internships.html">Internships</a></li>
       <li><a href="projects.html">Projects</a></li>
       <li><a href="services.html">Services</a></li>
-      <li><a class="nav-apply" href="student-login.html">Login Now <span class="arrow">→</span></a></li>
+      <li><a class="nav-apply" href="student-login.html">Register | Login <span class="arrow">→</span></a></li>
     </ul>
   </div>
-</header>
+</header><div class="sgt-live-ticker" id="sgtLiveTicker"><div>9,000+ Students Registered <span>•</span> 6,000+ Students Certified <span>•</span> 15+ Countries <span>•</span> Learn • Build • Evolve</div></div>
 
 
 <main>
@@ -146,7 +146,7 @@
     <div class="faq-list">
       <details class="faq-item">
         <summary>What will I actually learn during the internship?</summary>
-        <p>You’ll learn through practical tasks, domain-related projects, mentor guidance, orientation, project presentation and a final project designed to turn learning into real work.</p>
+        <p>You’ll learn through practical tasks, domain-related projects, mentor guidance, orientation, project presentation and a final project designed to turn learning into real work.</p><p style="margin-top:8px"><a href="internship-fee-policy.html" style="color:#2563eb;font-weight:800;text-decoration:none">Check the full Program Fee Policy →</a></p>
       </details>
       <details class="faq-item">
         <summary>Will I get mentor support while working on projects?</summary>
@@ -158,7 +158,7 @@
       </details>
       <details class="faq-item">
         <summary>What is the Enrollment Fee and when do I pay it?</summary>
-        <p>Registration is completely free. A <strong>nominal, one-time Enrollment Fee</strong> is introduced only at the enrollment stage to support assessment participation and the related processing, participant verification, records/documentation and enrollment coordination. It is <strong>not a fee for the internship, certificate or selection</strong>. Selection is based on assessment performance and review. <strong>IF YOU ARE NOT SELECTED, THE APPLICABLE ENROLLMENT FEE IS REFUNDABLE</strong> under the stated refund process and terms.</p>
+        <p>Registration is completely free. A <strong>nominal, one-time Enrollment Fee</strong> is introduced only at the enrollment stage to support assessment participation and the related processing, participant verification, records/documentation and enrollment coordination. It is <strong>not a fee for the internship, certificate or selection</strong>. Selection is based on assessment performance and review.</p>
       </details>
       <details class="faq-item">
         <summary>What support do I get after completing my projects?</summary>
@@ -241,5 +241,5 @@
 </div>
 
 <script src="script.js"></script>
-<script src="site-content.js"></script></body>
+<script src="site-content.js"></script><script>setTimeout(()=>{const t=document.getElementById("sgtLiveTicker");if(t)t.style.display="block"},5000)</script></body>
 </html>

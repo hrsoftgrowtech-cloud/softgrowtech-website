@@ -123,13 +123,13 @@ function initHomeReviewPopup() {
   // Internship-focused social proof only. This popup is intentionally separate
   // from the Internship page feedback cards and uses one consistent design.
   const reviews = [
-    { name: "Pragavi Gajendran", text: "The SoftGrowTech internship was a valuable learning experience and helped me gain practical knowledge beyond classroom concepts." },
-    { name: "Sadiya Afreen", text: "Working on projects during my SoftGrowTech internship helped me improve my programming and problem-solving skills." },
-    { name: "Roshani Kumari", text: "I gained useful knowledge and practical exposure through my SoftGrowTech internship experience." },
-    { name: "Anchal Shukla", text: "SoftGrowTech gave me a good opportunity to improve my technical skills through practical internship work." },
-    { name: "Khushi Bhatnagar", text: "The project work made my internship experience engaging and gave me the opportunity to learn something new." },
-    { name: "Vivek Kumar", text: "The internship provided a clear learning path with practical work that helped me build confidence in my skills." },
-    { name: "Mehak Gupta", text: "I found the internship well structured and appreciated the practical learning experience throughout the program." }
+    { name: "Pragavi Gajendran", rating: 5, text: "The SoftGrowTech internship was a valuable learning experience and helped me gain practical knowledge beyond classroom concepts." },
+    { name: "Sadiya Afreen", rating: 4, text: "Working on projects during my SoftGrowTech internship helped me improve my programming and problem-solving skills." },
+    { name: "Roshani Kumari", rating: 5, text: "I gained useful knowledge and practical exposure through my SoftGrowTech internship experience." },
+    { name: "Anchal Shukla", rating: 4, text: "SoftGrowTech gave me a good opportunity to improve my technical skills through practical internship work." },
+    { name: "Khushi Bhatnagar", rating: 5, text: "The project work made my internship experience engaging and gave me the opportunity to learn something new." },
+    { name: "Vivek Kumar", rating: 4, text: "The internship provided a clear learning path with practical work that helped me build confidence in my skills." },
+    { name: "Mehak Gupta", rating: 5, text: "I found the internship well structured and appreciated the practical learning experience throughout the program." }
   ];
 
   const textEl = document.getElementById("reviewPopupText");
@@ -176,7 +176,7 @@ function initHomeReviewPopup() {
     const review = chooseNextReview();
     if (textEl) textEl.textContent = review.text;
     if (nameEl) nameEl.textContent = review.name;
-    if (starsEl) starsEl.textContent = "★★★★★";
+    if (starsEl) { const r=Math.max(1,Math.min(5,Number(review.rating||5))); starsEl.textContent="★".repeat(r)+"☆".repeat(5-r); starsEl.setAttribute("aria-label",`${r} star rating`); }
     // One fixed popup design; do not switch visual variants between reviews.
     popup.classList.remove("review-popup-blue", "review-popup-minimal", "review-popup-soft", "review-popup-dark");
     popup.classList.add("review-popup-internship");
