@@ -8,7 +8,7 @@
 <link rel="icon" href="assets/softgrowtech-logo.png">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="icons.css">
-<style>.sgt-live-ticker{position:sticky;top:72px;z-index:20;overflow:hidden;background:#0f3c9e;color:#fff;box-shadow:0 8px 22px rgba(15,60,158,.14);display:none}.sgt-live-ticker>div{white-space:nowrap;padding:10px 0;font-weight:800;animation:sgtTicker 22s linear infinite}.sgt-live-ticker span{opacity:.65;margin:0 10px}@keyframes sgtTicker{from{transform:translateX(100%)}to{transform:translateX(-100%)}}@media(max-width:700px){.sgt-live-ticker{top:64px}.sgt-live-ticker>div{font-size:13px;animation-duration:18s}}</style></head>
+<style>.sgt-live-ticker{position:sticky;top:72px;z-index:20;overflow:hidden;background:linear-gradient(90deg,#0b2d6b,#174ea6,#0b2d6b);color:#fff;box-shadow:0 8px 22px rgba(15,60,158,.14);display:none}.sgt-ticker-track{position:relative;min-height:48px;display:flex;align-items:center;justify-content:center;overflow:hidden}.sgt-ticker-message{position:absolute;left:100%;width:max-content;max-width:92%;padding:8px 0;text-align:center;animation:sgtTickerInOut 10s ease-in-out forwards;white-space:nowrap}.sgt-ticker-message strong{font-size:14px;letter-spacing:.01em}.sgt-ticker-message small{display:block;margin-top:2px;font-size:12px;font-weight:500;color:#dbeafe}.sgt-ticker-message.next{animation-delay:0s}@keyframes sgtTickerInOut{0%{transform:translateX(0);opacity:0}10%{transform:translateX(-50%);opacity:1}65%{transform:translateX(-50%);opacity:1}100%{transform:translateX(-145%);opacity:0}}@media(max-width:700px){.sgt-live-ticker{top:64px}.sgt-ticker-track{min-height:58px}.sgt-ticker-message{max-width:94%;white-space:normal}.sgt-ticker-message strong{font-size:12px}.sgt-ticker-message small{font-size:10.5px}}</style></head>
 <body>
 
 <div class="welcome-screen" id="welcomeScreen">
@@ -37,7 +37,7 @@
       <li><a class="nav-apply" href="student-login.html">Register | Login <span class="arrow">→</span></a></li>
     </ul>
   </div>
-</header><div class="sgt-live-ticker" id="sgtLiveTicker"><div>9,000+ Students Registered <span>•</span> 6,000+ Students Certified <span>•</span> 15+ Countries <span>•</span> Learn • Build • Evolve</div></div>
+</header><div class="sgt-live-ticker" id="sgtLiveTicker"><div class="sgt-ticker-track" id="sgtTickerTrack"></div></div>
 
 
 <main>
@@ -241,5 +241,5 @@
 </div>
 
 <script src="script.js"></script>
-<script src="site-content.js"></script><script>setTimeout(()=>{const t=document.getElementById("sgtLiveTicker");if(t)t.style.display="block"},5000)</script></body>
+<script src="site-content.js"></script><script>setTimeout(()=>{const t=document.getElementById("sgtLiveTicker");if(t)t.style.display="block"},5000)</script><script>(function(){const t=document.getElementById('sgtLiveTicker'),track=document.getElementById('sgtTickerTrack');if(!t||!track)return;const messages=[['Learn • Build • Evolve','Turn your skills into real-world experience and build what comes next.'],['9,000+ Students Registered • 5,000+ Students Certified • 15+ Countries','A growing global community of learners, builders and future tech professionals.'],['Official Document Verification System','Verify SoftGrowTech documents securely using your unique Student ID or Certificate ID.']];let i=0;function show(){track.innerHTML='';const e=document.createElement('div');e.className='sgt-ticker-message';e.innerHTML='<strong>'+messages[i][0]+'</strong><small>'+messages[i][1]+'</small>';track.appendChild(e);i=(i+1)%messages.length;setTimeout(show,10000)}setTimeout(()=>{t.style.display='block';show()},5000)})();</script></body>
 </html>
