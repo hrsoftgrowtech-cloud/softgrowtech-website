@@ -8,7 +8,33 @@
 <link rel="icon" href="assets/softgrowtech-logo.png">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="icons.css">
-<style>.sgt-live-ticker{position:sticky;top:72px;z-index:20;overflow:hidden;background:linear-gradient(90deg,#0b2d6b,#174ea6,#0b2d6b);color:#fff;box-shadow:0 8px 22px rgba(15,60,158,.14);display:none}.sgt-ticker-track{position:relative;min-height:48px;display:flex;align-items:center;justify-content:center;overflow:hidden}.sgt-ticker-message{position:absolute;left:100%;width:max-content;max-width:92%;padding:8px 0;text-align:center;animation:sgtTickerInOut 10s ease-in-out forwards;white-space:nowrap}.sgt-ticker-message strong{font-size:14px;letter-spacing:.01em}.sgt-ticker-message small{display:block;margin-top:2px;font-size:12px;font-weight:500;color:#dbeafe}.sgt-ticker-message.next{animation-delay:0s}@keyframes sgtTickerInOut{0%{transform:translateX(0);opacity:0}10%{transform:translateX(-50%);opacity:1}65%{transform:translateX(-50%);opacity:1}100%{transform:translateX(-145%);opacity:0}}@media(max-width:700px){.sgt-live-ticker{top:64px}.sgt-ticker-track{min-height:58px}.sgt-ticker-message{max-width:94%;white-space:normal}.sgt-ticker-message strong{font-size:12px}.sgt-ticker-message small{font-size:10.5px}}</style></head>
+<style>
+.sgt-live-ticker{position:sticky;top:72px;z-index:20;overflow:hidden;background:linear-gradient(100deg,#0b2d6b,#174ea6 50%,#0b2d6b);color:#fff;box-shadow:0 8px 22px rgba(15,60,158,.14);display:none;border-bottom:1px solid rgba(255,255,255,.12)}
+.sgt-ticker-track{position:relative;min-height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.sgt-ticker-message{position:absolute;left:50%;top:50%;width:max-content;max-width:92%;display:flex;align-items:center;gap:12px;padding:9px 18px;text-align:left;white-space:nowrap;opacity:0;transform:translate(110vw,-50%);animation:sgtTickerJourney 11s cubic-bezier(.22,.61,.36,1) forwards}
+.sgt-ticker-icon{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,rgba(255,255,255,.24),rgba(255,255,255,.08));border:1px solid rgba(255,255,255,.28);box-shadow:0 7px 18px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.18);backdrop-filter:blur(6px)}
+.sgt-ticker-icon svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 2px rgba(0,0,0,.18))}
+.sgt-ticker-copy{min-width:0}
+.sgt-ticker-message strong{display:block;font-size:14px;line-height:1.35;letter-spacing:.01em}
+.sgt-ticker-message small{display:block;margin-top:3px;font-size:12px;line-height:1.35;font-weight:500;color:#dbeafe}
+@keyframes sgtTickerJourney{
+  0%{transform:translate(110vw,-50%);opacity:0}
+  7%{opacity:1}
+  31%{transform:translate(-50%,-50%);opacity:1}
+  58%{transform:translate(-50%,-50%);opacity:1}
+  64%{opacity:1}
+  100%{transform:translate(-110vw,-50%);opacity:0}
+}
+@media(max-width:700px){
+  .sgt-live-ticker{top:64px}
+  .sgt-ticker-track{min-height:72px}
+  .sgt-ticker-message{width:min(94%,620px);max-width:94%;white-space:normal;gap:10px;padding:9px 12px}
+  .sgt-ticker-icon{width:34px;height:34px;flex-basis:34px;border-radius:10px}
+  .sgt-ticker-icon svg{width:18px;height:18px}
+  .sgt-ticker-message strong{font-size:11.5px}
+  .sgt-ticker-message small{font-size:10.5px;margin-top:2px}
+}
+</style></head>
 <body>
 
 <div class="welcome-screen" id="welcomeScreen">
@@ -241,5 +267,5 @@
 </div>
 
 <script src="script.js"></script>
-<script src="site-content.js"></script><script>setTimeout(()=>{const t=document.getElementById("sgtLiveTicker");if(t)t.style.display="block"},5000)</script><script>(function(){const t=document.getElementById('sgtLiveTicker'),track=document.getElementById('sgtTickerTrack');if(!t||!track)return;const messages=[['Learn • Build • Evolve','Turn your skills into real-world experience and build what comes next.'],['9,000+ Students Registered • 5,000+ Students Certified • 15+ Countries','A growing global community of learners, builders and future tech professionals.'],['Official Document Verification System','Verify SoftGrowTech documents securely using your unique Student ID or Certificate ID.']];let i=0;function show(){track.innerHTML='';const e=document.createElement('div');e.className='sgt-ticker-message';e.innerHTML='<strong>'+messages[i][0]+'</strong><small>'+messages[i][1]+'</small>';track.appendChild(e);i=(i+1)%messages.length;setTimeout(show,10000)}setTimeout(()=>{t.style.display='block';show()},5000)})();</script></body>
+<script src="site-content.js"></script><script>(function(){const t=document.getElementById('sgtLiveTicker'),track=document.getElementById('sgtTickerTrack');if(!t||!track)return;const messages=[{title:'Learn • Build • Evolve',text:'Turn your skills into real-world experience and build what comes next.',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15Z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"/><path d="m8 9 2.2 2.2L14.5 7"/></svg>'},{title:'9,000+ Students Registered • 5,000+ Students Certified • 15+ Countries',text:'A growing global community of learners, builders and future tech professionals.',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 11a3 3 0 1 0-1.8-5.4"/><path d="M16.5 14a5 5 0 0 1 4 5"/></svg>'},{title:'Official Document Verification System',text:'Verify SoftGrowTech documents securely using your unique Student ID or Certificate ID.',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h5"/><path d="m8 16 2 2 5-5"/></svg>'}];let i=0;const DURATION=11000;function show(){const m=messages[i];track.innerHTML='';const e=document.createElement('div');e.className='sgt-ticker-message';e.innerHTML='<span class="sgt-ticker-icon">'+m.icon+'</span><span class="sgt-ticker-copy"><strong>'+m.title+'</strong><small>'+m.text+'</small></span>';track.appendChild(e);i=(i+1)%messages.length;window.setTimeout(show,DURATION)}window.setTimeout(()=>{t.style.display='block';show()},5000)})();</script></body>
 </html>
