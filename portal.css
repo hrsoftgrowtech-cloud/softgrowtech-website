@@ -106,3 +106,6 @@ body.dashboard-scrolled .portal-tabs{top:104px}
   background:#eef2f7 !important;
   isolation:isolate;
 }
+
+/* Registration form refinements */
+.password-field{min-width:0}.password-eye{width:36px;height:36px;right:7px}.password-eye svg{width:21px;height:21px;display:block;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}.registration-submit{position:relative;min-height:46px;min-width:210px;white-space:nowrap;transition:background .2s,box-shadow .2s,transform .12s}.registration-submit:active{transform:translateY(1px) scale(.99)}.registration-submit:disabled{opacity:1;background:#1d4ed8;cursor:wait}.registration-spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:sgtSpin .7s linear infinite}.registration-submit.is-loading .registration-spinner{display:inline-block}.registration-submit.is-loading .registration-submit-label{display:inline}.registration-submit.is-loading{box-shadow:0 0 0 3px rgba(37,99,235,.13)}@keyframes sgtSpin{to{transform:rotate(360deg)}}@media(min-width:521px){#registerForm .field:has(#password),#registerForm .field:has(#confirmPassword){grid-column:span 1}}

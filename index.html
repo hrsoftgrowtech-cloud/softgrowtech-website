@@ -9,33 +9,29 @@
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="icons.css">
 <style>
-.sgt-live-ticker{position:sticky;top:72px;z-index:20;overflow:hidden;background:linear-gradient(100deg,#0b2d6b,#174ea6 50%,#0b2d6b);color:#fff;box-shadow:0 8px 22px rgba(15,60,158,.14);display:none;border-bottom:1px solid rgba(255,255,255,.12)}
-.sgt-ticker-track{position:relative;min-height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.sgt-ticker-message{position:absolute;left:50%;top:50%;width:max-content;max-width:92%;display:flex;align-items:center;gap:12px;padding:9px 18px;text-align:left;white-space:nowrap;opacity:0;transform:translate(110vw,-50%);animation:sgtTickerJourney 11s cubic-bezier(.22,.61,.36,1) forwards}
-.sgt-ticker-icon{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,rgba(255,255,255,.24),rgba(255,255,255,.08));border:1px solid rgba(255,255,255,.28);box-shadow:0 7px 18px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.18);backdrop-filter:blur(6px)}
-.sgt-ticker-icon svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 2px rgba(0,0,0,.18))}
-.sgt-ticker-copy{min-width:0}
-.sgt-ticker-message strong{display:block;font-size:14px;line-height:1.35;letter-spacing:.01em}
-.sgt-ticker-message small{display:block;margin-top:3px;font-size:12px;line-height:1.35;font-weight:500;color:#dbeafe}
-@keyframes sgtTickerJourney{
-  0%{transform:translate(110vw,-50%);opacity:0}
-  7%{opacity:1}
-  31%{transform:translate(-50%,-50%);opacity:1}
-  58%{transform:translate(-50%,-50%);opacity:1}
-  64%{opacity:1}
-  100%{transform:translate(-110vw,-50%);opacity:0}
-}
-@media(max-width:700px){
-  .sgt-live-ticker{top:64px}
-  .sgt-ticker-track{min-height:72px}
-  .sgt-ticker-message{width:min(94%,620px);max-width:94%;white-space:normal;gap:10px;padding:9px 12px}
-  .sgt-ticker-icon{width:34px;height:34px;flex-basis:34px;border-radius:10px}
-  .sgt-ticker-icon svg{width:18px;height:18px}
-  .sgt-ticker-message strong{font-size:11.5px}
-  .sgt-ticker-message small{font-size:10.5px;margin-top:2px}
-}
+/* Home-only fixed navigation and ticker */
+body.home-ticker-page{padding-top:0}
+body.home-ticker-page .header{position:fixed;top:0;left:0;right:0;width:100%;z-index:1000}
+body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;width:100%;z-index:999;overflow:hidden;background:linear-gradient(100deg,#0b2d6b,#174ea6 50%,#0b2d6b);color:#fff;box-shadow:0 8px 22px rgba(15,60,158,.14);display:none;border-bottom:1px solid rgba(255,255,255,.12)}
+body.home-ticker-page .sgt-ticker-track{position:relative;min-height:64px;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0 54px}
+.sgt-ticker-message{position:absolute;left:50%;top:50%;width:max-content;max-width:min(780px,calc(100% - 120px));display:flex;align-items:center;gap:12px;padding:8px 12px;text-align:left;white-space:normal;opacity:1;transform:translate(150%,-50%);will-change:transform;}
+.sgt-ticker-message strong{display:block;font-size:14px;line-height:1.35;letter-spacing:.01em}.sgt-ticker-message small{display:block;margin-top:3px;font-size:12px;line-height:1.35;font-weight:500;color:#dbeafe}
+.sgt-ticker-icon{width:40px;height:40px;flex:0 0 40px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,rgba(255,255,255,.24),rgba(255,255,255,.08));border:1px solid rgba(255,255,255,.28);box-shadow:0 7px 18px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.18)}
+.sgt-ticker-icon svg{width:22px;height:22px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.sgt-ticker-copy{min-width:0}.sgt-ticker-controls{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 9px;pointer-events:none;z-index:4}
+.sgt-ticker-btn{pointer-events:auto;width:36px;height:36px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.34);border-radius:11px;background:rgba(255,255,255,.12);color:#fff;font-size:25px;line-height:1;cursor:pointer;transition:background .2s,transform .2s,border-color .2s;backdrop-filter:blur(5px)}
+.sgt-ticker-btn:hover{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.65)}.sgt-ticker-btn:active{transform:scale(.94)}.sgt-ticker-btn:focus-visible{outline:2px solid white;outline-offset:2px}
+.sgt-ticker-message.enter-right{animation:sgtTickerEnterRight .72s cubic-bezier(.22,.72,.25,1) both}.sgt-ticker-message.enter-left{animation:sgtTickerEnterLeft .72s cubic-bezier(.22,.72,.25,1) both}
+.sgt-ticker-message.exit-left{animation:sgtTickerExitLeft .72s cubic-bezier(.55,.05,.75,.35) both}.sgt-ticker-message.exit-right{animation:sgtTickerExitRight .72s cubic-bezier(.55,.05,.75,.35) both}
+@keyframes sgtTickerEnterRight{from{transform:translate(150%,-50%);opacity:.35}to{transform:translate(-50%,-50%);opacity:1}}
+@keyframes sgtTickerEnterLeft{from{transform:translate(-150%,-50%);opacity:.35}to{transform:translate(-50%,-50%);opacity:1}}
+@keyframes sgtTickerExitLeft{from{transform:translate(-50%,-50%);opacity:1}to{transform:translate(-150%,-50%);opacity:.25}}
+@keyframes sgtTickerExitRight{from{transform:translate(-50%,-50%);opacity:1}to{transform:translate(150%,-50%);opacity:.25}}
+body.home-ticker-page main{padding-top:138px}
+@media(max-width:700px){body.home-ticker-page .sgt-live-ticker{top:64px}body.home-ticker-page .sgt-ticker-track{min-height:76px;padding:0 48px}.sgt-ticker-message{max-width:calc(100% - 94px);gap:9px;padding:7px 3px}.sgt-ticker-icon{width:33px;height:33px;flex-basis:33px;border-radius:10px}.sgt-ticker-icon svg{width:18px;height:18px}.sgt-ticker-message strong{font-size:11.5px}.sgt-ticker-message small{font-size:10.5px;margin-top:2px}.sgt-ticker-btn{width:32px;height:32px;font-size:22px;border-radius:9px}body.home-ticker-page main{padding-top:140px}}
+@media(prefers-reduced-motion:reduce){.sgt-ticker-message{animation-duration:.01ms!important;transition:none!important}}
 </style></head>
-<body>
+<body class="home-ticker-page">
 
 <div class="welcome-screen" id="welcomeScreen">
   <div class="welcome-inner">
@@ -172,7 +168,7 @@
     <div class="faq-list">
       <details class="faq-item">
         <summary>What will I actually learn during the internship?</summary>
-        <p>You’ll learn through practical tasks, domain-related projects, mentor guidance, orientation, project presentation and a final project designed to turn learning into real work.</p><p style="margin-top:8px"><a href="internship-fee-policy.html" style="color:#2563eb;font-weight:800;text-decoration:none">Check the full Program Fee Policy →</a></p>
+        <p>You’ll learn through practical tasks, domain-related projects, mentor guidance, orientation, project presentation and a final project designed to turn learning into real work.</p><p style="margin-top:8px"><a href="internship-fee-policy.html" style="color:#2563eb;font-weight:800;text-decoration:none">More Details: Enrollment Fee Policy →</a></p>
       </details>
       <details class="faq-item">
         <summary>Will I get mentor support while working on projects?</summary>
@@ -184,7 +180,7 @@
       </details>
       <details class="faq-item">
         <summary>What is the Enrollment Fee and when do I pay it?</summary>
-        <p>Registration is completely free. A <strong>nominal, one-time Enrollment Fee</strong> is introduced only at the enrollment stage to support assessment participation and the related processing, participant verification, records/documentation and enrollment coordination. It is <strong>not a fee for the internship, certificate or selection</strong>. Selection is based on assessment performance and review.</p>
+        <p><strong>Registration is completely free. The Enrollment Fee is payable only after selection.</strong> No Enrollment Fee is required before selection. <a href="internship-fee-policy.html" style="color:#2563eb;font-weight:800">More Details: Enrollment Fee Policy →</a></p>
       </details>
       <details class="faq-item">
         <summary>What support do I get after completing my projects?</summary>
@@ -250,7 +246,7 @@
   <ul>
     <li><a href="privacy-policy.html">Privacy Policy</a></li>
     <li><a href="terms-conditions.html">Terms &amp; Conditions</a></li>
-    <li><a href="internship-fee-policy.html">Program Fee Policy</a></li>
+    <li><a href="internship-fee-policy.html">Enrollment Fee Policy</a></li>
     <li><a href="verification-policy.html">Verification Policy</a></li>
   </ul>
 </div></div>
@@ -267,5 +263,28 @@
 </div>
 
 <script src="script.js"></script>
-<script src="site-content.js"></script><script>(function(){const t=document.getElementById('sgtLiveTicker'),track=document.getElementById('sgtTickerTrack');if(!t||!track)return;const messages=[{title:'Learn • Build • Evolve',text:'Turn your skills into real-world experience and build what comes next.',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15Z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"/><path d="m8 9 2.2 2.2L14.5 7"/></svg>'},{title:'9,000+ Students Registered • 5,000+ Students Certified • 15+ Countries',text:'A growing global community of learners, builders and future tech professionals.',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 11a3 3 0 1 0-1.8-5.4"/><path d="M16.5 14a5 5 0 0 1 4 5"/></svg>'},{title:'Official Document Verification System',text:'Verify SoftGrowTech documents securely using your unique Student ID or Certificate ID.',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h5"/><path d="m8 16 2 2 5-5"/></svg>'}];let i=0;const DURATION=11000;function show(){const m=messages[i];track.innerHTML='';const e=document.createElement('div');e.className='sgt-ticker-message';e.innerHTML='<span class="sgt-ticker-icon">'+m.icon+'</span><span class="sgt-ticker-copy"><strong>'+m.title+'</strong><small>'+m.text+'</small></span>';track.appendChild(e);i=(i+1)%messages.length;window.setTimeout(show,DURATION)}window.setTimeout(()=>{t.style.display='block';show()},5000)})();</script></body>
+<script src="site-content.js"></script><script>
+(function(){
+ const ticker=document.getElementById('sgtLiveTicker'),track=document.getElementById('sgtTickerTrack');if(!ticker||!track)return;
+ const icon=(path)=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+path+'</svg>';
+ const messages=[
+ {title:'Learn • Build • Evolve',text:'Turn your skills into real-world experience and build what comes next.',icon:icon('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15Z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"/><path d="m8 9 2.2 2.2L14.5 7"/>')},
+ {title:'A Growing Global Community',text:'9,000+ Students Registered • 5,000+ Students Certified • 15+ Countries',icon:icon('<circle cx="9" cy="8" r="3"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 11a3 3 0 1 0-1.8-5.4"/><path d="M16.5 14a5 5 0 0 1 4 5"/>')},
+ {title:'Official Document Verification',text:'Verify SoftGrowTech documents using your unique Student ID or Certificate ID.',icon:icon('<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h5"/><path d="m8 16 2 2 5-5"/>')},
+ {title:'4.8/5 Student Rating  |  Mentor-Guided Learning',text:'Building Skills. Earning Trust. Growing Together.',icon:icon('<path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/><path d="M18 17.5a4 4 0 0 1 3 3"/>')},
+ {title:'Your Future in Technology',text:'Explore your interests. Strengthen your skills. Build your future.',icon:icon('<path d="M12 3v18M3 12h18"/><path d="m7 7 10 10M17 7 7 17"/>')},
+ {title:'Learn Today. Build Tomorrow.',text:'Turn your knowledge into practical skills and prepare for opportunities in technology.',icon:icon('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z"/><path d="M8 8h8M8 11h6"/><path d="m9 15 2 2 4-4"/>')}
+ ];
+ let index=0, timer=null, animating=false, current=null;const pause=3000,travel=720,cycle=0;
+ track.innerHTML='<div class="sgt-ticker-controls"><button type="button" class="sgt-ticker-btn" id="sgtTickerPrev" aria-label="Previous message" title="Previous message">‹</button><button type="button" class="sgt-ticker-btn" id="sgtTickerNext" aria-label="Next message" title="Next message">›</button></div>';
+ const controls=track.querySelector('.sgt-ticker-controls');
+ function makeMessage(i,entry){const m=messages[i],el=document.createElement('div');el.className='sgt-ticker-message '+entry;el.innerHTML='<span class="sgt-ticker-icon">'+m.icon+'</span><span class="sgt-ticker-copy"><strong>'+m.title+'</strong><small>'+m.text+'</small></span>';return el}
+ function clearTimer(){if(timer){clearTimeout(timer);timer=null}}
+ function schedule(){clearTimer();timer=setTimeout(()=>move(1,'auto'),pause)}
+ function move(step,mode){if(animating)return;clearTimer();const old=current;if(!old){index=(index+step+messages.length)%messages.length;current=makeMessage(index,mode==='prev'?'enter-left':'enter-right');track.insertBefore(current,controls);current.addEventListener('animationend',()=>{current.classList.remove('enter-left','enter-right');schedule()},{once:true});return}
+ animating=true;let exitClass,enterClass;if(mode==='prev'){exitClass='exit-left';enterClass='enter-right'}else if(mode==='next'){exitClass='exit-right';enterClass='enter-left'}else{exitClass='exit-left';enterClass='enter-right'}
+ const nextIndex=(index+step+messages.length)%messages.length;const next=makeMessage(nextIndex,enterClass);track.insertBefore(next,controls);old.classList.add(exitClass);index=nextIndex;current=next;let ended=0;const finish=()=>{ended++;if(ended<2)return;old.remove();next.classList.remove(enterClass);animating=false;schedule()};old.addEventListener('animationend',finish,{once:true});next.addEventListener('animationend',finish,{once:true});setTimeout(()=>{if(animating){old.remove();next.classList.remove(enterClass);animating=false;schedule()}},travel+120)}
+ document.getElementById('sgtTickerPrev').addEventListener('click',()=>move(-1,'prev'));document.getElementById('sgtTickerNext').addEventListener('click',()=>move(1,'next'));
+ setTimeout(()=>{ticker.style.display='block';current=makeMessage(0,'enter-right');track.insertBefore(current,controls);current.addEventListener('animationend',()=>{current.classList.remove('enter-right');schedule()},{once:true})},3000);
+})();</script></body>
 </html>
