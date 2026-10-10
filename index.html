@@ -13,8 +13,9 @@
 /* Home-only fixed navigation and ticker */
 body.home-ticker-page{padding-top:132px}
 body.home-ticker-page .header{position:fixed!important;top:0;left:0;right:0;width:100%;z-index:1100}
-body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;z-index:1090;display:block;opacity:0;visibility:hidden;transition:opacity .25s ease;overflow:hidden;background:linear-gradient(105deg,#082b68,#174ea6 52%,#082b68);color:#fff;box-shadow:0 8px 24px rgba(15,60,158,.18);border-bottom:1px solid rgba(255,255,255,.16)}
-.sgt-live-ticker.is-visible{opacity:1;visibility:visible}\n.sgt-ticker-track{position:relative;min-height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0 56px}
+body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;width:100%;box-sizing:border-box;z-index:1090;display:block;opacity:1;visibility:visible;transition:none;overflow:hidden;background:linear-gradient(105deg,#082b68,#174ea6 52%,#082b68);color:#fff;box-shadow:0 8px 24px rgba(15,60,158,.18);border-bottom:1px solid rgba(255,255,255,.16)}
+.sgt-live-ticker.is-visible{opacity:1;visibility:visible}
+.sgt-ticker-track{position:relative;min-height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0 56px}
 .sgt-ticker-message{position:absolute;left:50%;top:50%;width:max-content;max-width:min(850px,calc(100% - 112px));display:flex;align-items:center;gap:12px;padding:8px 12px;text-align:left;white-space:nowrap;opacity:0;transform:translate(150%,-50%);will-change:transform,opacity;pointer-events:none}
 .sgt-ticker-message.is-active{opacity:1;transform:translate(-50%,-50%)}
 .sgt-ticker-message.is-enter-right{transform:translate(150%,-50%);opacity:0}
@@ -33,7 +34,8 @@ body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;z-
 .sgt-ticker-btn:active{transform:scale(.95)}
 .sgt-ticker-btn:focus-visible{outline:2px solid #bfdbfe;outline-offset:2px}
 @media(max-width:700px){
- body.home-ticker-page{padding-top:138px}
+ body.home-ticker-page{padding-top:140px}
+ body.home-ticker-page .header{height:66px}
  body.home-ticker-page .sgt-live-ticker{top:66px}
  .sgt-ticker-track{min-height:72px;padding:0 46px}
  .sgt-ticker-message{width:calc(100% - 84px);max-width:calc(100% - 84px);white-space:normal;gap:9px;padding:8px 3px}
@@ -45,6 +47,18 @@ body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;z-
  .sgt-ticker-btn{width:30px;height:30px;border-radius:9px;font-size:21px}
 }
 @media(prefers-reduced-motion:reduce){.sgt-ticker-message.sgt-moving{transition-duration:.01ms}}
+@media(max-width:640px){
+ body.home-ticker-page{padding-top:122px}
+ body.home-ticker-page .header{min-height:66px}
+ body.home-ticker-page .sgt-live-ticker{top:66px}
+ .sgt-ticker-track{min-height:62px;padding:0 42px}
+ .sgt-ticker-message{max-width:calc(100% - 78px);gap:8px;padding:6px 4px;white-space:normal;width:calc(100% - 78px)}
+ .sgt-ticker-icon{width:32px;height:32px;flex-basis:32px;border-radius:10px}
+ .sgt-ticker-icon svg{width:18px;height:18px}
+ .sgt-ticker-copy strong{font-size:12px;line-height:1.2}
+ .sgt-ticker-copy small{font-size:10px;line-height:1.25}
+ .sgt-ticker-control{width:28px;height:28px}
+}
 </style></head>
 <body class="home-ticker-page">
 
@@ -321,10 +335,12 @@ body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;z-
  function clearTimer(){if(timer){clearTimeout(timer);timer=null}}
  function enterInitial(){
    if(started)return;started=true;
+   // Reveal the ticker only after the initial 3-second delay, when its first message is ready.
+   ticker.classList.add('is-visible');
    const el=makeMessage(index,'right');track.appendChild(el);current=el;
    requestAnimationFrame(()=>requestAnimationFrame(()=>{
     el.classList.add('sgt-moving','is-active');el.classList.remove('is-enter-right');
-    timer=setTimeout(()=>advance('auto'),HOLD_MS+ENTER_MS);
+    timer=setTimeout(()=>advance('auto'),HOLD_MS);
    }));
  }
  function advance(mode){
