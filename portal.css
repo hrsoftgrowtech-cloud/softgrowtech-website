@@ -110,11 +110,11 @@ body.dashboard-scrolled .portal-tabs{top:104px}
 .password-eye-icon{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.password-eye{display:grid;place-items:center}
 
 /* Consolidated improvements: dashboard fixed shell, referral CTA, assessment CTA */
-.portal-body{height:100dvh;overflow:hidden}
+.portal-body{min-height:100vh;height:auto;overflow-x:hidden;overflow-y:auto}
 .portal-body .portal-top{position:sticky;top:0;z-index:40}
-.portal-body .portal-wrap{height:calc(100dvh - 64px);min-height:0;overflow:hidden;display:flex;flex-direction:column;padding-top:0;padding-bottom:0}
+.portal-body .portal-wrap{height:auto;min-height:calc(100vh - 64px);overflow:visible;display:block;padding-top:18px;padding-bottom:40px}
 .portal-dashboard-fixed{flex:0 0 auto;position:relative;z-index:30;background:var(--portal-bg)}
-.portal-dashboard-content{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 0 32px;scrollbar-gutter:stable}
+.portal-dashboard-content{min-height:0;overflow:visible;overscroll-behavior:auto;padding:0 0 32px;scrollbar-gutter:stable}
 .portal-dashboard-content .portal-section-view.active{display:block;animation:portalSectionIn .22s ease both}
 .portal-dashboard-fixed .portal-hero,.portal-dashboard-fixed .portal-tabs{position:static!important;top:auto!important}
 .student-referral-cta{display:flex;align-items:center;justify-content:space-between;gap:16px;border-color:#bfdbfe;background:linear-gradient(120deg,#f8fbff,#eef5ff 55%,#fff);box-shadow:0 12px 30px rgba(37,99,235,.08)}
@@ -122,7 +122,7 @@ body.dashboard-scrolled .portal-tabs{top:104px}
 .student-referral-gift{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border-radius:14px;background:#dbeafe;color:#1d4ed8}.student-referral-gift svg{width:25px;height:25px;display:block}
 .assessment-compact-cta{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;border:1px solid #bfdbfe;border-radius:16px;background:linear-gradient(120deg,#f8fbff,#eef5ff);box-shadow:0 8px 22px rgba(37,99,235,.06)}
 .assessment-compact-cta>div{display:grid;gap:4px}.assessment-compact-cta strong{font-size:15px;color:#0f172a}.assessment-compact-cta span{font-size:13px;color:#64748b}
-@media(max-width:700px){.portal-body .portal-wrap{height:calc(100dvh - 58px)}.portal-dashboard-content{padding-bottom:24px}.student-referral-cta{align-items:stretch;flex-direction:column}.student-referral-cta .portal-btn{width:100%}.assessment-compact-cta{align-items:stretch;flex-direction:column}.assessment-compact-cta .portal-btn{width:100%}}
+@media(max-width:700px){.portal-body .portal-wrap{height:auto;min-height:calc(100vh - 58px);overflow:visible}.portal-dashboard-content{padding-bottom:24px}.student-referral-cta{align-items:stretch;flex-direction:column}.student-referral-cta .portal-btn{width:100%}.assessment-compact-cta{align-items:stretch;flex-direction:column}.assessment-compact-cta .portal-btn{width:100%}}
 /* Inline SVG icon consistency */
 [data-sgt-icon] svg,.icon-inline svg,.portal-tab svg,.ref-nav svg{width:1.1em;height:1.1em;display:inline-block;vertical-align:-.18em;flex:0 0 auto}
 
@@ -150,3 +150,12 @@ body.dashboard-scrolled .portal-tabs{top:104px}
 
 /* Referral CTA and icon clarity */
 .student-referral-cta{animation:referralCardIn .45s ease both}.student-referral-cta .student-referral-gift{border:0;box-shadow:none}.student-referral-cta .student-referral-gift svg{background:transparent;display:block}@keyframes referralCardIn{from{opacity:.85;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}@media(prefers-reduced-motion:reduce){.student-referral-cta{animation:none}}
+
+/* Global scroll and stable navigation fixes: dashboard and referral pages must not trap document scrolling. */
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body.portal-body{height:auto!important;min-height:100vh;overflow-x:hidden!important;overflow-y:auto!important}
+body.portal-body .portal-top{position:sticky;top:0;z-index:1100}
+body.portal-body .portal-wrap{height:auto!important;min-height:calc(100vh - 64px);overflow:visible!important;display:block;padding-bottom:48px}
+body.portal-body .portal-dashboard-content{height:auto;min-height:0;overflow:visible;overscroll-behavior:auto}
+body.portal-body .portal-dashboard-fixed{position:relative;top:auto}
+@media(max-width:700px){body.portal-body .portal-wrap{min-height:calc(100vh - 58px);height:auto!important;padding-bottom:36px}}
