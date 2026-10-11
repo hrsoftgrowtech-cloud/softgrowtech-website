@@ -4,21 +4,15 @@ async function captureSoftGrowReferral(){
   try{
     const at=Number(localStorage.getItem('sgt_referral_captured_at')||0);
     if(at && Date.now()-at>30*24*60*60*1000){localStorage.removeItem('sgt_referral_code');localStorage.removeItem('sgt_referral_captured_at');}
-    const existing=(localStorage.getItem('sgt_referral_code')||'').trim().toUpperCase();
-    if(existing){
-      const check=await sb.rpc('sgt_validate_referral_code',{p_code:existing});
-      if(!check.error && check.data===true) return;
-      localStorage.removeItem('sgt_referral_code');
-      localStorage.removeItem('sgt_referral_captured_at');
-    }
     const params=new URLSearchParams(location.search);
     const code=(params.get('invite')||params.get('ref')||'').trim().toUpperCase();
-    if(!code || !/^SGT-REF-[A-Z0-9-]+$/i.test(code)) return;
-    const {data, error}=await sb.rpc('sgt_validate_referral_code',{p_code:code});
-    if(!error && data===true){
-      localStorage.setItem('sgt_referral_code',code);
-      localStorage.setItem('sgt_referral_captured_at',String(Date.now()));
+    if(code && /^SGT-REF-[A-Z0-9-]+$/i.test(code)){
+      const {data,error}=await sb.rpc('sgt_validate_referral_code',{p_code:code});
+      if(!error && data===true){localStorage.setItem('sgt_referral_code',code);localStorage.setItem('sgt_referral_captured_at',String(Date.now()));return;}
     }
+    const existing=(localStorage.getItem('sgt_referral_code')||'').trim().toUpperCase();
+    if(existing){const check=await sb.rpc('sgt_validate_referral_code',{p_code:existing});if(!check.error && check.data===true)return;}
+    localStorage.removeItem('sgt_referral_code');localStorage.removeItem('sgt_referral_captured_at');
   }catch(_){}
 }
 
@@ -43,8 +37,8 @@ async function initRegister(){
   const backDomain=document.getElementById('backToDomain');if(backDomain&&requested){const slug=String(requested).trim().toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');const map={'web-development':'web-development.html','data-analysis':'data-analysis.html','artificial-intelligence':'artificial-intelligence.html'};backDomain.href=map[slug]?map[slug]:`domain-details.html?domain=${encodeURIComponent(requested)}`;}
   const showPhoneError=(message='',isError=false)=>{const help=document.getElementById('phoneHelp');if(!help)return;help.textContent=message;help.classList.toggle('error',isError)};
   const showCountryError=(message='',isError=false)=>{if(!countryHelp)return;countryHelp.textContent=message;countryHelp.classList.toggle('error',isError)};const showFieldError=(id,message='',isError=false)=>{const el=document.getElementById(id);if(el){el.textContent=message;el.classList.toggle('error',isError)}};
-  const syncCountry=()=>{const opt=code?.selectedOptions?.[0],c=opt?.dataset?.country,iso=opt?.dataset?.iso,flag=document.getElementById('callingFlag'),selected=Boolean(code?.value);if(countryEl)countryEl.value=c||'';if(flag)flag.innerHTML=iso?`<img src="https://flagcdn.com/w40/${iso}.png" width="24" height="18" alt="${esc(c||'Country')}" loading="eager" referrerpolicy="no-referrer">`:`<span class="calling-flag-placeholder">${window.sgtIcon?window.sgtIcon('globe'):''}</span>`;showCountryError('',false);if(phoneEl){phoneEl.disabled=!selected;phoneEl.placeholder='';if(!selected){phoneEl.value='';showPhoneError('Please select your country calling code first.',true)}else{showPhoneError('');setTimeout(()=>phoneEl.focus(),0)}}};
-  code?.addEventListener('change',syncCountry);syncCountry();
+  const syncCountry=()=>{const opt=code?.selectedOptions?.[0],c=opt?.dataset?.country,iso=opt?.dataset?.iso,flag=document.getElementById('callingFlag'),selected=Boolean(code?.value);if(countryEl)countryEl.value=c||'';if(flag)flag.innerHTML=iso?`<img src="https://flagcdn.com/w40/${iso}.png" width="24" height="18" alt="${esc(c||'Country')}" loading="eager" referrerpolicy="no-referrer">`:`<span class="calling-flag-placeholder">${window.sgtIcon?window.sgtIcon('globe'):''}</span>`;showCountryError('',false);if(phoneEl){phoneEl.disabled=!selected;phoneEl.placeholder='';if(!selected){phoneEl.value='';showPhoneError('')}else{showPhoneError('');setTimeout(()=>phoneEl.focus(),0)}}};
+  let callingCodeTouched=false;code?.addEventListener('change',()=>{callingCodeTouched=true;syncCountry()});syncCountry();
 
   const countryRules={in:{min:10,max:10,starts:/^[6-9]/},pk:{min:10,max:10,starts:/^3/},za:{min:9,max:9,starts:/^[6-8]/},bd:{min:10,max:10,starts:/^1/},gb:{min:10,max:10,starts:/^7/},us:{min:10,max:10},ca:{min:10,max:10},au:{min:9,max:9,starts:/^4/},ae:{min:9,max:9,starts:/^5/},sa:{min:9,max:9,starts:/^5/},de:{min:7,max:11},fr:{min:9,max:9,starts:/^[67]/},it:{min:9,max:10},es:{min:9,max:9,starts:/^[6789]/},nl:{min:9,max:9,starts:/^6/},be:{min:9,max:9,starts:/^4/},ch:{min:9,max:9,starts:/^7/},ru:{min:10,max:10,starts:/^9/},jp:{min:10,max:10,starts:/^(70|80|90)/},kr:{min:9,max:10,starts:/^1/},cn:{min:11,max:11,starts:/^1/},sg:{min:8,max:8,starts:/^[689]/},my:{min:9,max:10,starts:/^1/},nz:{min:8,max:10,starts:/^2/},ng:{min:10,max:10,starts:/^[789]/},ke:{min:9,max:9,starts:/^[17]/},eg:{min:10,max:10,starts:/^1/}};
   const allCodes=[...new Set([...code.options].map(o=>o.value).filter(Boolean))].map(x=>x.replace('+',''));
@@ -145,6 +139,40 @@ async function initPortal(){
   const rangeState=(start,end)=>{const s=escDate(start),e=escDate(end)||s;if(!s)return'upcoming';if(today>e)return'complete';if(today>=s&&today<=e)return'current';return'upcoming'};
   const rangeLabel=(start,end)=>start&&end&&start!==end?`${dateFmt(start)} – ${dateFmt(end)}`:dateFmt(start);
   document.getElementById('studentName').textContent=p.name||'Student';
+  const referralDashboardButton=document.getElementById('studentReferralDashboard');
+  const studentReferralCard=document.getElementById('studentReferralCard');
+  const referralTermsModal=document.getElementById('referralTermsModal');
+  const referralTermsConsent=document.getElementById('referralTermsConsent');
+  const referralConfirmButton=document.getElementById('confirmReferralCreate');
+  const referralClose=()=>{if(referralTermsModal)referralTermsModal.hidden=true};
+  if(referralDashboardButton){
+    const eligible=String(p.selection_status||'').trim().toLowerCase()==='selected'&&String(p.payment_status||'').trim().toLowerCase()==='verified';
+    referralDashboardButton.hidden=!eligible;
+    if(studentReferralCard)studentReferralCard.hidden=!eligible;
+    if(eligible){
+      try{const {data}=await sb.rpc('sgt_get_my_referral_id');if(data&&!data.error&&data.referral_id){referralDashboardButton.textContent='Open Referral Dashboard →';referralDashboardButton.dataset.hasAccount='1';}}catch(_){}
+    }
+    referralDashboardButton.addEventListener('click',async e=>{e.preventDefault();
+      if(referralDashboardButton.dataset.hasAccount==='1'){
+        try{const {data,error}=await sb.rpc('sgt_get_my_referral_id');if(error||!data||data.error)throw new Error(data?.error||error?.message||'Referral dashboard is not ready yet.');sessionStorage.setItem('sgt_referral_credentials',JSON.stringify({token:data.referral_id,access:''}));location.href='my-referral.html'}catch(err){toast(err.message||'Referral dashboard could not be opened.')}return;
+      }
+      if(!eligible){toast('Referral Program is available after selection and payment verification.');return;}
+      if(referralTermsModal)referralTermsModal.hidden=false;
+    });
+  }
+  document.getElementById('closeReferralTerms')?.addEventListener('click',referralClose);
+  document.getElementById('cancelReferralTerms')?.addEventListener('click',referralClose);
+  referralTermsModal?.addEventListener('click',e=>{if(e.target===referralTermsModal)referralClose()});
+  referralTermsConsent?.addEventListener('change',()=>{if(referralConfirmButton)referralConfirmButton.disabled=!referralTermsConsent.checked});
+  referralConfirmButton?.addEventListener('click',async()=>{
+    if(!referralTermsConsent?.checked)return toast('Please accept the Referral Program terms first.');
+    referralConfirmButton.disabled=true;referralConfirmButton.textContent='Creating your Referral Account…';
+    try{const {data,error}=await sb.rpc('sgt_create_my_referral_account',{p_terms_accepted:true,p_terms_version:'2026-10-11'});
+      if(error||!data||data.error)throw new Error(data?.error||error?.message||'Referral Account could not be created.');
+      sessionStorage.setItem('sgt_referral_credentials',JSON.stringify({token:data.referral_id,access:''}));
+      referralConfirmButton.textContent='Account Created ✓';location.href='my-referral.html';
+    }catch(err){toast(err.message||'Referral Account could not be created.');referralConfirmButton.disabled=false;referralConfirmButton.textContent='Confirm Create & Get Reward →';}
+  });
   document.getElementById('logoutBtn').onclick=logout;
   const queryBtn=document.getElementById('studentSendQuery'),queryForm=document.getElementById('studentSupportForm'),cancelQuery=document.getElementById('cancelStudentQuery');
   if(queryBtn&&queryForm){
@@ -155,7 +183,7 @@ async function initPortal(){
     cancelQuery?.addEventListener('click',()=>{queryForm.reset();if(nameInput)nameInput.value=p.name||'';if(idInput)idInput.value=p.student_id||'';queryForm.hidden=true;queryBtn.style.display='inline-flex'});
     queryForm.onsubmit=async e=>{e.preventDefault();const text=document.getElementById('studentQueryText')?.value.trim();if(!text)return toast('Please describe your query.');const btn=e.submitter||queryForm.querySelector('button[type="submit"]');if(btn){btn.disabled=true;btn.textContent='Sending…'}const {error}=await sb.from('sgt_support_queries').insert({user_id:u.id,student_id:p.student_id||null,name:p.name||'',email:p.email||'',category:document.getElementById('studentQueryCategory')?.value||'Other',query_text:text});if(btn){btn.disabled=false;btn.textContent='Send Query →'}if(error)return toast(error.message);toast('Query submitted successfully.');queryForm.reset();if(nameInput)nameInput.value=p.name||'';if(idInput)idInput.value=p.student_id||'';queryForm.hidden=true;queryBtn.style.display='inline-flex'};
   }
-  document.querySelectorAll('.portal-tab').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.portal-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.portal-section-view').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelector(`[data-portal-view=\"${btn.dataset.portalTab}\"]`)?.classList.add('active');window.scrollTo({top:0,behavior:'smooth'})});
+  document.querySelectorAll('.portal-tab').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.portal-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.portal-section-view').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelector(`[data-portal-view=\"${btn.dataset.portalTab}\"]`)?.classList.add('active');document.querySelector('.portal-dashboard-content')?.scrollTo({top:0,behavior:'smooth'})});
   const dashboardStickyUpdate=()=>document.body.classList.toggle('dashboard-scrolled',window.scrollY>36); window.addEventListener('scroll',dashboardStickyUpdate,{passive:true}); dashboardStickyUpdate();
 
   const programStart=p.batch_start||null, programEnd=programStart?monthEnd(programStart):null, orient=programStart?addDays(programStart,-2):null;
@@ -221,9 +249,10 @@ async function initPortal(){
   }else if(p.assessment_status==='Complete'){
     action='<div class="success-panel"><strong>Assessment Submitted</strong><p>Your assessment has already been submitted. Your result is being processed.</p></div>';
   }else{
-    action=`<div class="portal-actions"><a class="portal-btn primary" href="${assessmentStartHref}">Start Assessment →</a></div>`;
+    action=`<div class="assessment-compact-cta"><div><strong>Interview-Based Assessment</strong><span>Selection Process</span></div><span class="assessment-cta-note">Use <strong>Start Now</strong> above to begin.</span></div>`;
   }
   document.getElementById('assessmentAction').innerHTML=`<div class="assessment-action-highlight">${action}</div>`;
+  const topAssessmentCta=document.getElementById('assessmentTopCta');if(topAssessmentCta){const canStart=!paymentRejected&&p.selection_status!=='Selected'&&p.selection_status!=='Not Selected'&&p.assessment_status!=='Complete';topAssessmentCta.hidden=!canStart;topAssessmentCta.href=assessmentStartHref;}
   document.getElementById('assessmentBlockedBtn')?.addEventListener('click',()=>{const m=document.createElement('div');m.className='document-viewer-modal';m.innerHTML='<div class="document-viewer-card" style="max-width:520px"><div class="document-viewer-head"><strong>Assessment Already Submitted</strong><button class="close-btn" type="button">×</button></div><div style="padding:24px"><p style="margin-top:0">You are already submitted assessment and your payment is currently under review.</p><p>Please wait for payment verification. You cannot start another assessment attempt at this stage.</p><button class="portal-btn primary" id="closeAssessmentPopup" type="button">Okay</button></div></div>';document.body.appendChild(m);m.querySelector('.close-btn').onclick=()=>m.remove();m.querySelector('#closeAssessmentPopup').onclick=()=>m.remove()});
   document.getElementById('startReassessment')?.addEventListener('click',async()=>{const b=document.getElementById('startReassessment');b.disabled=true;b.textContent='Preparing…';const {error}=await sb.from('sgt_profiles').update({selection_round:2,assessment_status:'Not Started',review_status:'Pending',updated_at:new Date().toISOString()}).eq('id',u.id);if(error){toast(error.message);b.disabled=false;b.textContent='Re-Assessment →';return}location.href='assessment.html'});
 
@@ -441,7 +470,7 @@ async function initAssessment(){
   if(set==='reassessment-v2'&&!forceStart){
     root.innerHTML=`<div class="portal-card assessment-gate-card"><div class="portal-kicker">SECOND OPPORTUNITY</div><h1>Your Second Opportunity</h1><p>Your first assessment did not result in selection, but this is a fresh opportunity to demonstrate your knowledge, problem-solving skills and readiness.</p><div class="success-panel"><strong>Payment Submitted</strong><p style="margin:7px 0 0">Payment Status: ${esc(p.payment_status||'Submitted')}</p></div><div class="portal-actions"><button class="portal-btn secondary" id="backReassess" type="button">← Back</button><button class="portal-btn primary" id="continueReassessment" type="button">Continue to the Re-Assessment →</button></div></div>`;document.getElementById('backReassess').onclick=()=>location.href='portal.html';document.getElementById('continueReassessment').onclick=showQuestions;return}
   if(set==='primary-v2'&&!forceStart){
-    root.innerHTML=`<div class="portal-card"><div class="portal-kicker">SELECTION ASSESSMENT</div><h1>Interview-Based Assessment</h1><p>This assessment contains exactly 20 domain-specific multiple-choice questions. You have 30 minutes. You may leave questions unanswered and move between pages.</p><div class="portal-meta"><div class="meta-box"><small>Name</small><strong>${esc(p.name)}</strong></div><div class="meta-box"><small>Student ID</small><strong>${esc(p.student_id)}</strong></div><div class="meta-box"><small>Domain</small><strong>${esc(p.domain)}</strong></div><div class="meta-box"><small>Duration</small><strong>30 Minutes</strong></div></div><div class="help-note" style="margin-top:16px"><strong>Selection Rule</strong><br>A score of 17 or more out of 20 qualifies for selection.</div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a><button class="portal-btn primary" id="nextAssessInfo" type="button">Start Assessment →</button></div></div>`;
+    root.innerHTML=`<div class="portal-card"><div class="portal-kicker">SELECTION ASSESSMENT</div><h1>Show What You Know. Take Your Next Step.</h1><p>This interview-based selection assessment helps us understand your knowledge, problem-solving approach, and understanding of your selected domain.</p><p>Complete the assessment to demonstrate your skills. Qualifying makes you eligible for selection; final selection follows the review process.</p><div class="help-note"><strong>Assessment format</strong><br>20 domain-specific questions • 30 minutes • You may leave questions unanswered and navigate between pages.</div><div class="portal-meta"><div class="meta-box"><small>Name</small><strong>${esc(p.name)}</strong></div><div class="meta-box"><small>Student ID</small><strong>${esc(p.student_id)}</strong></div><div class="meta-box"><small>Domain</small><strong>${esc(p.domain)}</strong></div><div class="meta-box"><small>Duration</small><strong>30 Minutes</strong></div></div><div class="help-note" style="margin-top:16px"><strong>Selection Rule</strong><br>A score of 17 or more out of 20 qualifies for selection.</div><div class="portal-actions"><a class="portal-btn secondary" href="portal.html">Back to Dashboard</a><button class="portal-btn primary" id="nextAssessInfo" type="button">Continue →</button></div></div>`;
     document.getElementById('nextAssessInfo').onclick=showQuestions;return;
   }
   let page=0,answers={};const pageCount=Math.ceil(q.length/2),storageKey=`sgt_assessment_${u.id}_${set}`;let startAt=Number(localStorage.getItem(storageKey+'_start')||0),expired=false,submitting=false,timerHandle=null;

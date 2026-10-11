@@ -447,3 +447,16 @@ button:not(:disabled):focus-visible,a.btn:focus-visible,.portal-btn:focus-visibl
 @media(max-width:760px){html,body{max-width:100%;overflow-x:hidden}.container{width:100%;padding-left:16px;padding-right:16px}.section{padding-left:0;padding-right:0}.btn,.portal-btn{min-height:44px}.table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}}
 
 .domain-hero-inner{display:flex;align-items:center;justify-content:space-between;gap:28px}.domain-back-hero{flex:0 0 auto;white-space:nowrap}.domain-back-hero:hover{transform:translateY(-1px)}@media(max-width:700px){.domain-hero-inner{align-items:flex-start;flex-direction:column}.domain-back-hero{align-self:flex-end}.sgt-live-ticker{width:100%}}
+
+/* Global public-site navbar: keep the main navigation visible while scrolling. */
+.header{position:sticky;top:0;z-index:1000}
+body.home-ticker-page .header{position:fixed!important}
+
+/* Global public-site navbar: keep the main navigation visible while scrolling. */
+.header{position:sticky;top:0;z-index:1000}
+body.home-ticker-page .header{position:fixed!important}
+
+/* Document verification polish: clean action button, no accidental dark icon container. */
+.new-clean-verification .record-footer-actions{display:flex;justify-content:center;padding:18px 0 8px;background:transparent!important;box-shadow:none!important;border:0!important}
+.new-clean-verification .verify-another{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(110deg,#1d4ed8,#3b82f6)!important;color:#fff!important;border:0!important;border-radius:12px!important;padding:13px 22px!important;box-shadow:0 8px 22px rgba(37,99,235,.18)!important;text-decoration:none!important}
+.new-clean-verification .verify-another svg,.new-clean-verification .verify-another .icon{background:transparent!important;border:0!important;box-shadow:none!important}

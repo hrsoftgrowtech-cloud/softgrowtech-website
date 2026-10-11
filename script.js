@@ -1257,12 +1257,12 @@ function renderNewStudentRecord(student) {
   const complete=statusRaw.includes('complete')||(end&&!Number.isNaN(end.getTime())&&now>end&&activeByFlow);
   const offerVerified=offer.includes('verified')||offer.includes('received')||offer.includes('issued')||student['Offer Letter URL'];
   const certVerified=certificate.includes('verified')||certificate.includes('received')||certificate.includes('issued')||student['Certificate URL'];
-  const internshipStatus=complete?'Internship Complete':running?'Internship Running':activeByFlow?'Active':'Applicant';
-  const statusDescription=complete?'The internship program has been successfully completed.':running?'The internship program is currently running according to the assigned batch schedule.':activeByFlow?'The candidate is active in the SoftGrowTech program and is awaiting the scheduled batch start.':'The student has registered with SoftGrowTech and the application is currently at the applicant stage.';
-  const offerText=offerVerified?'Received / Verified':'Coming Soon';
-  const certText=certVerified?'Received / Verified':'Coming Soon';
+  const internshipStatus=complete?'Internship Completed':running?'Internship Running':activeByFlow?(start&&now<start?'Internship Coming Soon':'Internship Active'):'Internship Coming Soon';
+  const statusDescription=complete?'Congratulations on completing your internship! Check the status of your Offer Letter and Certificate below.':running?'Your internship is currently in progress. Keep working on your assigned tasks and final project to make the most of this learning experience.':activeByFlow?'Your internship journey is about to begin! Stay prepared and get ready to build your skills through real-world projects.':'Your registration has been received. Your internship journey and document status will be updated here as your application progresses.';
+  const offerText=offerVerified?'Issued / Verified':'Coming Soon';
+  const certText=certVerified?'Issued / Verified':'Coming Soon';
   const officialRecordMessage=certVerified
-    ? `<div class="official-record-message success"><div class="official-record-icon">${icons.celebration}</div><div><strong>Congratulations!</strong><span>The student has successfully completed the SoftGrowTech internship program and the certificate has been issued.</span></div></div>`
+    ? `<div class="official-record-message success"><div class="official-record-icon">${icons.celebration}</div><div><strong>Congratulations!</strong><span>Your internship is complete. Please review the Offer Letter and Certificate statuses below.</span></div></div>`
     : offerVerified
       ? `<div class="official-record-message confirmed"><div class="official-record-icon">${icons.verified}</div><div><strong>Selection Confirmed</strong><span>The student's selection has been confirmed and the official offer letter has been issued.</span></div></div>`
       : `<div class="official-record-message private"><div class="official-record-icon">${icons.shield}</div><div><strong>Official Record</strong><span>This public verification page shows only essential verification information. Internal assessment, payment and personal contact details are not displayed.</span></div></div>`;
@@ -1286,8 +1286,8 @@ function renderNewStudentRecord(student) {
         <div class="status-label">PROGRAM STATUS</div>
         <div class="status-content"><div class="overall-circle"><div class="overall-check">${complete?icons.verified:running?icons.group:activeByFlow?icons.profile:icons.profile}</div><small>Program Status</small><strong>${escapeHtml(internshipStatus)}</strong><p>${escapeHtml(statusDescription)}</p></div>
         <div class="document-status"><h2>Document Status</h2>
-          <div class="doc-row"><div><strong>Offer Letter</strong><small>${offerVerified?'The official offer letter has been issued and verified.':'The offer letter will appear here once it has been officially issued.'}</small></div>${badge(offerText,offerVerified?'green':'yellow')}</div>
-          <div class="doc-row"><div><strong>Certificate</strong><small>${certVerified?'The certificate has been issued and verified.':'The certificate will appear here after successful program completion and applicable evaluation.'}</small></div>${badge(certText,certVerified?'green':'yellow')}</div>
+          <div class="doc-row"><div><strong>Offer Letter</strong><small>${offerVerified?'Your official Offer Letter has been issued and verified.':'Your Offer Letter has not been issued yet. Please check back later.'}</small></div>${badge(offerText,offerVerified?'green':'yellow')}</div>
+          <div class="doc-row"><div><strong>Certificate</strong><small>${certVerified?'Your Certificate has been issued and verified.':'Your Certificate has not been issued yet. It will appear here once it is issued.'}</small></div>${badge(certText,certVerified?'green':'yellow')}</div>
         </div></div>
       </section>
       ${officialRecordMessage}
