@@ -460,3 +460,23 @@ body.home-ticker-page .header{position:fixed!important}
 .new-clean-verification .record-footer-actions{display:flex;justify-content:center;padding:18px 0 8px;background:transparent!important;box-shadow:none!important;border:0!important}
 .new-clean-verification .verify-another{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(110deg,#1d4ed8,#3b82f6)!important;color:#fff!important;border:0!important;border-radius:12px!important;padding:13px 22px!important;box-shadow:0 8px 22px rgba(37,99,235,.18)!important;text-decoration:none!important}
 .new-clean-verification .verify-another svg,.new-clean-verification .verify-another .icon{background:transparent!important;border:0!important;box-shadow:none!important}
+
+
+/* Mobile navbar stability fix: keep the shared public header visible on every page.
+   Desktop layout remains unchanged. */
+@media (max-width: 900px) {
+  body:not(.home-ticker-page) .header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100%;
+    z-index: 1100 !important;
+  }
+  body:not(.home-ticker-page) {
+    padding-top: 66px;
+  }
+  body:not(.home-ticker-page) .header .nav-links {
+    top: 66px;
+  }
+}
