@@ -92,8 +92,8 @@ body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;wi
 </header><div class="sgt-live-ticker" id="sgtLiveTicker" aria-label="SoftGrowTech announcements">
   <div class="sgt-ticker-track" id="sgtTickerTrack" aria-live="polite"></div>
   <div class="sgt-ticker-controls">
-    <button type="button" class="sgt-ticker-btn" id="sgtTickerPrev" aria-label="Previous announcement" title="Previous announcement">‹</button>
-    <button type="button" class="sgt-ticker-btn" id="sgtTickerNext" aria-label="Next announcement" title="Next announcement">›</button>
+    <button type="button" class="sgt-ticker-btn" id="sgtTickerPrev" aria-label="Next announcement" title="Next announcement">‹</button>
+    <button type="button" class="sgt-ticker-btn" id="sgtTickerNext" aria-label="Previous announcement" title="Previous announcement">›</button>
   </div>
 </div>
 
@@ -348,9 +348,13 @@ body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;wi
    if(!started){clearTimer();enterInitial();return}
    if(transitioning)return;
    clearTimer();transitioning=true;const token=++cycleToken;
-   const direction=mode==='next'?'right':'left';
-   const nextIndex=(index+(mode==='prev'?-1:1)+messages.length)%messages.length;
-   const incomingSide=mode==='prev'?'right':mode==='next'?'left':'right';
+   // The right (>) control replays the previous message: current exits right,
+   // previous message enters from the left. The left (<) control advances:
+   // current exits left and the next message enters from the right.
+   const isPrevious=mode==='prev';
+   const direction=isPrevious?'right':'left';
+   const nextIndex=(index+(isPrevious?-1:1)+messages.length)%messages.length;
+   const incomingSide=isPrevious?'left':'right';
    const incoming=makeMessage(nextIndex,incomingSide);
    track.appendChild(incoming);
    // Force initial off-screen position before starting both transitions.
@@ -373,6 +377,7 @@ body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;wi
    if(transitioning){return}
    advance(mode);
  }
+ // Left arrow advances to the next message; right arrow replays the previous one.
  prev.addEventListener('click',()=>manual('next'));
  next.addEventListener('click',()=>manual('prev'));
  timer=setTimeout(enterInitial,INITIAL_DELAY);
