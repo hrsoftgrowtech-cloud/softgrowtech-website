@@ -168,10 +168,25 @@ async function initPortal(){
   const rangeLabel=(start,end)=>start&&end&&start!==end?`${dateFmt(start)} – ${dateFmt(end)}`:dateFmt(start);
   document.getElementById('studentName').textContent=p.name||'Student';
   document.getElementById('logoutBtn').onclick=async()=>{const b=document.getElementById('logoutBtn');if(b){b.disabled=true;b.textContent='Logging out…'}await logout()};
-  const menuToggle=document.getElementById('portalMenuToggle'),menuDrawer=document.getElementById('portalMenuDrawer'),menuBackdrop=document.getElementById('portalMenuBackdrop');
-  const closePortalMenu=()=>{if(menuDrawer)menuDrawer.hidden=true;if(menuBackdrop)menuBackdrop.hidden=true;menuToggle?.setAttribute('aria-expanded','false')};
-  menuToggle?.addEventListener('click',()=>{const opening=menuDrawer?.hidden===true;if(menuDrawer)menuDrawer.hidden=!opening;if(menuBackdrop)menuBackdrop.hidden=!opening;menuToggle.setAttribute('aria-expanded',String(opening))});
+  const menuToggle=document.getElementById('portalMenuToggle'),menuDrawer=document.getElementById('portalMenuDrawer'),menuBackdrop=document.getElementById('portalMenuBackdrop'),menuClose=document.getElementById('portalMenuClose');
+  let menuCloseTimer=null;
+  const closePortalMenu=()=>{
+    if(menuCloseTimer)clearTimeout(menuCloseTimer);
+    if(menuDrawer){menuDrawer.classList.remove('is-open');menuDrawer.setAttribute('aria-hidden','true');menuCloseTimer=setTimeout(()=>{menuDrawer.hidden=true},260)}
+    if(menuBackdrop){menuBackdrop.classList.remove('is-open');menuBackdrop.hidden=false;setTimeout(()=>{if(!menuDrawer?.classList.contains('is-open'))menuBackdrop.hidden=true},220)}
+    menuToggle?.setAttribute('aria-expanded','false');menuToggle?.setAttribute('aria-label','Open dashboard menu');document.body.classList.remove('portal-menu-open');
+  };
+  const openPortalMenu=()=>{
+    if(menuCloseTimer)clearTimeout(menuCloseTimer);
+    if(menuDrawer){menuDrawer.hidden=false;menuDrawer.setAttribute('aria-hidden','false')}
+    if(menuBackdrop)menuBackdrop.hidden=false;
+    requestAnimationFrame(()=>{menuDrawer?.classList.add('is-open');menuBackdrop?.classList.add('is-open')});
+    menuToggle?.setAttribute('aria-expanded','true');menuToggle?.setAttribute('aria-label','Close dashboard menu');document.body.classList.add('portal-menu-open');
+  };
+  menuToggle?.addEventListener('click',()=>{if(menuDrawer?.classList.contains('is-open'))closePortalMenu();else openPortalMenu()});
+  menuClose?.addEventListener('click',closePortalMenu);
   menuBackdrop?.addEventListener('click',closePortalMenu);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menuDrawer?.classList.contains('is-open'))closePortalMenu()});
   document.querySelectorAll('[data-menu-view]').forEach(btn=>btn.addEventListener('click',()=>{const key=btn.dataset.menuView;document.querySelectorAll('.portal-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.portal-section-view').forEach(x=>x.classList.remove('active'));document.querySelector(`[data-portal-view="${key}"]`)?.classList.add('active');closePortalMenu();window.scrollTo({top:0,behavior:'smooth'})}));
   const queryBtn=document.getElementById('studentSendQuery'),queryForm=document.getElementById('studentSupportForm'),cancelQuery=document.getElementById('cancelStudentQuery');
   if(queryBtn&&queryForm){
