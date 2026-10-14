@@ -8,7 +8,7 @@
 <link rel="icon" href="assets/softgrowtech-logo.png">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="icons.css">
-<style>.process .step{cursor:pointer;transition:transform .2s,box-shadow .2s}.process .step.active{box-shadow:0 12px 30px rgba(37,99,235,.14);transform:translateY(-2px);border-color:#93c5fd}.step-detail{display:none;margin:20px 0 0;padding:22px;border:1px solid #dbeafe;border-radius:18px;background:#f8fbff}.step-detail.active{display:block}.step-detail h3{margin:0 0 7px}</style></head>
+</head>
 <body>
 
 
@@ -26,7 +26,7 @@
       <li><a href="internships.html">Internships</a></li>
       <li><a href="projects.html">Projects</a></li>
       <li><a href="services.html">Services</a></li>
-      <li><a class="nav-apply" href="student-login.html">Register | Login <span class="arrow">→</span></a></li>
+      <li><a class="nav-apply" href="student-login.html">Login Now <span class="arrow">→</span></a></li>
     </ul>
   </div>
 </header>
@@ -43,9 +43,17 @@
     <div class="step"><div class="step-number">05</div><h4>Onboarding</h4><p>Complete the onboarding process.</p></div>
     <div class="step"><div class="step-number">06</div><h4>Start Learning</h4><p>Begin tasks, mentorship and projects.</p></div>
     <div class="step"><div class="step-number">07</div><h4>Complete</h4><p>Finish the journey and become eligible for recognition.</p></div>
-  </div><div id="stepDetail" class="step-detail"><h3 id="stepDetailTitle"></h3><p id="stepDetailText"></p></div>
+  </div>
+  <div class="how-step-reader" id="howStepReader" aria-live="polite"><div class="how-step-reader-label">STEP DETAILS</div><h3 id="howStepReaderTitle">Submit Application</h3><p id="howStepReaderText">Share your details and interest domain.</p><div class="how-step-reader-controls"><button type="button" id="howStepPrev" aria-label="Previous step">‹</button><span id="howStepReaderCount">1 / 7</span><button type="button" id="howStepNext" aria-label="Next step">›</button></div></div>
+  <style>
+  .process .step{cursor:pointer;scroll-margin-top:140px}.process .step:focus-visible{outline:3px solid #93c5fd;outline-offset:3px;border-radius:12px}.process .step.how-step-active{border-radius:12px;box-shadow:0 0 0 2px #93c5fd;background:#f8fbff}
+  .how-step-reader{max-width:760px;margin:24px auto 0;padding:22px;border:1px solid #bfdbfe;border-radius:18px;background:linear-gradient(145deg,#eff6ff,#fff);scroll-margin-top:140px}.how-step-reader-label{font-size:11px;letter-spacing:.14em;font-weight:900;color:#1d4ed8}.how-step-reader h3{margin:6px 0}.how-step-reader p{margin:0;color:#475569;line-height:1.6}.how-step-reader-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px}.how-step-reader-controls button{width:42px;height:42px;border:1px solid #bfdbfe;border-radius:12px;background:#fff;color:#1d4ed8;font-size:26px;cursor:pointer}.how-step-reader-controls span{font-size:12px;color:#64748b;font-weight:800}
+  </style>
+  <script>
+  (function(){const steps=[...document.querySelectorAll('.process .step')],reader=document.getElementById('howStepReader'),title=document.getElementById('howStepReaderTitle'),text=document.getElementById('howStepReaderText'),count=document.getElementById('howStepReaderCount');if(!steps.length||!reader)return;let active=0;function show(i,scroll){active=(i+steps.length)%steps.length;const st=steps[active];title.textContent=st.querySelector('h4')?.textContent||`Step ${active+1}`;text.textContent=st.querySelector('p')?.textContent||'';count.textContent=`${active+1} / ${steps.length}`;steps.forEach((x,j)=>{x.classList.toggle('how-step-active',j===active);x.setAttribute('aria-current',j===active?'step':'false')});if(scroll)reader.scrollIntoView({behavior:'smooth',block:'center'})}steps.forEach((st,i)=>{st.setAttribute('tabindex','0');st.setAttribute('role','button');st.addEventListener('click',()=>show(i,true));st.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();show(i,true)}})});document.getElementById('howStepPrev').addEventListener('click',()=>show(active-1,false));document.getElementById('howStepNext').addEventListener('click',()=>show(active+1,false));show(0,false)})();
+  </script>
 </div></section>
-<section class="section"><div class="container"><div class="card program-clarity-card"><div class="eyebrow">Assessment &amp; Selection</div><h2>20 domain-specific questions • 30 minutes • domain-focused evaluation</h2><p>Your selection assessment is designed around the domain you choose during registration. Selected students receive their official Offer Letter directly in the Student Dashboard.</p></div></div></section>
+
 <section class="section section-light"><div class="container"><div class="section-head"><div class="eyebrow">Career Support</div><h2>Beyond the internship tasks</h2></div><div class="grid-3">
   <div class="card"><div class="icon-box"><svg class="sg-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></g></svg></div><h3>Interview Preparation</h3><p>Prepare for interviews with better communication, confidence and project explanation.</p></div>
   <div class="card"><div class="icon-box"><svg class="sg-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></g></svg></div><h3>Resume & Portfolio</h3><p>Present your work and learning in a professional way.</p></div>
@@ -115,7 +123,7 @@
   <ul>
     <li><a href="privacy-policy.html">Privacy Policy</a></li>
     <li><a href="terms-conditions.html">Terms &amp; Conditions</a></li>
-    <li><a href="internship-fee-policy.html">Enrollment Fee Policy</a></li>
+    <li><a href="internship-fee-policy.html">Program Fee Policy</a></li>
     <li><a href="verification-policy.html">Verification Policy</a></li>
   </ul>
 </div></div>
@@ -133,5 +141,5 @@
 </div>
 
 <script src="script.js"></script>
-<script>(function(){const steps=[['Submit Application','Create your free registration, select your interest domain and complete your personal details.'],['Interview-Based Assessment','Take exactly 20 domain-specific MCQs in a professional exam-style interface. You have 30 minutes and may navigate using Previous and Next.'],['Evaluation','Your submitted assessment is evaluated automatically against the program’s selection criteria. Qualified students are selected and their official Offer Letter becomes available in the Student Dashboard.'],['Select Interns','If you qualify, you are selected immediately and your official Offer Letter becomes available on your Student Dashboard.'],['Onboarding','After selection, complete the enrollment payment submission. Submitted payments remain Under Review until manually verified by the SoftGrowTech team.'],['Start Learning','Once payment is verified, your batch, tasks, project work and program activities become available according to the batch schedule.'],['Complete','When the applicable program schedule is completed, your status becomes Completed and your verified completion certificate becomes available with a unique Certificate ID. Eligible participants may also receive a Letter of Recommendation according to the program criteria.']];const els=[...document.querySelectorAll('.process .step')],box=document.getElementById('stepDetail'),title=document.getElementById('stepDetailTitle'),text=document.getElementById('stepDetailText');els.forEach((el,i)=>el.addEventListener('click',()=>{els.forEach(x=>x.classList.remove('active'));el.classList.add('active');title.textContent=`${String(i+1).padStart(2,'0')} — ${steps[i][0]}`;text.textContent=steps[i][1];box.classList.add('active')}))})();</script></body>
+</body>
 </html>

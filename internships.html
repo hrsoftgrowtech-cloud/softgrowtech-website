@@ -26,7 +26,7 @@
       <li><a href="internships.html">Internships</a></li>
       <li><a href="projects.html">Projects</a></li>
       <li><a href="services.html">Services</a></li>
-      <li><a class="nav-apply" href="student-login.html">Register | Login <span class="arrow">→</span></a></li>
+      <li><a class="nav-apply" href="student-login.html">Login Now <span class="arrow">→</span></a></li>
     </ul>
   </div>
 </header>
@@ -43,13 +43,6 @@
       <div class="eyebrow">Program Clarity</div>
       <h2>A practical experience, not just a certificate.</h2>
       <p>SoftGrowTech programs combine structured learning, practical projects, mentorship and evaluation so participants can build evidence of their skills.</p>
-    </div>
-    <div class="card program-clarity-card">
-      <h3>Before you enroll</h3>
-      <div class="clarity-grid">
-        <div><strong>What you build</strong><span>Tasks, projects, documentation and presentation-ready work.</span></div>
-        <div><strong>What you receive</strong><span>Mentorship, feedback, evaluation and career-focused guidance.</span></div>
-      </div>
     </div>
   </div>
 </section>
@@ -159,7 +152,7 @@
   <ul>
     <li><a href="privacy-policy.html">Privacy Policy</a></li>
     <li><a href="terms-conditions.html">Terms &amp; Conditions</a></li>
-    <li><a href="internship-fee-policy.html">Enrollment Fee Policy</a></li>
+    <li><a href="internship-fee-policy.html">Program Fee Policy</a></li>
     <li><a href="verification-policy.html">Verification Policy</a></li>
   </ul>
 </div></div>
@@ -168,5 +161,5 @@
 </footer>
 
 <script src="script.js"></script>
-<script>document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('continueRegistration'),d=document.getElementById('programDomainSelect');if(b)b.onclick=()=>{if(!d.value){d.focus();return}location.href='student-register.html?domain='+encodeURIComponent(d.value)};const menu=document.querySelector('.menu-btn'),nav=document.getElementById('navLinks');if(menu&&nav)menu.onclick=()=>nav.classList.toggle('open')});</script></body>
+<script>document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('continueRegistration'),d=document.getElementById('programDomainSelect');if(b)b.onclick=()=>{if(!d.value){d.focus();return}location.href='student-register.html?domain='+encodeURIComponent(d.value)};const menu=document.querySelector('.menu-btn'),nav=document.getElementById('navLinks');if(menu&&nav){menu.setAttribute('aria-expanded','false');menu.onclick=(e)=>{e.preventDefault();const opened=nav.classList.toggle('open');menu.setAttribute('aria-expanded',String(opened))};nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');menu.setAttribute('aria-expanded','false')}))}});</script></body>
 </html>
