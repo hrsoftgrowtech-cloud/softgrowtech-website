@@ -254,13 +254,22 @@ function initCommonUI() {
       navLinks.classList.toggle("open", open);
       backdrop.classList.toggle("open", open);
       menuBtn.setAttribute("aria-expanded", String(open));
+      menuBtn.setAttribute("aria-label", open ? "Close navigation menu" : "Open navigation menu");
       document.body.classList.toggle("mobile-nav-open", open);
     };
     menuBtn.setAttribute("aria-expanded", "false");
-    menuBtn.addEventListener("click", () => setMenu(!navLinks.classList.contains("open")));
-    closeBtn.addEventListener("click", () => setMenu(false));
+    menuBtn.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); setMenu(!navLinks.classList.contains("open")); });
+    closeBtn.addEventListener("click", event => { event.preventDefault(); event.stopPropagation(); setMenu(false); });
     backdrop.addEventListener("click", () => setMenu(false));
-    navLinks.querySelectorAll("a").forEach(a => a.addEventListener("click", () => setMenu(false)));
+    navLinks.querySelectorAll("a").forEach(a => a.addEventListener("click", event => {
+      const href = (a.getAttribute("href") || "").trim();
+      setMenu(false);
+      // Make same-page section links work reliably on touch browsers.
+      if (href.startsWith("#")) {
+        const target = document.querySelector(href);
+        if (target) { event.preventDefault(); target.scrollIntoView({behavior:"smooth",block:"start"}); history.replaceState(null,"",href); }
+      }
+    }));
     document.addEventListener("keydown", event => { if (event.key === "Escape") setMenu(false); });
   }
 
@@ -1561,7 +1570,10 @@ function ensureRecordFooterStyles() {
     .new-clean-status .overall-circle{width:min(100%,205px);height:auto;min-height:205px;aspect-ratio:1;padding:22px;overflow-wrap:anywhere}
     .new-clean-status .overall-circle strong{font-size:clamp(16px,2vw,21px);line-height:1.25;max-width:100%}
     .new-clean-status .overall-circle p{max-width:100%;font-size:12px;line-height:1.45}
-    .record-footer{background:transparent!important;border-top:0!important;padding-top:0!important}
+    .new-clean-verification{background:#fff!important;color:#0f172a!important}
+    .new-clean-verification .record-footer{background:#fff!important;border:0!important;border-top:0!important;padding:0!important;margin-top:22px!important;color:#0f172a!important}
+    .new-clean-verification .verification-trust-strip{background:#f8fbff!important;color:#0f172a!important}
+    .new-clean-verification .verification-copyright{background:#f8fafc!important;color:#64748b!important;border:1px solid #e2e8f0!important;border-radius:12px!important;box-shadow:none!important}
     .record-footer .verification-trust-strip{margin-bottom:14px}
     .record-footer .verification-copyright{margin-top:12px}
     @media(max-width:760px){
