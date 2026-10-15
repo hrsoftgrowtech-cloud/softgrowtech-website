@@ -161,5 +161,5 @@
 </footer>
 
 <script src="script.js"></script>
-<script>document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('continueRegistration'),d=document.getElementById('programDomainSelect');if(b)b.onclick=()=>{if(!d.value){d.focus();return}location.href='student-register.html?domain='+encodeURIComponent(d.value)};const menu=document.querySelector('.menu-btn'),nav=document.getElementById('navLinks');if(menu&&nav){menu.setAttribute('aria-expanded','false');menu.onclick=(e)=>{e.preventDefault();const opened=nav.classList.toggle('open');menu.setAttribute('aria-expanded',String(opened))};nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');menu.setAttribute('aria-expanded','false')}))}});</script></body>
+<script>document.addEventListener('DOMContentLoaded',()=>{const b=document.getElementById('continueRegistration'),d=document.getElementById('programDomainSelect');if(b)b.onclick=()=>{if(!d.value){d.focus();return}location.href='student-register.html?domain='+encodeURIComponent(d.value)}});</script></body>
 </html>
