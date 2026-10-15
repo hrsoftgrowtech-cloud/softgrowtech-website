@@ -500,3 +500,15 @@ body.home-ticker-page .header{position:fixed!important}
   .mobile-nav-backdrop.open{opacity:1;visibility:visible;pointer-events:auto}
 }
 @media(prefers-reduced-motion:reduce){.mobile-nav-backdrop,.nav-links,.nav-links.open{transition:none!important}}
+
+
+/* Mobile drawer brand: visible only while the mobile navigation drawer is used. */
+.mobile-nav-brand{display:none}
+@media(max-width:900px){
+  .nav-links .mobile-nav-brand{display:block;order:0;margin:0 0 12px!important;padding:0 0 16px!important;border-bottom:1px solid #e8eef6;flex:0 0 auto}
+  .nav-links .mobile-nav-brand>a{display:flex!important;align-items:center;gap:11px;min-height:58px;padding:8px 4px!important;background:transparent!important;color:#0f172a!important;border-radius:10px;text-decoration:none}
+  .nav-links .mobile-nav-brand img{display:block;width:44px;height:44px;object-fit:contain;flex:0 0 44px;border-radius:10px;background:#fff}
+  .nav-links .mobile-nav-brand span{display:flex;flex-direction:column;gap:3px;line-height:1.2}
+  .nav-links .mobile-nav-brand strong{font-size:16px;font-weight:800;letter-spacing:-.02em}
+  .nav-links .mobile-nav-brand small{font-size:11px;font-weight:600;color:#64748b;letter-spacing:.02em}
+}

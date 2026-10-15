@@ -250,6 +250,13 @@ function initCommonUI() {
       closeBtn.innerHTML = "<span aria-hidden=\"true\">×</span>";
       navLinks.insertBefore(closeBtn, navLinks.firstChild);
     }
+    let mobileBrand = navLinks.querySelector(".mobile-nav-brand");
+    if (!mobileBrand) {
+      mobileBrand = document.createElement("li");
+      mobileBrand.className = "mobile-nav-brand";
+      mobileBrand.innerHTML = '<a href="index.html" aria-label="SoftGrowTech Home"><img src="assets/softgrowtech-logo.png" alt=""><span><strong>SoftGrowTech</strong><small>Learn • Build • Evolve</small></span></a>';
+      navLinks.insertBefore(mobileBrand, closeBtn.nextSibling);
+    }
     const setMenu = open => {
       navLinks.classList.toggle("open", open);
       backdrop.classList.toggle("open", open);
