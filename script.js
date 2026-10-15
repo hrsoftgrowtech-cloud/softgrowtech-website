@@ -232,8 +232,36 @@ function initCommonUI() {
   const menuBtn = document.querySelector(".menu-btn");
   const navLinks = document.getElementById("navLinks");
   if (menuBtn && navLinks) {
-    menuBtn.addEventListener("click", () => navLinks.classList.toggle("open"));
-    navLinks.querySelectorAll("a").forEach(a => a.addEventListener("click", () => navLinks.classList.remove("open")));
+    let backdrop = document.querySelector(".mobile-nav-backdrop");
+    if (!backdrop) {
+      backdrop = document.createElement("button");
+      backdrop.type = "button";
+      backdrop.className = "mobile-nav-backdrop";
+      backdrop.setAttribute("aria-label", "Close navigation menu");
+      backdrop.tabIndex = -1;
+      document.body.appendChild(backdrop);
+    }
+    let closeBtn = navLinks.querySelector(".mobile-nav-close");
+    if (!closeBtn) {
+      closeBtn = document.createElement("button");
+      closeBtn.type = "button";
+      closeBtn.className = "mobile-nav-close";
+      closeBtn.setAttribute("aria-label", "Close menu");
+      closeBtn.innerHTML = "<span aria-hidden=\"true\">×</span>";
+      navLinks.insertBefore(closeBtn, navLinks.firstChild);
+    }
+    const setMenu = open => {
+      navLinks.classList.toggle("open", open);
+      backdrop.classList.toggle("open", open);
+      menuBtn.setAttribute("aria-expanded", String(open));
+      document.body.classList.toggle("mobile-nav-open", open);
+    };
+    menuBtn.setAttribute("aria-expanded", "false");
+    menuBtn.addEventListener("click", () => setMenu(!navLinks.classList.contains("open")));
+    closeBtn.addEventListener("click", () => setMenu(false));
+    backdrop.addEventListener("click", () => setMenu(false));
+    navLinks.querySelectorAll("a").forEach(a => a.addEventListener("click", () => setMenu(false)));
+    document.addEventListener("keydown", event => { if (event.key === "Escape") setMenu(false); });
   }
 
   const scrollTop = document.createElement("button");
@@ -276,7 +304,7 @@ function ensureMobileLast4Field(form) {
     <div class="verify-mobile-input-shell">
       <input id="verifyMobileLast4" name="mobile_last4" type="password" inputmode="numeric" autocomplete="off" maxlength="4" pattern="\\d{4}" placeholder="••••" aria-label="Registered mobile number last 4 digits" />
       <button type="button" class="verify-mobile-visibility" id="verifyMobileVisibility" aria-label="Show mobile digits" aria-pressed="false" title="Show mobile digits">
-        <svg class="verify-eye-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="eye-open" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle class="eye-open" cx="12" cy="12" r="2.5"/><path class="eye-closed" d="M3 3l18 18M5.5 7.5C3.6 9 2.5 12 2.5 12s3.5 6 9.5 6c1.7 0 3.2-.4 4.5-1M9.5 6.4C10.1 6.1 10.8 6 12 6c6 0 9.5 6 9.5 6s-1 2.1-2.7 3.7"/></svg>
+        <svg class="verify-eye-icon is-closed" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="eye-open" d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle class="eye-open" cx="12" cy="12" r="2.5"/><path class="eye-closed" d="M3 3l18 18M5.5 7.5C3.6 9 2.5 12 2.5 12s3.5 6 9.5 6c1.7 0 3.2-.4 4.5-1M9.5 6.4C10.1 6.1 10.8 6 12 6c6 0 9.5 6 9.5 6s-1 2.1-2.7 3.7"/></svg>
       </button>
     </div>
     <div class="verify-mobile-last4-help">Enter the last 4 digits of the mobile number registered with SoftGrowTech internship.</div>`;
@@ -1257,15 +1285,15 @@ function renderNewStudentRecord(student) {
   const complete=statusRaw.includes('complete')||(end&&!Number.isNaN(end.getTime())&&now>end&&activeByFlow);
   const offerVerified=offer.includes('verified')||offer.includes('received')||offer.includes('issued')||student['Offer Letter URL'];
   const certVerified=certificate.includes('verified')||certificate.includes('received')||certificate.includes('issued')||student['Certificate URL'];
-  const internshipStatus=complete?'Internship Completed':running?'Internship Running':activeByFlow?(start&&now<start?'Internship Coming Soon':'Internship Active'):'Internship Coming Soon';
-  const statusDescription=complete?'Congratulations on completing your internship! Check the status of your Offer Letter and Certificate below.':running?'Your internship is currently in progress. Keep working on your assigned tasks and final project to make the most of this learning experience.':activeByFlow?'Your internship journey is about to begin! Stay prepared and get ready to build your skills through real-world projects.':'Your registration has been received. Your internship journey and document status will be updated here as your application progresses.';
-  const offerText=offerVerified?'Issued / Verified':'Coming Soon';
-  const certText=certVerified?'Issued / Verified':'Coming Soon';
+  const internshipStatus=complete?'Internship Completed':running?'Internship Running':activeByFlow?(start&&now<start?'Internship Starting Soon':'Internship Active'):'Registration Completed';
+  const statusDescription=complete?'Congratulations on completing your internship! Check the status of your Offer Letter and Certificate below.':running?'Your internship is currently in progress. Keep working on your assigned tasks and final project to make the most of this learning experience.':activeByFlow?'Your internship journey is about to begin! Stay prepared and get ready to build your skills through real-world projects.':'Your registration is complete. Selection is required before your Offer Letter can be issued; program progress will update here as your application advances.';
+  const offerText=offerVerified?'Issued & Verified':'Selection Required';
+  const certText=certVerified?'Issued & Verified':complete?'Awaiting Issuance':'Completion Required';
   const officialRecordMessage=certVerified
     ? `<div class="official-record-message success"><div class="official-record-icon">${icons.celebration}</div><div><strong>Congratulations!</strong><span>Your internship is complete. Please review the Offer Letter and Certificate statuses below.</span></div></div>`
     : offerVerified
       ? `<div class="official-record-message confirmed"><div class="official-record-icon">${icons.verified}</div><div><strong>Selection Confirmed</strong><span>The student's selection has been confirmed and the official offer letter has been issued.</span></div></div>`
-      : `<div class="official-record-message private"><div class="official-record-icon">${icons.shield}</div><div><strong>Official Record</strong><span>This public verification page shows only essential verification information. Internal assessment, payment and personal contact details are not displayed.</span></div></div>`;
+      : `<div class="official-record-message private"><div class="official-record-icon">${icons.shield}</div><div><strong>Registration Record</strong><span>The student record was matched successfully. Selection, internship progress and document issuance are shown separately below according to the available official records.</span></div></div>`;
   const batchStartText=batchStart?formatDate(batchStart):'Coming Soon';
   const batchEndText=batchEnd?formatDate(batchEnd):'Coming Soon';
   const badge=(text,kind)=>`<span class="badge ${kind}">${text}</span>`;
@@ -1286,8 +1314,8 @@ function renderNewStudentRecord(student) {
         <div class="status-label">PROGRAM STATUS</div>
         <div class="status-content"><div class="overall-circle"><div class="overall-check">${complete?icons.verified:running?icons.group:activeByFlow?icons.profile:icons.profile}</div><small>Program Status</small><strong>${escapeHtml(internshipStatus)}</strong><p>${escapeHtml(statusDescription)}</p></div>
         <div class="document-status"><h2>Document Status</h2>
-          <div class="doc-row"><div><strong>Offer Letter</strong><small>${offerVerified?'Your official Offer Letter has been issued and verified.':'Your Offer Letter has not been issued yet. Please check back later.'}</small></div>${badge(offerText,offerVerified?'green':'yellow')}</div>
-          <div class="doc-row"><div><strong>Certificate</strong><small>${certVerified?'Your Certificate has been issued and verified.':'Your Certificate has not been issued yet. It will appear here once it is issued.'}</small></div>${badge(certText,certVerified?'green':'yellow')}</div>
+          <div class="doc-row"><div><strong>Offer Letter</strong><small>${offerVerified?'Your official Offer Letter has been issued and verified.':'Selection is required before an official Offer Letter can be issued.'}</small></div>${badge(offerText,offerVerified?'green':'yellow')}</div>
+          <div class="doc-row"><div><strong>Certificate</strong><small>${certVerified?'Your Certificate has been issued and verified.':complete?'Your internship is complete. The Certificate will show as issued after it is formally issued and verified.':'Your Certificate can be issued after successful internship completion and evaluation.'}</small></div>${badge(certText,certVerified?'green':'yellow')}</div>
         </div></div>
       </section>
       ${officialRecordMessage}
@@ -1455,7 +1483,7 @@ function ensureImprovedVerificationStyles(){
   if(document.getElementById("sgtImprovedVerificationStyles"))return;
   const style=document.createElement("style");style.id="sgtImprovedVerificationStyles";style.textContent=`
     .official-record-message{display:flex;align-items:flex-start;gap:12px;padding:15px 16px;border-radius:14px;margin:18px 0;border:1px solid #dbeafe;background:#f8fbff}.official-record-message.confirmed{border-color:#bfdbfe;background:#eff6ff}.official-record-message.success{border-color:#bbf7d0;background:#f0fdf4}.official-record-message.private{border-color:#e2e8f0;background:#f8fafc}.official-record-icon{width:38px;height:38px;min-width:38px;border-radius:11px;background:#dbeafe;color:#1d4ed8;display:grid;place-items:center}.official-record-message.success .official-record-icon{background:#dcfce7;color:#15803d}.official-record-message.private .official-record-icon{background:#e2e8f0;color:#475569}.official-record-icon svg{width:21px;height:21px;display:block}.official-record-message strong,.official-record-message span{display:block}.official-record-message strong{font-size:13px;color:#0f172a;margin-bottom:3px}.official-record-message span{font-size:12px;line-height:1.55;color:#64748b}.new-clean-verification .trust-icon{font-size:0}.new-clean-verification .trust-icon svg{width:20px;height:20px;display:block}.new-clean-verification .result-button{max-width:330px}.new-clean-verification .verification-copyright{background:#f8fafc;color:#64748b;border-top:1px solid #e2e8f0;box-shadow:none;border-radius:0 0 10px 10px}
-    @media(max-width:700px){.new-clean-verification .result-main{padding:20px 15px}.new-clean-verification .status-content{grid-template-columns:1fr;gap:16px}.new-clean-verification .overall-circle{width:145px;height:145px}.new-clean-verification .doc-row{align-items:flex-start;flex-direction:column}.new-clean-verification .doc-row .badge{align-self:flex-start}.new-clean-verification .verification-trust-strip{grid-template-columns:1fr;gap:9px;padding:14px}.new-clean-verification .trust-item{padding:9px 0}.new-clean-verification .verified-title{align-items:flex-start}.new-clean-verification .verified-title h1{font-size:22px}}`;document.head.appendChild(style);
+    @media(max-width:700px){.new-clean-verification .result-main{padding:20px 15px}.new-clean-verification .status-content{grid-template-columns:1fr;gap:16px}.new-clean-verification .overall-circle{width:min(100%,205px);height:auto;min-height:205px;aspect-ratio:1;padding:22px;overflow-wrap:anywhere}.new-clean-verification .overall-circle strong{font-size:clamp(16px,2vw,21px);line-height:1.25;max-width:100%}.new-clean-verification .overall-circle p{max-width:100%;font-size:12px;line-height:1.45}.new-clean-verification .doc-row{align-items:flex-start;flex-direction:column}.new-clean-verification .doc-row .badge{align-self:flex-start}.new-clean-verification .verification-trust-strip{grid-template-columns:1fr;gap:9px;padding:14px}.new-clean-verification .record-footer{background:transparent!important;border:0!important;padding:0!important}.new-clean-verification .verification-copyright{background:#f8fafc!important;color:#64748b!important;border:1px solid #e2e8f0!important;box-shadow:none!important;border-radius:12px!important;margin-top:12px}.new-clean-verification .trust-item{padding:9px 0}.new-clean-verification .verified-title{align-items:flex-start}.new-clean-verification .verified-title h1{font-size:22px}}`;document.head.appendChild(style);
 }
 
 function ensureRecordFooterStyles() {
@@ -1520,18 +1548,29 @@ function ensureRecordFooterStyles() {
       width:100%;
       box-sizing:border-box;
       margin:0;
-      background:#061a33;
-      color:#fff;
+      background:#f8fafc;
+      color:#64748b;
       text-align:center;
       padding:15px 10px;
-      font-size:11px;
-      border-radius:0 0 10px 10px;
-      box-shadow:0 8px 20px rgba(6,26,51,.12);
+      font-size:12px;
+      border:1px solid #e2e8f0;
+      border-radius:12px;
+      box-shadow:none;
     }
+    .new-clean-status .status-content{grid-template-columns:minmax(0,240px) minmax(0,1fr);align-items:center;gap:22px}
+    .new-clean-status .overall-circle{width:min(100%,205px);height:auto;min-height:205px;aspect-ratio:1;padding:22px;overflow-wrap:anywhere}
+    .new-clean-status .overall-circle strong{font-size:clamp(16px,2vw,21px);line-height:1.25;max-width:100%}
+    .new-clean-status .overall-circle p{max-width:100%;font-size:12px;line-height:1.45}
+    .record-footer{background:transparent!important;border-top:0!important;padding-top:0!important}
+    .record-footer .verification-trust-strip{margin-bottom:14px}
+    .record-footer .verification-copyright{margin-top:12px}
     @media(max-width:760px){
-      .record-footer .verification-trust-strip{grid-template-columns:1fr 1fr;padding:14px}
+      .record-footer .verification-trust-strip{grid-template-columns:1fr;padding:14px}
       .record-footer-actions{flex-direction:column}
       .record-footer-actions .result-button{width:100%;max-width:360px;min-width:0}
+      .new-clean-status .status-content{grid-template-columns:minmax(0,1fr);gap:18px}
+      .new-clean-status .overall-circle{width:190px;min-height:190px}
+      .new-clean-status .document-status{min-width:0;width:100%}
     }
   `;
   document.head.appendChild(style);

@@ -11,10 +11,13 @@
 <style>
 
 /* Home-only fixed navigation and ticker */
-body.home-ticker-page{padding-top:132px}
+body.home-ticker-page{padding-top:74px}
+body.home-ticker-page.ticker-started{padding-top:132px}
 body.home-ticker-page .header{position:fixed!important;top:0;left:0;right:0;width:100%;z-index:1100}
-body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;width:100%;box-sizing:border-box;z-index:1090;display:block;opacity:1;visibility:visible;transition:none;overflow:hidden;background:linear-gradient(105deg,#082b68,#174ea6 52%,#082b68);color:#fff;box-shadow:0 8px 24px rgba(15,60,158,.18);border-bottom:1px solid rgba(255,255,255,.16)}
-.sgt-live-ticker.is-visible{opacity:1;visibility:visible}
+body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;width:100%;box-sizing:border-box;z-index:1090;display:block;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease,visibility .25s ease;overflow:hidden;background:linear-gradient(105deg,#082b68,#174ea6 52%,#082b68)!important;color:#fff!important;box-shadow:0 8px 24px rgba(15,60,158,.18);border-bottom:1px solid rgba(255,255,255,.16)}
+.sgt-live-ticker.is-visible{opacity:1;visibility:visible;display:block!important;background:linear-gradient(105deg,#082b68,#174ea6 52%,#082b68)!important;color:#fff!important}
+body.home-ticker-page .sgt-live-ticker .sgt-ticker-track{background:transparent!important;color:#fff!important}
+body.home-ticker-page .sgt-live-ticker .sgt-ticker-controls{background:transparent!important}
 .sgt-ticker-track{position:relative;min-height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0 56px}
 .sgt-ticker-message{position:absolute;left:50%;top:50%;width:max-content;max-width:min(850px,calc(100% - 112px));display:flex;align-items:center;gap:12px;padding:8px 12px;text-align:left;white-space:nowrap;opacity:0;transform:translate(150%,-50%);will-change:transform,opacity;pointer-events:none}
 .sgt-ticker-message.is-active{opacity:1;transform:translate(-50%,-50%)}
@@ -34,7 +37,8 @@ body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;wi
 .sgt-ticker-btn:active{transform:scale(.95)}
 .sgt-ticker-btn:focus-visible{outline:2px solid #bfdbfe;outline-offset:2px}
 @media(max-width:700px){
- body.home-ticker-page{padding-top:140px}
+ body.home-ticker-page{padding-top:66px}
+ body.home-ticker-page.ticker-started{padding-top:140px}
  body.home-ticker-page .header{height:66px}
  body.home-ticker-page .sgt-live-ticker{top:66px}
  .sgt-ticker-track{min-height:72px;padding:0 46px}
@@ -48,7 +52,8 @@ body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;wi
 }
 @media(prefers-reduced-motion:reduce){.sgt-ticker-message.sgt-moving{transition-duration:.01ms}}
 @media(max-width:640px){
- body.home-ticker-page{padding-top:122px}
+ body.home-ticker-page{padding-top:66px}
+ body.home-ticker-page.ticker-started{padding-top:128px}
  body.home-ticker-page .header{min-height:66px}
  body.home-ticker-page .sgt-live-ticker{top:66px}
  .sgt-ticker-track{min-height:62px;padding:0 42px}
@@ -306,6 +311,7 @@ body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;wi
  const prev=document.getElementById('sgtTickerPrev');
  const next=document.getElementById('sgtTickerNext');
  if(!ticker||!track||!prev||!next)return;
+ ticker.setAttribute('aria-hidden','true');
  const icons={
  learn:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5A2.5 2.5 0 0 1 5.5 3H21v15H5.5A2.5 2.5 0 0 0 3 20.5z"/><path d="M3 20.5A2.5 2.5 0 0 1 5.5 18H21"/><path d="m8 9 2.2 2.2L15 7"/></svg>',
  global:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>',
@@ -322,7 +328,7 @@ body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;wi
   {title:'Your Future in Technology',text:'Explore your interests. Strengthen your skills. Build your future.',icon:icons.future},
   {title:'Learn Today. Build Tomorrow.',text:'Turn your knowledge into practical skills and prepare for opportunities in technology.',icon:icons.grow}
  ];
- const ENTER_MS=780, HOLD_MS=3000, EXIT_MS=780, INITIAL_DELAY=3000;
+ const ENTER_MS=780, HOLD_MS=3000, EXIT_MS=780, INITIAL_DELAY=5000;
  let index=0,current=null,timer=null,transitioning=false,started=false,cycleToken=0;
  function makeMessage(i,side){
    const m=messages[i],el=document.createElement('div');
@@ -335,14 +341,38 @@ body.home-ticker-page .sgt-live-ticker{position:fixed;top:74px;left:0;right:0;wi
  }
  function clearTimer(){if(timer){clearTimeout(timer);timer=null}}
  function enterInitial(){
-   if(started)return;started=true;
-   // Reveal the ticker only after the initial 3-second delay, when its first message is ready.
+   if(started)return;
+   started=true;
+   clearTimer();
+
+   // Create and lay out the first message BEFORE revealing the ticker.
+   // Explicitly enforce the brand-blue background to avoid a blank white bar
+   // if another stylesheet overrides the ticker styles.
+   const el=makeMessage(index,'right');
+   track.replaceChildren(el);
+   current=el;
+   ticker.style.setProperty('background','linear-gradient(105deg,#082b68,#174ea6 52%,#082b68)','important');
+   ticker.style.setProperty('color','#ffffff','important');
+   ticker.style.setProperty('display','block','important');
+   ticker.style.setProperty('opacity','0');
+   ticker.style.setProperty('visibility','hidden');
+   ticker.style.setProperty('pointer-events','none');
+   el.classList.add('sgt-moving');
+   el.getBoundingClientRect(); // establish the off-screen starting position
+
+   document.body.classList.add('ticker-started');
    ticker.classList.add('is-visible');
-   const el=makeMessage(index,'right');track.appendChild(el);current=el;
-   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    el.classList.add('sgt-moving','is-active');el.classList.remove('is-enter-right');
-    timer=setTimeout(()=>advance('auto'),HOLD_MS);
-   }));
+   ticker.setAttribute('aria-hidden','false');
+   ticker.style.setProperty('visibility','visible');
+   ticker.style.setProperty('pointer-events','auto');
+   requestAnimationFrame(()=>{
+     ticker.style.setProperty('opacity','1');
+     requestAnimationFrame(()=>{
+       el.classList.add('is-active');
+       el.classList.remove('is-enter-right');
+       timer=setTimeout(()=>advance('auto'),HOLD_MS);
+     });
+   });
  }
  function advance(mode){
    if(!started){clearTimer();enterInitial();return}
