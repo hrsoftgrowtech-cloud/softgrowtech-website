@@ -146,3 +146,9 @@ body.portal-menu-open{overflow:hidden;}
   .portal-menu-item{padding:12px 10px;}
 }
 @media(prefers-reduced-motion:reduce){.portal-menu-drawer,.portal-menu-backdrop{transition:none!important;}}
+
+/* Small interaction polish: show loading state inside the action button itself. */
+.portal-btn.is-processing{display:inline-flex;align-items:center;justify-content:center;gap:10px;cursor:wait;opacity:1;filter:saturate(.92)}
+.sgt-button-spinner{width:16px;height:16px;display:inline-block;flex:0 0 16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sgtButtonSpin .7s linear infinite}
+@keyframes sgtButtonSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.sgt-button-spinner{animation:none}}
