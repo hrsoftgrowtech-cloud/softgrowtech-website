@@ -1574,11 +1574,16 @@ function ensureRecordFooterStyles() {
       box-shadow:none;
     }
     .new-clean-status .status-content{grid-template-columns:minmax(0,240px) minmax(0,1fr);align-items:center;gap:22px}
-    .new-clean-status .overall-circle{width:min(100%,225px);height:auto;min-height:225px;aspect-ratio:1;padding:18px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;overflow:hidden;overflow-wrap:anywhere;word-break:normal}
-    .new-clean-status .overall-circle small,.new-clean-status .overall-circle strong,.new-clean-status .overall-circle p{max-width:100%;width:100%;box-sizing:border-box;text-align:center;overflow-wrap:anywhere}
-    .new-clean-status .overall-circle small{font-size:12px;line-height:1.2}
-    .new-clean-status .overall-circle strong{font-size:clamp(14px,1.2vw,18px);line-height:1.2}
-    .new-clean-status .overall-circle p{font-size:11px;line-height:1.3;margin:2px 0 0}
+    .new-clean-status .overall-circle{width:min(100%,225px);height:auto;min-height:225px;aspect-ratio:1;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden;overflow-wrap:anywhere;word-break:normal}
+    .new-clean-status .overall-circle small,.new-clean-status .overall-circle strong,.new-clean-status .overall-circle p{max-width:100%;width:100%;box-sizing:border-box;text-align:center;overflow-wrap:anywhere;word-break:normal}
+    .new-clean-status .overall-circle small{font-size:11px;line-height:1.25}
+    .new-clean-status .overall-circle strong{font-size:clamp(14px,1.05vw,17px);line-height:1.25}
+    .new-clean-status .overall-circle p{font-size:10px;line-height:1.35;margin:2px 0 0;letter-spacing:0}
+    .new-clean-verification .overall-circle{padding:25px 28px;gap:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;box-sizing:border-box}
+    .new-clean-verification .overall-circle small,.new-clean-verification .overall-circle strong,.new-clean-verification .overall-circle p{width:100%;max-width:100%;box-sizing:border-box;text-align:center;overflow-wrap:anywhere;word-break:normal}
+    .new-clean-verification .overall-circle small{font-size:11px;line-height:1.25}
+    .new-clean-verification .overall-circle strong{font-size:clamp(14px,1.05vw,17px);line-height:1.25}
+    .new-clean-verification .overall-circle p{font-size:10px;line-height:1.35;margin:2px 0 0}
     .new-clean-verification{background:#fff!important;color:#0f172a!important}
     .new-clean-verification .record-footer{background:#fff!important;border:0!important;border-top:0!important;padding:0!important;margin-top:22px!important;color:#0f172a!important}
     .new-clean-verification .verification-trust-strip{background:#f8fbff!important;color:#0f172a!important}
@@ -1590,7 +1595,10 @@ function ensureRecordFooterStyles() {
       .record-footer-actions{flex-direction:column}
       .record-footer-actions .result-button{width:100%;max-width:360px;min-width:0}
       .new-clean-status .status-content{grid-template-columns:minmax(0,1fr);gap:18px}
-      .new-clean-status .overall-circle{width:190px;min-height:190px}
+      .new-clean-status .overall-circle{width:190px;min-height:190px;padding:20px 23px;gap:5px}
+      .new-clean-status .overall-circle strong,.new-clean-verification .overall-circle strong{font-size:14px;line-height:1.22}
+      .new-clean-status .overall-circle p,.new-clean-verification .overall-circle p{font-size:9.5px;line-height:1.3}
+      .new-clean-verification .overall-circle{padding:20px 23px;gap:5px}
       .new-clean-status .document-status{min-width:0;width:100%}
     }
   `;
