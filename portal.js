@@ -214,7 +214,7 @@ async function initPortal(){
   menuClose?.addEventListener('click',closePortalMenu);
   menuBackdrop?.addEventListener('click',closePortalMenu);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menuDrawer?.classList.contains('is-open'))closePortalMenu()});
-  document.querySelectorAll('[data-menu-view]').forEach(btn=>btn.addEventListener('click',()=>{const key=btn.dataset.menuView;document.querySelectorAll('.portal-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.portal-section-view').forEach(x=>x.classList.remove('active'));document.querySelector(`[data-portal-view="${key}"]`)?.classList.add('active');closePortalMenu();window.scrollTo({top:0,behavior:'smooth'})}));
+  document.querySelectorAll('[data-menu-view]').forEach(btn=>btn.addEventListener('click',()=>{const key=btn.dataset.menuView;document.querySelectorAll('.portal-tab').forEach(x=>x.classList.toggle('active',x.dataset.portalTab===key));document.querySelectorAll('.portal-section-view').forEach(x=>x.classList.toggle('active',x.dataset.portalView===key));closePortalMenu();window.scrollTo({top:0,behavior:'smooth'})}));
   const queryBtn=document.getElementById('studentSendQuery'),queryForm=document.getElementById('studentSupportForm'),cancelQuery=document.getElementById('cancelStudentQuery');
   if(queryBtn&&queryForm){
     const nameInput=document.getElementById('studentQueryName'),idInput=document.getElementById('studentQueryId');
