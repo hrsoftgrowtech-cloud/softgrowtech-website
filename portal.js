@@ -96,6 +96,14 @@ async function initRegister(){
     if(!registrationResponse.ok||registrationResult.ok!==true)throw Error(registrationResult.error||'Registration could not be completed. Please try again.');
     try{localStorage.removeItem('sgt_referral_code');localStorage.removeItem('sgt_referral_captured_at')}catch(_){}
     sessionStorage.setItem('sgt_new_registration',JSON.stringify({name,email,domain,student_id:registrationResult.student_id||'',email_sent:registrationResult.email_sent===true,email_error:registrationResult.email_error||''}));
+    // Establish a real Supabase auth session for the newly created account before offering direct dashboard access.
+    sessionStorage.setItem('sgt_registration_auth_ready','false');
+    try{
+      const {data:registrationAuth,error:registrationAuthError}=await sb.auth.signInWithPassword({email,password});
+      if(!registrationAuthError && registrationAuth?.session && registrationAuth?.user?.id){
+        sessionStorage.setItem('sgt_registration_auth_ready','true');
+      }
+    }catch(authError){console.warn('Registration succeeded, but automatic sign-in did not complete.');}
     location.href='registration-success.html'
   }catch(err){if(regError&&/already|registered|exists/i.test(err.message||'')){regError.innerHTML='<strong>Registration Already Exists</strong><br>This Gmail address is already registered with SoftGrowTech. Please use your existing registration instead of creating a new one.';regError.hidden=false}else{if(regError){regError.textContent=err.message||'Registration failed.';regError.hidden=false}else toast(err.message||'Registration failed.')}b.disabled=false;b.classList.remove('is-processing');b.textContent=originalButtonText}}}
 

@@ -38,13 +38,19 @@
 <p class="registration-success-lead">Welcome to SoftGrowTech! Your registration has been completed successfully.</p>
 <hr class="registration-success-divider">
 <div id="registrationDetails"></div>
-<a class="registration-dashboard-link" href="student-login.html"><span class="dashboard-title"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/></svg>Student Dashboard →</span><span class="dashboard-description">Access your personalized dashboard to view your registration details and stay updated on your internship journey.</span></a>
+<a class="registration-dashboard-link" id="registrationDashboardLink" href="student-login.html"><span class="dashboard-title"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/></svg>Student Dashboard →</span><span class="dashboard-description">Access your personalized dashboard to view your registration details and stay updated on your internship journey.</span></a>
 <a class="registration-back-link" href="internships.html">Back to Programs</a>
 </div></section></main>
 <script>
 const d=JSON.parse(sessionStorage.getItem('sgt_new_registration')||'null');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const details=document.getElementById('registrationDetails');
+const dashboardLink=document.getElementById('registrationDashboardLink');
+if(dashboardLink && sessionStorage.getItem('sgt_registration_auth_ready')==='true'){
+ dashboardLink.href='portal.html';
+}else if(dashboardLink){
+ dashboardLink.href='student-login.html';
+}
 if(d){
  const state=d.email_sent===true?`<section class="registration-email-state success"><svg class="state-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="3" y="6" width="26" height="20" rx="3" stroke="currentColor" stroke-width="2.5"/><path d="m5 9 11 9 11-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m21 23 3 3 5-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h2>Registration Details Sent to Your Email</h2><p>Your registration details have been sent to your registered Gmail address. Please check your Inbox and Spam/Junk folder.</p></div></section>`:`<section class="registration-email-state neutral"><svg class="state-icon" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect x="3" y="6" width="26" height="20" rx="3" stroke="currentColor" stroke-width="2.5"/><path d="m5 9 11 9 11-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><div><h2>Registration Completed</h2><p>Your registration is complete, but we could not confirm that the welcome email was sent. Please check your email later or sign in to your Student Dashboard.</p></div></section>`;
  details.innerHTML=`<div class="registration-detail-card"><div><span class="registration-detail-label">Student ID</span><strong class="registration-detail-value">${esc(d.student_id||'Being assigned')}</strong></div><div><span class="registration-detail-label">Domain</span><strong class="registration-detail-value">${esc(d.domain||'')}</strong></div><div><span class="registration-detail-label">Registered Gmail</span><strong class="registration-detail-value">${esc(d.email||'')}</strong></div></div>${state}`;

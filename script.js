@@ -737,7 +737,7 @@ function renderVerificationFallback(student) {
             <div class="trust-item"><div class="trust-icon">✓</div><div><strong>Official Verification</strong><span>Use the Student ID to verify the official record.</span></div></div>
             <div class="trust-item"><div class="trust-icon">?</div><div><strong>Need Support?</strong><span>Contact SoftGrowTech for verification assistance.</span></div></div>
           </section>
-          <div class="record-footer-actions"><a class="result-button verify-another" href="documents-verification.html">Verify Another ID</a></div>
+          <div class="record-footer-actions"><a class="result-button verify-another" href="documents-verification.html">Verify Another ID / Back</a></div>
           <div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div>
         </footer>
       </div>
@@ -779,7 +779,7 @@ function initResultPage() {
           <span class="verification-help-label">Need Help</span>
         </div>
 
-        <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
+        <a class="result-button" href="${backUrl}">Verify Another ID / Back <span>→</span></a>
       </div>
     </div>`;
 };
@@ -827,7 +827,7 @@ function initResultPage() {
           <div class="invalid-icon">!</div>
           <h1>Verification Session Expired</h1>
           <p>Please return to the official verification page and verify the Student / Letter ID again.</p>
-          <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
+          <a class="result-button" href="${backUrl}">Verify Another ID / Back <span>→</span></a>
         </div>
       </div>`;
     return;
@@ -842,7 +842,7 @@ function initResultPage() {
         <div class="invalid-icon">!</div>
         <h1>Verification Session Expired</h1>
         <p>Please return to the official verification page and verify the Student / Letter ID with the last 4 digits of the registered mobile number.</p>
-        <a class="result-button" href="${backUrl}">Verify Another ID <span>→</span></a>
+        <a class="result-button" href="${backUrl}">Verify Another ID / Back <span>→</span></a>
       </div>
     </div>`;
 }
@@ -1255,7 +1255,7 @@ function renderOrientationRecord(student) {
         </section>
 
         <div class="orientation-action-wrap">
-          <a class="orientation-action" href="${backUrl}" aria-label="Verify Another ID and go back">${icons.arrow}<span>Verify Another ID &amp; Back</span></a>
+          <a class="orientation-action" href="${backUrl}" aria-label="Verify Another ID and go back">${icons.arrow}<span>Verify Another ID / Back</span></a>
         </div>
 
         <footer class="record-footer" aria-label="Verification record footer">
@@ -1335,7 +1335,7 @@ function renderNewStudentRecord(student) {
         </div></div>
       </section>
       ${officialRecordMessage}
-      <footer class="record-footer"><section class="verification-trust-strip"><div class="trust-item"><div class="trust-icon">${icons.verified}</div><div><strong>Authentic Record</strong><span>Student details are matched with the official record.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.shield}</div><div><strong>Privacy Protected</strong><span>Personal contact details are protected on this page.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.profile}</div><div><strong>Official Verification</strong><span>Use the Student ID to verify the official record.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.group}</div><div><strong>Need Support?</strong><span>Contact SoftGrowTech for verification assistance.</span></div></div></section><div class="record-footer-actions"><a class="result-button verify-another" href="documents-verification.html">Verify Another ID</a></div><div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div></footer>
+      <footer class="record-footer"><section class="verification-trust-strip"><div class="trust-item"><div class="trust-icon">${icons.verified}</div><div><strong>Authentic Record</strong><span>Student details are matched with the official record.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.shield}</div><div><strong>Privacy Protected</strong><span>Personal contact details are protected on this page.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.profile}</div><div><strong>Official Verification</strong><span>Use the Student ID to verify the official record.</span></div></div><div class="trust-item"><div class="trust-icon">${icons.group}</div><div><strong>Need Support?</strong><span>Contact SoftGrowTech for verification assistance.</span></div></div></section><div class="record-footer-actions"><a class="result-button verify-another" href="documents-verification.html">Verify Another ID / Back</a></div><div class="verification-copyright">© 2026 SoftGrowTech. All Rights Reserved.</div></footer>
     </div></div>`;
 }
 
@@ -1574,9 +1574,11 @@ function ensureRecordFooterStyles() {
       box-shadow:none;
     }
     .new-clean-status .status-content{grid-template-columns:minmax(0,240px) minmax(0,1fr);align-items:center;gap:22px}
-    .new-clean-status .overall-circle{width:min(100%,205px);height:auto;min-height:205px;aspect-ratio:1;padding:22px;overflow-wrap:anywhere}
-    .new-clean-status .overall-circle strong{font-size:clamp(16px,2vw,21px);line-height:1.25;max-width:100%}
-    .new-clean-status .overall-circle p{max-width:100%;font-size:12px;line-height:1.45}
+    .new-clean-status .overall-circle{width:min(100%,225px);height:auto;min-height:225px;aspect-ratio:1;padding:18px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;overflow:hidden;overflow-wrap:anywhere;word-break:normal}
+    .new-clean-status .overall-circle small,.new-clean-status .overall-circle strong,.new-clean-status .overall-circle p{max-width:100%;width:100%;box-sizing:border-box;text-align:center;overflow-wrap:anywhere}
+    .new-clean-status .overall-circle small{font-size:12px;line-height:1.2}
+    .new-clean-status .overall-circle strong{font-size:clamp(14px,1.2vw,18px);line-height:1.2}
+    .new-clean-status .overall-circle p{font-size:11px;line-height:1.3;margin:2px 0 0}
     .new-clean-verification{background:#fff!important;color:#0f172a!important}
     .new-clean-verification .record-footer{background:#fff!important;border:0!important;border-top:0!important;padding:0!important;margin-top:22px!important;color:#0f172a!important}
     .new-clean-verification .verification-trust-strip{background:#f8fbff!important;color:#0f172a!important}
