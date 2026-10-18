@@ -152,3 +152,21 @@ body.portal-menu-open{overflow:hidden;}
 .sgt-button-spinner{width:16px;height:16px;display:inline-block;flex:0 0 16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sgtButtonSpin .7s linear infinite}
 @keyframes sgtButtonSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.sgt-button-spinner{animation:none}}
+
+
+/* Phase 2 refinement: full-height left drawer and distinct selection status. */
+.portal-menu-drawer{top:0!important;bottom:0!important;left:0!important;right:auto!important;width:min(420px,84vw)!important;max-height:none!important;height:100dvh!important;transform:translateX(-105%)!important;border-radius:0 22px 22px 0!important;padding:18px 16px max(16px,env(safe-area-inset-bottom))!important;overflow-y:auto!important;}
+.portal-menu-drawer.is-open{transform:translateX(0)!important;}
+.portal-menu-item[data-menu-view="selection"]{position:relative;overflow:hidden;border:1px solid #9bbcff;background:linear-gradient(125deg,#e4edff 0%,#f7faff 54%,#fff 100%);box-shadow:0 7px 20px rgba(37,99,235,.13);animation:selectionMenuPulse 3s ease-in-out infinite;}
+.portal-menu-item[data-menu-view="selection"]:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,#2563eb,#7c3aed);}
+.portal-menu-item[data-menu-view="selection"] .portal-menu-icon{background:#d8e5ff;color:#214fc0;}
+.portal-menu-item[data-menu-view="selection"].is-locked{cursor:not-allowed;opacity:.78;animation:none;filter:saturate(.72);}
+.portal-menu-item[data-menu-view="selection"].is-locked:hover{background:linear-gradient(125deg,#e4edff 0%,#f7faff 54%,#fff 100%);border-color:#9bbcff;}
+.portal-qualification-line{display:flex;align-items:center;gap:12px;padding:14px 13px;border:1px solid #a7e4c1;border-radius:14px;background:linear-gradient(120deg,#e5faed,#f7fff9);color:#17643b;box-shadow:0 4px 14px rgba(22,101,52,.08);}
+.portal-qualification-line>span:first-child{display:grid;place-items:center;flex:none;width:38px;height:38px;border-radius:12px;background:#c9f3d8;color:#167344;font-size:23px;}
+.portal-qualification-line strong,.portal-qualification-line small{display:block;}
+.portal-qualification-line strong{font-size:14px;}
+.portal-qualification-line small{font-size:11px;line-height:1.4;color:#387653;margin-top:3px;}
+@keyframes selectionMenuPulse{0%,100%{box-shadow:0 5px 16px rgba(37,99,235,.10)}50%{box-shadow:0 8px 23px rgba(37,99,235,.20)}}
+@media(max-width:700px){.portal-menu-drawer{width:min(420px,88vw)!important;padding:14px 12px max(14px,env(safe-area-inset-bottom))!important;}}
+@media(prefers-reduced-motion:reduce){.portal-menu-item[data-menu-view="selection"]{animation:none!important;}}

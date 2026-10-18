@@ -189,6 +189,26 @@ async function initPortal(){
   if(!u){location.replace('student-login.html');return}
   const p=await profile();
   if(!p){root.innerHTML='<div class="portal-card"><h2>Profile not found</h2><p>Please contact SoftGrowTech support.</p></div>';return}
+  // Selection Process menu state is derived from the authenticated student's profile.
+  const selectionMenuItem=document.querySelector('[data-menu-view="selection"]');
+  const selectionPaymentState=String(p.payment_status||'').trim().toLowerCase();
+  const selectionState=String(p.selection_status||'').trim().toLowerCase();
+  const assessmentState=String(p.assessment_status||'').trim().toLowerCase();
+  const selectionAwaitingPaymentReview=assessmentState==='complete' && ['under verification','under review','pending verification','under review & verification'].includes(selectionPaymentState);
+  const selectionQualified=selectionPaymentState==='verified' && selectionState==='selected';
+  if(selectionMenuItem && selectionQualified){
+    const line=document.createElement('div');
+    line.className='portal-qualification-line';
+    line.innerHTML='<span aria-hidden="true">✦</span><span><strong>You’re Qualified!</strong><small>Your next chapter with SoftGrowTech starts here.</small></span>';
+    selectionMenuItem.replaceWith(line);
+  }else if(selectionMenuItem && selectionAwaitingPaymentReview){
+    selectionMenuItem.disabled=true;
+    selectionMenuItem.classList.add('is-locked');
+    selectionMenuItem.setAttribute('aria-disabled','true');
+    const detail=selectionMenuItem.querySelector('small');
+    if(detail)detail.textContent='Enrollment fee is under review and verification';
+    selectionMenuItem.title='Available after payment verification';
+  }
   const escDate=v=>v?new Date(v+'T00:00:00'):null;
   const today=new Date();today.setHours(0,0,0,0);
   const rangeState=(start,end)=>{const s=escDate(start),e=escDate(end)||s;if(!s)return'upcoming';if(today>e)return'complete';if(today>=s&&today<=e)return'current';return'upcoming'};
@@ -214,7 +234,7 @@ async function initPortal(){
   menuClose?.addEventListener('click',closePortalMenu);
   menuBackdrop?.addEventListener('click',closePortalMenu);
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menuDrawer?.classList.contains('is-open'))closePortalMenu()});
-  document.querySelectorAll('[data-menu-view]').forEach(btn=>btn.addEventListener('click',()=>{const key=btn.dataset.menuView;document.querySelectorAll('.portal-tab').forEach(x=>x.classList.toggle('active',x.dataset.portalTab===key));document.querySelectorAll('.portal-section-view').forEach(x=>x.classList.toggle('active',x.dataset.portalView===key));closePortalMenu();window.scrollTo({top:0,behavior:'smooth'})}));
+  document.querySelectorAll('[data-menu-view]').forEach(btn=>btn.addEventListener('click',()=>{if(btn.disabled||btn.getAttribute('aria-disabled')==='true')return;const key=btn.dataset.menuView;document.querySelectorAll('.portal-tab').forEach(x=>x.classList.toggle('active',x.dataset.portalTab===key));document.querySelectorAll('.portal-section-view').forEach(x=>x.classList.toggle('active',x.dataset.portalView===key));closePortalMenu();window.scrollTo({top:0,behavior:'smooth'})}));
   const queryBtn=document.getElementById('studentSendQuery'),queryForm=document.getElementById('studentSupportForm'),cancelQuery=document.getElementById('cancelStudentQuery');
   if(queryBtn&&queryForm){
     const nameInput=document.getElementById('studentQueryName'),idInput=document.getElementById('studentQueryId');
@@ -279,13 +299,13 @@ async function initPortal(){
   const hasPaid=['Under Verification','Verified'].includes(String(p.payment_status||''));const paymentRejected=String(p.payment_status||'')==='Invalid';const rejectionAt=p.payment_rejected_at||null;const assessmentCompletedAt=p.assessment_completed_at||null;const dayDeadline=stamp=>{if(!stamp)return null;const d=new Date(stamp);d.setHours(23,59,59,999);d.setDate(d.getDate()+7);return d};const sevenDayDeadline=rejectionAt?dayDeadline(rejectionAt):(assessmentCompletedAt?dayDeadline(assessmentCompletedAt):null);const formatRemaining=deadline=>{if(!deadline)return '';const now=new Date(),ms=deadline-now;if(ms<=0)return 'Deadline passed';const d=Math.floor(ms/86400000);if(d>=1)return `${d} Day${d===1?'':'s'} Left`;const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000);return `Today — ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} remaining (11:59 PM deadline)`;};
   const assessmentStartHref=(hasPaid&&p.assessment_status!=='Complete')?'assessment.html?start=1':'assessment.html';
   const round=Number(p.selection_round||1);
-  if(paymentRejected){const remaining=formatRemaining(sevenDayDeadline);action=`<div class="help-note"><strong>Payment Rejected</strong><p>Your nominal Enrollment Fee payment was rejected. Please submit a valid payment within the available time.</p><div style="font-weight:800;margin:10px 0">${esc(remaining)}</div></div><div class="portal-actions"><a class="portal-btn primary" href="enrollment.html">Complete Nominal Enrollment Fee →</a></div>`;}else if(p.selection_status==='Not Selected'){
+  if(selectionAwaitingPaymentReview){action='<div class="help-note"><strong>Enrollment Fee Under Review &amp; Verification</strong><p style="margin:7px 0 0">Your assessment has been submitted and your enrollment payment is being reviewed. This section will be available again after verification is complete.</p></div>';}else if(paymentRejected){const remaining=formatRemaining(sevenDayDeadline);action=`<div class="help-note"><strong>Payment Rejected</strong><p>Your nominal Enrollment Fee payment was rejected. Please submit a valid payment within the available time.</p><div style="font-weight:800;margin:10px 0">${esc(remaining)}</div></div><div class="portal-actions"><a class="portal-btn primary" href="enrollment.html">Complete Nominal Enrollment Fee →</a></div>`;}else if(p.selection_status==='Not Selected'){
     if(round>=2){
       const rs=p.refund_status||'Refund Process Pending';
       action=`<div class="help-note"><strong>Refund Process</strong><br>Your re-assessment result was not selected. The refund is handled manually by the management team.</div><div class="portal-meta" style="margin-top:14px"><div class="meta-box"><small>Refund Status</small><span class="status ${statusClass(rs)}">${esc(rs)}</span></div>${p.refund_reference?`<div class="meta-box"><small>Refund Reference</small><strong>${esc(p.refund_reference)}</strong></div>`:''}</div>`;
       if(rs==='Refund Completed')action+=`<div class="success-panel" style="margin-top:14px"><strong>Refund completed ✓</strong><p>Your refund process has been marked completed by the management team.</p></div>`;
     }else if(hasPaid){
-      action=`<div class="help-note">You were not selected in the current selection round. You can take one re-assessment before the batch starts. Your Student ID remains unchanged.</div><div class="portal-actions"><button class="portal-btn primary" id="startReassessment">Re-Assessment →</button></div>`;
+      action=`<div class="help-note"><strong>You Haven’t Qualified This Round</strong><p style="margin:7px 0 0">You were not selected in the current selection round. You may take one re-assessment before the batch starts. Your Student ID remains unchanged.</p></div><div class="portal-actions"><button class="portal-btn primary" id="startReassessment">Re-Assessment →</button><button class="portal-btn secondary" type="button" id="backToDashboardFromSelection">Back to Dashboard</button></div>`;
     }else{
       action=`<div class="help-note">Your current selection status is <strong>Not Selected</strong>. No refund process applies because no enrollment payment has been submitted.</div>`;
     }
@@ -299,13 +319,16 @@ async function initPortal(){
       const batchText=programStart?` Your internship journey will begin with your assigned batch${programStart?` on ${dateFmt(programStart)}`:''}.`:'';
       action=`<div class="success-panel"><strong class="icon-inline">${window.sgtIcon?window.sgtIcon('check'):''}You're All Set!</strong><p style="margin:6px 0 0">Your assessment and enrollment process are complete. You are officially selected for the SoftGrowTech Internship Program.${esc(batchText)}</p></div>`;
     }
+  }else if(p.assessment_status==='Complete' && ['Under Verification','Under Review','Pending Verification'].includes(String(p.payment_status||''))){
+    action='<div class="help-note"><strong>Enrollment Fee Under Review &amp; Verification</strong><p style="margin:7px 0 0">Your assessment has been submitted and your enrollment payment is being reviewed. This section will be available again after verification is complete.</p></div>';
   }else if(p.assessment_status==='Complete'){
-    action='<div class="success-panel"><strong>Assessment Already Submitted</strong><p style="margin:6px 0 0">Your assessment has already been submitted and is currently under review. Please wait for the result.</p></div><div class="portal-actions"><a class="portal-btn secondary" href="assessment.html">View Assessment Status</a></div>';
+    action='<div class="success-panel"><strong>Assessment Submitted</strong><p style="margin:6px 0 0">Your assessment has been submitted. Please wait for the selection and payment review updates shown in your dashboard.</p></div><div class="portal-actions"><a class="portal-btn secondary" href="assessment.html">View Assessment Status</a></div>';
   }else{
     action=`<div class="portal-actions"><a class="portal-btn primary" href="${assessmentStartHref}">Selection Process →</a></div>`;
   }
   document.getElementById('assessmentAction').innerHTML=`<div class="assessment-action-highlight">${action}</div>`;
   document.getElementById('startReassessment')?.addEventListener('click',async()=>{const b=document.getElementById('startReassessment');b.disabled=true;b.textContent='Preparing…';const {error}=await sb.from('sgt_profiles').update({selection_round:2,assessment_status:'Not Started',review_status:'Pending',updated_at:new Date().toISOString()}).eq('id',u.id);if(error){toast(error.message);b.disabled=false;b.textContent='Re-Assessment →';return}location.href='assessment.html'});
+  document.getElementById('backToDashboardFromSelection')?.addEventListener('click',()=>{document.querySelectorAll('.portal-tab').forEach(x=>x.classList.toggle('active',x.dataset.portalTab==='overview'));document.querySelectorAll('.portal-section-view').forEach(x=>x.classList.toggle('active',x.dataset.portalView==='overview'));window.scrollTo({top:0,behavior:'smooth'})});
 
   const [{data:tasks},{data:tf}]=await Promise.all([
     sb.from('sgt_tasks').select('*').eq('enabled',true).or(`domain.eq.${p.domain},domain.is.null`).order('title'),
